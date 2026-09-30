@@ -114,6 +114,10 @@ async def poll(api_url: str, secret: str, token: str) -> int:
 
 
 def main() -> int:
+    # Line buffering, so status appears immediately when stdout is redirected to
+    # a log file. A silent service log is indistinguishable from a dead service.
+    sys.stdout.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(description="Run the Telegram bot by long polling.")
     parser.add_argument(
         "--api-url",
