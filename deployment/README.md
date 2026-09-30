@@ -1,9 +1,27 @@
 # Deploying Ranti
 
-The recommended host is a Hugging Face Docker Space. The fallbacks below are
-listed with their real tradeoffs, not as equals.
+## Status: the Hugging Face recommendation below is out of date
 
-## Recommended: Hugging Face Docker Space
+Hugging Face now refuses to create a Docker or Gradio Space on the free
+`cpu-basic` hardware, returning HTTP 402. Its own error text is: "Static Spaces
+are free for everyone, but hosting Gradio and Docker Spaces on free cpu-basic
+requires a PRO subscription." A Static Space cannot run this Python service, so
+the Hugging Face path is no longer free.
+
+The free replacement is a Render web service, described under the fallback
+section below. It needs no credit card. Its one real drawback is that it sleeps
+after roughly 15 idle minutes, which a scheduled ping against `/health` fixes;
+750 instance-hours per month is enough to stay up continuously. Note that a
+webhook bot on a sleeping host cold-starts on the first message, so the ping
+matters rather than being optional.
+
+The rest of this document is kept because the reasoning still holds for anyone
+who already has Hugging Face PRO.
+
+The originally recommended host was a Hugging Face Docker Space. The fallbacks
+below are listed with their real tradeoffs, not as equals.
+
+## Originally recommended: Hugging Face Docker Space
 
 Why this one:
 
