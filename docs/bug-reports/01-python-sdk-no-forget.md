@@ -1,5 +1,7 @@
 # Python SDK has no forget or delete method while the relayer exposes POST /api/forget
 
+Related: #1043 requests the same capability for the TypeScript SDK. This reports the Python surface, and adds that POST /api/forget is unwrapped by both SDKs.
+
 Reproduced locally: yes.
 
 ## Labels

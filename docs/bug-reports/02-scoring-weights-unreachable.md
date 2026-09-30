@@ -1,5 +1,7 @@
 # Python recall() cannot pass scoring_weights, so recency and importance ranking are unreachable from the high-level API
 
+Related: #968 (closed) asked for a default relevance cutoff in the TypeScript SDK. This is a different gap: the ranking machinery already exists and is wired to the manual path, but the high-level Python recall() cannot reach it.
+
 Reproduced locally: yes (wire-body capture with a stubbed transport; no live relayer write).
 
 ## Labels

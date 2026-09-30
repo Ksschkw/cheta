@@ -1,5 +1,7 @@
 # Python SDK defaults server_url to http://localhost:8000 while the TypeScript SDK defaults to the hosted relayer
 
+Related: #1012 documents another TypeScript versus Python divergence, so this class of issue is already on the maintainers' radar.
+
 Reproduced locally: yes (default value and resulting connection failure observed; no credentials needed).
 
 ## Labels

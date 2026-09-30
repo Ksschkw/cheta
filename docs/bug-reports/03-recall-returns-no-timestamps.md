@@ -1,5 +1,7 @@
 # Python recall() drops the created_at and score fields the relayer returns and the TypeScript SDK exposes
 
+Related: no existing issue found. #993 concerns seal and sui dependencies, not the fields recall() returns.
+
 Reproduced locally: partially (field presence proven by running the mock and by reading the response mapper; no live authenticated recall was run).
 
 ## Labels

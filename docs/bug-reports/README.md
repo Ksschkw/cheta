@@ -34,3 +34,26 @@ One line per report; every claim is grounded in the file and line cited inside t
 - Interpreter used: `/home/ksschkw/kss/IDK/.research/venv/bin/python`
 - Relayer checked: `https://relayer.memory.walrus.xyz/health` (HTTP 200, `apiVersion` 1.0.0, `extract.v6`)
 - Sources: installed wheel under `.research/venv/.../memwal/`, the checked-out repo at `.research/MemWal`, and `.research` findings recorded in `PLAN.md` section 8.
+
+## Filed
+
+Four reports were filed on 2026-09-30 and cross-referenced against existing
+threads before filing, so none of them duplicate work already in the tracker:
+
+| Report | Issue |
+| --- | --- |
+| 01 Python SDK has no forget or delete | https://github.com/MystenLabs/MemWal/issues/1061 |
+| 02 scoring_weights unreachable from recall() | https://github.com/MystenLabs/MemWal/issues/1062 |
+| 03 recall() drops created_at and score | https://github.com/MystenLabs/MemWal/issues/1063 |
+| 05 Python default server_url mismatch | https://github.com/MystenLabs/MemWal/issues/1064 |
+
+Not filed separately:
+
+- 04 was withdrawn. Its behaviour is documented by design, so filing it would
+  have been inaccurate.
+- 06 (no extract-only endpoint) was posted as a comment on the existing dedupe
+  thread instead, because that is where the same problem is already being
+  discussed: https://github.com/MystenLabs/MemWal/issues/1042#issuecomment-5920409813
+
+Filing is reproducible with `python scripts/file_bug_reports.py`, which reads
+these files, so the drafts remain the single source of truth.
