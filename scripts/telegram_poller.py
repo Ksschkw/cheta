@@ -41,8 +41,13 @@ BACKOFF_SECONDS = 3.0
 
 
 async def delete_webhook(client: httpx.AsyncClient, token: str) -> bool:
-    response = await client.post(f"{TELEGRAM_API}/bot{token}/deleteWebhook")
-    body = response.json()
+    """A failure here must not stop the worker: polling still works."""
+    try:
+        response = await client.post(f"{TELEGRAM_API}/bot{token}/deleteWebhook")
+        body = response.json()
+    except (httpx.HTTPError, json.JSONDecodeError) as error:
+        print(f"[WARN] deleteWebhook failed ({type(error).__name__}); polling anyway")
+        return False
     ok = bool(body.get("ok"))
     print(f"[{'OK' if ok else 'WARN'}] deleteWebhook: {body.get('description', 'ok')}")
     return ok
@@ -68,7 +73,10 @@ async def forward(client: httpx.AsyncClient, api_url: str, secret: str, update: 
 
 async def poll(api_url: str, secret: str, token: str) -> int:
     offset: int | None = None
-    async with httpx.AsyncClient() as client:
+    # The httpx default timeout is 5 seconds, which a cold DNS plus TLS handshake
+    # can exceed, crashing the worker on its very first call.
+    limits = httpx.Timeout(POLL_TIMEOUT_SECONDS + 15, connect=20.0)
+    async with httpx.AsyncClient(timeout=limits) as client:
         await delete_webhook(client, token)
         print(f"[OK] polling {TELEGRAM_API} and forwarding to {api_url}")
         print("     message the bot to test it. Ctrl+C to stop.")
