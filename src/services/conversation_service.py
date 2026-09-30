@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 
 from core.config import Settings
 from core.errors import DependencyUnavailableError, NotFoundError
-from core.protocols import LlmGatewayProtocol, MemoryGatewayProtocol
+from core.protocols import LlmGatewayProtocol, MemoryGatewayProtocol, ReplyChannelProtocol
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.turn_crud import TurnCrud
@@ -78,6 +78,7 @@ class ConversationService:
         settings: Settings,
         weights: RankingWeights | None = None,
         thresholds: ConsolidationThresholds | None = None,
+        reply_channel: ReplyChannelProtocol | None = None,
     ) -> None:
         self._users = users
         self._memories = memories
@@ -88,6 +89,7 @@ class ConversationService:
         self._settings = settings
         self._weights = weights or RankingWeights()
         self._thresholds = thresholds or ConsolidationThresholds()
+        self._reply_channel = reply_channel
 
     # ---------------------------------------------------------------- recall
 
@@ -233,6 +235,55 @@ class ConversationService:
             memory_note=note,
             provider=completion.provider,
         )
+
+    async def handle_surface_turn(
+        self,
+        surface: str,
+        surface_user_id: str,
+        display_name: str,
+        text: str,
+        recipient_id: str,
+        memory_enabled: bool = True,
+        context_budget: int = 6,
+    ) -> TurnSchema:
+        """Handle a turn that arrived on a push transport and answer on it.
+
+        The router stays a parser: it hands over primitives and this use case
+        decides what the person actually sees, receipts included.
+        """
+        result = await self.handle_turn(
+            surface, surface_user_id, display_name, text, memory_enabled, context_budget
+        )
+        if self._reply_channel is not None:
+            await self._reply_channel.send_message(recipient_id, self._render_reply(result))
+        return result
+
+    async def notify_unavailable(self, recipient_id: str) -> None:
+        """Tell a push-transport user that this turn could not be served."""
+        if self._reply_channel is not None:
+            await self._reply_channel.send_message(
+                recipient_id,
+                "My memory or my model is briefly unavailable. Nothing you said was lost. "
+                "Please try again in a moment.",
+            )
+
+    def _render_reply(self, result: TurnSchema) -> str:
+        lines = [result.reply]
+        parts: list[str] = []
+        if result.recalled:
+            parts.append(f"{len(result.recalled)} recalled")
+        written = sum(1 for fact in result.stored_facts if fact.blob_id)
+        if written:
+            parts.append(f"{written} new")
+        if result.skipped_duplicates:
+            parts.append(f"{result.skipped_duplicates} duplicate skipped")
+        if result.contradiction_count:
+            parts.append(f"{result.contradiction_count} contradiction flagged")
+        if parts:
+            lines.extend(["", "memory: " + ", ".join(parts)])
+        if result.memory_degraded:
+            lines.extend(["", "memory: degraded this turn, Walrus Memory did not answer"])
+        return "\n".join(lines)
 
     # ----------------------------------------------------------- consolidation
 

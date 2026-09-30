@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Ranti terminal client wrapper.
+# Deliberately activates no virtualenv: it only chooses an interpreter and runs
+# the module with src on PYTHONPATH.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PYTHON_SRC="${ROOT_DIR}/src"
+
+if [ -n "${PYTHONPATH:-}" ]; then
+  export PYTHONPATH="${PYTHON_SRC}:${PYTHONPATH}"
+else
+  export PYTHONPATH="${PYTHON_SRC}"
+fi
+
+if [ -x "${ROOT_DIR}/.venv/bin/python" ]; then
+  exec "${ROOT_DIR}/.venv/bin/python" -m cli "$@"
+fi
+
+exec python3 -m cli "$@"

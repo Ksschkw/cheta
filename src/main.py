@@ -3,14 +3,25 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from core.config import Settings
 from core.container import Container, build_container
 from core.errors import RantiError
-from routers import health_router, user_router
+from routers import (
+    chat_router,
+    evidence_router,
+    health_router,
+    memory_router,
+    telegram_router,
+    user_router,
+)
+
+WEB_ROOT = Path(__file__).resolve().parent / "web"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +52,14 @@ def create_app(container: Container | None = None, settings: Settings | None = N
 
     app.include_router(health_router.build_router())
     app.include_router(user_router.build_router())
+    app.include_router(chat_router.build_router())
+    app.include_router(memory_router.build_router())
+    app.include_router(evidence_router.build_router())
+    app.include_router(telegram_router.build_router())
+
+    if WEB_ROOT.is_dir():
+        app.mount("/app", StaticFiles(directory=WEB_ROOT, html=True), name="app")
+
     return app
 
 

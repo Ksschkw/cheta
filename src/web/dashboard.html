@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ranti evidence dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="dashboard-app" class="wrap">
+      <header class="page-head">
+        <div class="brand-row">
+          <h1>Ranti evidence dashboard</h1>
+          <a class="nav-link" href="index.html">Back to chat</a>
+        </div>
+        <p class="lede">
+          Proof of real use, read straight from the API: one row per user with the
+          memories stored in Walrus Memory, a memory browser, an open-contradiction
+          inbox, and passport export or import for portable memory.
+        </p>
+      </header>
+
+      <section class="panel" aria-label="Health">
+        <div class="panel-head">
+          <h2>Health</h2>
+          <button id="refresh-health" type="button" class="ghost">Refresh</button>
+        </div>
+        <div id="health-body" class="kv"></div>
+        <div id="health-status" class="footer-note">Loading ...</div>
+      </section>
+
+      <section class="panel" aria-label="Evidence table">
+        <div class="panel-head">
+          <h2>Evidence: users and memory counts</h2>
+          <button id="refresh-evidence" type="button" class="ghost">Refresh</button>
+        </div>
+        <div id="evidence-status" class="footer-note">Loading ...</div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Display name</th>
+                <th scope="col">Surface</th>
+                <th scope="col" class="num">Active</th>
+                <th scope="col" class="num">Superseded</th>
+                <th scope="col" class="num">Contradicted</th>
+                <th scope="col" class="num">Open contradictions</th>
+                <th scope="col" class="num">Turns</th>
+                <th scope="col" class="num">Relayer memories</th>
+              </tr>
+            </thead>
+            <tbody id="evidence-body"></tbody>
+            <tfoot id="evidence-total"></tfoot>
+          </table>
+        </div>
+        <p class="footer-note">
+          Rows with 10 or more active memories are highlighted: that is the submission
+          threshold. Click a row to browse that user below.
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Memory browser">
+        <div class="panel-head">
+          <h2>Memory browser</h2>
+          <button id="refresh-memories" type="button" class="ghost">Refresh</button>
+        </div>
+        <div class="toolbar">
+          <div class="field">
+            <label for="user-select">User</label>
+            <select id="user-select"></select>
+          </div>
+          <label class="switch" for="show-superseded">
+            <input id="show-superseded" type="checkbox">
+            <span>Include superseded</span>
+          </label>
+          <label class="switch" for="show-contradicted">
+            <input id="show-contradicted" type="checkbox">
+            <span>Include contradicted</span>
+          </label>
+        </div>
+        <div id="memory-status" class="footer-note">Loading ...</div>
+        <div id="memory-list" class="memory-list"></div>
+      </section>
+
+      <section class="panel" aria-label="Contradictions inbox">
+        <div class="panel-head">
+          <h2>Contradictions inbox</h2>
+          <button id="refresh-contradictions" type="button" class="ghost">Refresh</button>
+        </div>
+        <div id="contradiction-status" class="footer-note">Loading ...</div>
+        <div id="contradiction-list" class="inbox-list"></div>
+      </section>
+
+      <section class="panel" aria-label="Memory passport">
+        <h2>Memory passport</h2>
+        <p class="footer-note">
+          The passport is a portable JSON bundle of one user's memories. Export it to
+          download the file, or import a passport to rewrite its memories into the
+          destination identity. Duplicate text is skipped, so importing twice is safe.
+        </p>
+        <div class="toolbar">
+          <div class="field">
+            <label for="passport-export">Export the selected user</label>
+            <button id="passport-export" type="button" class="primary">Export passport JSON</button>
+          </div>
+          <div class="field">
+            <label for="passport-file">Import a passport file</label>
+            <input id="passport-file" type="file" accept="application/json,.json">
+          </div>
+        </div>
+        <div id="passport-status" class="footer-note">Select a user to export.</div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

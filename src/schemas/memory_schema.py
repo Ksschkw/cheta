@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MemoryViewSchema(BaseModel):
@@ -34,6 +34,27 @@ class MemoryStatsSchema(BaseModel):
     relayer_memory_count: int
     relayer_storage_bytes: int
     relayer_degraded: bool
+
+
+class RecallRequestSchema(BaseModel):
+    user_id: str = Field(min_length=1)
+    query: str = Field(min_length=1, max_length=2000)
+    budget: int = Field(default=6, ge=1, le=25)
+
+
+class ContradictionViewSchema(BaseModel):
+    id: str
+    reason: str
+    created_at: str
+    left: str
+    right: str
+
+
+class PassportImportResultSchema(BaseModel):
+    user_id: str
+    namespace: str
+    imported: int
+    skipped: int
 
 
 @dataclass(frozen=True)

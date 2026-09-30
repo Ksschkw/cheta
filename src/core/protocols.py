@@ -68,3 +68,9 @@ class TelegramGatewayProtocol(Protocol):
     async def send_message(self, chat_id: str, text: str) -> None: ...
 
     async def set_webhook(self, url: str, secret_token: str) -> None: ...
+
+
+class ReplyChannelProtocol(Protocol):
+    """A push transport the conversation can deliver its own answer on."""
+
+    async def send_message(self, recipient_id: str, text: str) -> None: ...

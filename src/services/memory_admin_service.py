@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from core.config import Settings
-from core.errors import NotFoundError
+from core.errors import NotFoundError, ValidationError
 from core.protocols import MemoryGatewayProtocol
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
@@ -114,7 +114,8 @@ class MemoryAdminService:
     def export_passport(self, user_id: str) -> dict[str, object]:
         """A portable bundle of everything known about one user.
 
-        The index is data, not application state: it travels with the memories.
+        The index is data, not application state: it travels with the memories,
+        which is why a wiped install can rebuild from this file alone.
         """
         user = self._users.get_by_id(user_id)
         if user is None:
@@ -142,3 +143,94 @@ class MemoryAdminService:
                 for record in records
             ],
         }
+
+    async def import_passport(self, payload: dict[str, object]) -> dict[str, object]:
+        """Bring a memory space to a different surface identity.
+
+        Namespaces are derived per identity, so an import is a genuine rewrite
+        into the destination space, not a pointer swap. Duplicate text is
+        skipped, which makes the import safe to run twice.
+        """
+        raw_user = payload.get("user")
+        if not isinstance(raw_user, dict):
+            raise ValidationError("passport is missing its user block")
+        surface = str(raw_user.get("surface", "cli"))
+        surface_user_id = str(raw_user.get("surface_user_id", ""))
+        display_name = str(raw_user.get("display_name", "Imported"))
+        if not surface_user_id:
+            raise ValidationError("passport is missing user.surface_user_id")
+
+        raw_memories = payload.get("memories")
+        if not isinstance(raw_memories, list):
+            raise ValidationError("passport is missing its memories list")
+
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        namespace = self._settings.memory_namespace(user.memory_key)
+        seen = {record.text for record in self._memories.list_for_user(user.id, None, 1000)}
+
+        imported = 0
+        skipped = 0
+        for item in raw_memories:
+            if not isinstance(item, dict):
+                continue
+            text = str(item.get("text", "")).strip()
+            if not text:
+                continue
+            if text in seen:
+                skipped += 1
+                continue
+            written = await self._memory.remember(text, namespace)
+            try:
+                importance = float(item.get("importance", 0.5))
+            except (TypeError, ValueError):
+                importance = 0.5
+            self._memories.create(
+                user_id=user.id,
+                blob_id=written.blob_id,
+                namespace=namespace,
+                text=text,
+                importance=min(1.0, max(0.0, importance)),
+                origin_surface=str(item.get("origin_surface", "passport")),
+                occurred_at=str(
+                    item.get("occurred_at") or datetime.now(UTC).isoformat(timespec="seconds")
+                ),
+            )
+            seen.add(text)
+            imported += 1
+
+        return {
+            "user_id": user.id,
+            "namespace": namespace,
+            "imported": imported,
+            "skipped": skipped,
+        }
+
+    async def evidence_leaderboard(self) -> list[MemoryStatsSchema]:
+        """One row per known user. This is the artifact that proves real use."""
+        listing = await self._memory.list_namespaces(limit=500)
+        relayer_counts = {
+            summary.name: (summary.memory_count, summary.storage_used)
+            for summary in listing.namespaces
+        }
+
+        rows: list[MemoryStatsSchema] = []
+        for user in self._users.list(limit=500):
+            namespace = self._settings.memory_namespace(user.memory_key)
+            memory_count, storage = relayer_counts.get(namespace, (0, 0))
+            rows.append(
+                MemoryStatsSchema(
+                    user_id=user.id,
+                    display_name=user.display_name,
+                    surface=user.surface,
+                    namespace=namespace,
+                    active=self._memories.count_for_user(user.id, STATUS_ACTIVE),
+                    superseded=self._memories.count_for_user(user.id, STATUS_SUPERSEDED),
+                    contradicted=self._memories.count_for_user(user.id, STATUS_CONTRADICTED),
+                    open_contradictions=len(self._contradictions.list_open_for_user(user.id)),
+                    turns=self._turns.count_for_user(user.id),
+                    relayer_memory_count=memory_count,
+                    relayer_storage_bytes=storage,
+                    relayer_degraded=listing.degraded,
+                )
+            )
+        return rows

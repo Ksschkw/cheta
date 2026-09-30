@@ -1,0 +1,31 @@
+# Local tooling and state never belongs in the runtime image.
+.git
+.gitignore
+.venv
+.research
+.pytest_cache
+.lint_cache
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+artifacts
+exports
+*.log
+
+# Secrets. The image reads configuration from the environment at runtime.
+.env
+.env.*
+.env.local
+
+# Development-only material.
+tests
+scripts
+deployment
+PLAN.md
+project_init.md
+README.md
+Dockerfile
+.dockerignore
