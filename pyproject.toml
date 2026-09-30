@@ -1,0 +1,81 @@
+[project]
+name = "ranti"
+version = "0.1.0"
+description = "One mind, every app: portable Walrus Memory that consolidates instead of rot."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "openai>=1.40",
+    "pydantic>=2.7",
+    "memwal>=0.1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "import-linter>=2.0",
+    "respx>=0.21",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.importlinter]
+root_packages = ["core", "models", "schemas", "crud", "services", "routers"]
+
+[[tool.importlinter.contracts]]
+name = "Layers point inward: routers, services, crud, entities"
+type = "layers"
+layers = ["routers", "services", "crud", "models.entities"]
+
+[[tool.importlinter.contracts]]
+name = "Entities are the innermost layer"
+type = "forbidden"
+source_modules = ["models.entities"]
+forbidden_modules = ["core", "schemas", "crud", "services", "routers"]
+
+[[tool.importlinter.contracts]]
+name = "Schemas are transport only"
+type = "forbidden"
+source_modules = ["schemas"]
+forbidden_modules = ["crud", "services", "routers", "core.gateways"]
+
+[[tool.importlinter.contracts]]
+name = "Crud never reaches outward"
+type = "forbidden"
+source_modules = ["crud"]
+forbidden_modules = ["schemas", "services", "routers"]
+
+[[tool.importlinter.contracts]]
+name = "Routers call services, never crud or gateways"
+type = "forbidden"
+source_modules = ["routers"]
+forbidden_modules = ["crud", "core.gateways"]
+# The composition root legitimately imports every layer, so only a direct
+# router-to-persistence import is a violation.
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "No two services import each other"
+type = "independence"
+modules = ["services"]
+
+[[tool.importlinter.contracts]]
+name = "Gateways never import the layers that call them"
+type = "forbidden"
+source_modules = ["core.gateways"]
+forbidden_modules = ["crud", "services", "routers"]
+

@@ -1,0 +1,16 @@
+# Local state
+.venv/
+.research/
+*.pyc
+__pycache__/
+.pytest_cache/
+.lint_cache/
+*.db
+*.sqlite3
+.env
+.env.local
+
+# Runtime artifacts
+artifacts/
+exports/
+*.log
