@@ -59,18 +59,8 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     )
     """,
     """
-    CREATE TABLE IF NOT EXISTS conversations (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        surface TEXT NOT NULL,
-        started_at TEXT NOT NULL,
-        last_turn_at TEXT NOT NULL
-    )
-    """,
-    """
     CREATE TABLE IF NOT EXISTS turns (
         id TEXT PRIMARY KEY,
-        conversation_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         surface TEXT NOT NULL,
         user_text TEXT NOT NULL,

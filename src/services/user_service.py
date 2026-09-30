@@ -30,15 +30,9 @@ class UserService:
         self, surface: str, surface_user_id: str, display_name: str
     ) -> UserSchema:
         """Idempotent registration. A repeat visit never creates a second identity."""
-        existing = self._users.get_by_identity(surface, surface_user_id)
-        if existing is not None:
-            if existing.display_name != display_name:
-                refreshed = self._users.update(existing.id, display_name)
-                if refreshed is not None:
-                    return self._to_schema(refreshed)
-            return self._to_schema(existing)
-        created = self._users.create(surface, surface_user_id, display_name)
-        return self._to_schema(created)
+        return self._to_schema(
+            self._users.get_or_create(surface, surface_user_id, display_name)
+        )
 
     def get(self, user_id: str) -> UserSchema:
         user = self._users.get_by_id(user_id)

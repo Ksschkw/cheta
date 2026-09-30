@@ -62,6 +62,21 @@ class UserCrud:
         )
         return model
 
+    def get_or_create(
+        self, surface: str, surface_user_id: str, display_name: str
+    ) -> UserModel:
+        """Persist-level upsert. The single rule that one surface identity is one user.
+
+        Shared by every use case that needs an identity, so no two services have
+        to import each other to reuse it.
+        """
+        existing = self.get_by_identity(surface, surface_user_id)
+        if existing is None:
+            return self.create(surface, surface_user_id, display_name)
+        if existing.display_name != display_name:
+            return self.update(existing.id, display_name) or existing
+        return existing
+
     def update(self, user_id: str, display_name: str) -> UserModel | None:
         if not display_name.strip():
             raise ValueError("display_name must not be blank")

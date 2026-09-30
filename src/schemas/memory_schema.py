@@ -4,6 +4,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+
+
+class MemoryViewSchema(BaseModel):
+    """One memory as shown to a person in a memory browser or receipt."""
+
+    blob_id: str
+    text: str
+    status: str
+    importance: float
+    origin_surface: str
+    superseded_by: str | None
+    occurred_at: str
+
+
+class MemoryStatsSchema(BaseModel):
+    """Per-user evidence. This is what proves real use happened."""
+
+    user_id: str
+    display_name: str
+    surface: str
+    namespace: str
+    active: int
+    superseded: int
+    contradicted: int
+    open_contradictions: int
+    turns: int
+    relayer_memory_count: int
+    relayer_storage_bytes: int
+    relayer_degraded: bool
+
 
 @dataclass(frozen=True)
 class RecalledMemorySchema:

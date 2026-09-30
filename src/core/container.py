@@ -17,7 +17,12 @@ from core.gateways.llm_gateway import (
 from core.gateways.memwal_gateway import MemWalGateway
 from core.gateways.telegram_gateway import TelegramGateway
 from core.resilience import Boundary, ResiliencePolicy, StructuredLogMetricSink
+from crud.contradiction_crud import ContradictionCrud
+from crud.memory_crud import MemoryCrud
+from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
+from services.conversation_service import ConversationService
+from services.memory_admin_service import MemoryAdminService
 from services.user_service import UserService
 
 
@@ -31,6 +36,8 @@ class Container:
     llm_gateway: LlmGateway | None
     telegram_gateway: TelegramGateway | None
     user_service: UserService
+    conversation_service: ConversationService
+    memory_admin_service: MemoryAdminService
 
 
 def build_memory_boundary(settings: Settings) -> Boundary:
@@ -109,10 +116,32 @@ def build_container(settings: Settings | None = None) -> Container:
     database.migrate()
 
     users = UserCrud(database)
-    user_service = UserService(users=users, settings=resolved)
+    memories = MemoryCrud(database)
+    turns = TurnCrud(database)
+    contradictions = ContradictionCrud(database)
+
     memory_gateway = build_memory_gateway(resolved)
     llm_gateway = build_llm_gateway(resolved)
     telegram_gateway = build_telegram_gateway(resolved)
+
+    user_service = UserService(users=users, settings=resolved)
+    conversation_service = ConversationService(
+        users=users,
+        memories=memories,
+        turns=turns,
+        contradictions=contradictions,
+        memory_gateway=memory_gateway,
+        llm_gateway=llm_gateway,
+        settings=resolved,
+    )
+    memory_admin_service = MemoryAdminService(
+        users=users,
+        memories=memories,
+        turns=turns,
+        contradictions=contradictions,
+        memory_gateway=memory_gateway,
+        settings=resolved,
+    )
 
     return Container(
         settings=resolved,
@@ -121,6 +150,8 @@ def build_container(settings: Settings | None = None) -> Container:
         llm_gateway=llm_gateway,
         telegram_gateway=telegram_gateway,
         user_service=user_service,
+        conversation_service=conversation_service,
+        memory_admin_service=memory_admin_service,
     )
 
 
