@@ -145,6 +145,29 @@ is covered by
 so the clone-and-run claim is executable rather than aspirational. Point
 `MEMWAL_*` and a provider key at the real services to leave the fallback behind.
 
+### Verify your Walrus Memory credentials first
+
+Credential problems on Walrus Memory surface as 401s that are hard to attribute,
+so check them with a real round trip before debugging anything else:
+
+```bash
+python scripts/verify_memwal.py
+```
+
+It checks the relayer health, writes one small memory into a dedicated
+`ranti.verify` namespace, waits for it to persist, and reads it back. Every step
+prints `[OK]` or a `[FAIL]` that names the cause, including the two common ones:
+a delegate key that is not registered on the account, and a mainnet/staging
+mismatch. It exits non-zero on failure and never prints a traceback.
+
+The live integration test is the same round trip as a test. It is skipped unless
+you opt in explicitly, so the default run stays offline:
+
+```bash
+RANTI_LIVE_TESTS=1 MEMWAL_PRIVATE_KEY=... MEMWAL_ACCOUNT_ID=... \
+  python -m pytest tests/integration -q
+```
+
 ## The three surfaces
 
 All three write to the same per-user memory namespace and record which surface
