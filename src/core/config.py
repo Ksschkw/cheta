@@ -11,6 +11,16 @@ def _get(env: Mapping[str, str], key: str, default: str = "") -> str:
     return (env.get(key) or default).strip()
 
 
+def _get_float(env: Mapping[str, str], key: str, default: float) -> float:
+    raw = (env.get(key) or "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
 @dataclass(frozen=True)
 class LlmProviderConfig:
     """One OpenAI-compatible provider in the failover chain."""
@@ -43,7 +53,7 @@ class Settings:
 
     llm_providers: tuple[LlmProviderConfig, ...] = field(default_factory=tuple)
 
-    memwal_timeout_seconds: float = 30.0
+    memwal_timeout_seconds: float = 90.0
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
 
@@ -119,5 +129,6 @@ class Settings:
             telegram_bot_token=_get(source, "TELEGRAM_BOT_TOKEN"),
             telegram_webhook_secret=_get(source, "TELEGRAM_WEBHOOK_SECRET"),
             public_base_url=_get(source, "PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
+            memwal_timeout_seconds=_get_float(source, "MEMWAL_TIMEOUT_SECONDS", 90.0),
             llm_providers=tuple(candidate for candidate in candidates if candidate.configured),
         )

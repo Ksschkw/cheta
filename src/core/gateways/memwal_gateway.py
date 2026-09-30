@@ -98,9 +98,19 @@ class MemWalGateway:
     async def remember(
         self, text: str, namespace: str, idempotency_key: str | None = None
     ) -> StoredMemorySchema:
+        # A write is accepted as a job and only reaches "done" once the blob is
+        # uploaded and indexed, which on the hosted relayer takes tens of seconds.
+        # The SDK's own poll budget must expire before the boundary timeout, so
+        # that the error surfaced is the SDK's precise one (job timeout, with the
+        # job id) rather than a generic boundary timeout with no handle.
+        poll_budget_ms = int(max(30.0, self._boundary.policy.timeout_seconds - 10.0) * 1000)
+
         async def operation() -> StoredMemorySchema:
             result = await self._client.remember_and_wait(
-                text, namespace, idempotency_key=idempotency_key
+                text,
+                namespace,
+                timeout_ms=poll_budget_ms,
+                idempotency_key=idempotency_key,
             )
             return StoredMemorySchema(
                 blob_id=result.blob_id,
