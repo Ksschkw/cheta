@@ -22,13 +22,16 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Non-root runtime user. UID 10001 stays clear of the base image users.
 RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin ranti
 
-# SQLite needs a writable directory for the local index. On an ephemeral host
-# this file is disposable: it can be rebuilt from Walrus Memory.
-RUN mkdir -p /app/artifacts && chown -R ranti:ranti /app/artifacts
+# SQLite needs a writable directory for the local index, and the runtime user
+# must be able to read the application source. Chowning /app covers both; a
+# build-context umask that produces 0600 files otherwise makes the container
+# start and immediately die with PermissionError on src/main.py.
+RUN mkdir -p /app/artifacts && chown -R ranti:ranti /app
 
 USER ranti
 
 # 7860 is the Hugging Face Docker Space app port; 8000 is the local default.
+# Render and most other hosts inject PORT instead, so honour it when present.
 EXPOSE 7860 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860", "--app-dir", "src"]
+CMD uvicorn main:app --host 0.0.0.0 --port "${PORT:-7860}" --app-dir src
