@@ -99,8 +99,11 @@ cp .env.example .env
 
 The dependency list mirrors `[project].dependencies` and
 `[project.optional-dependencies].dev` in [pyproject.toml](pyproject.toml).
-`pyproject.toml` does not declare a build backend, so install the dependencies
-directly; `pip install -e .` does not work yet.
+An editable install also works and is the shorter path:
+
+```bash
+python -m pip install -e ".[dev]"
+```
 
 Required environment variables:
 
@@ -109,11 +112,15 @@ Required environment variables:
   (Enoki-sponsored, no gas). The site issues the delegate key used as
   `MEMWAL_PRIVATE_KEY`. `MEMWAL_SERVER_URL` already defaults to the hosted
   relayer `https://relayer.memory.walrus.xyz`.
-- At least one LLM provider: `GROQ_API_KEY` (primary, `GROQ_MODEL=qwen3-32b`),
-  `GEMINI_API_KEY` (secondary), or a local Ollama at `OLLAMA_BASE_URL`. All
-  providers speak the OpenAI wire format; the first configured provider wins and
-  the rest form the failover chain. See
-  [src/core/config.py](src/core/config.py).
+- Optional but recommended, at least one LLM provider: `GROQ_API_KEY` (primary,
+  `GROQ_MODEL=qwen3-32b`), `GEMINI_API_KEY` (secondary), or a local Ollama at
+  `OLLAMA_BASE_URL`. All providers speak the OpenAI wire format; the first
+  configured provider wins and the rest form the failover chain. See
+  [src/core/config.py](src/core/config.py). When none is configured the app falls
+  back to a deterministic offline model
+  ([src/core/gateways/offline_llm_gateway.py](src/core/gateways/offline_llm_gateway.py)),
+  which is loud about being a fallback and is good enough to demonstrate the
+  consolidation behaviour but is not a real model.
 
 Run the API:
 
@@ -129,10 +136,14 @@ bash scripts/run_local.sh
 ```
 
 Then open http://127.0.0.1:8000/app for the widget and
-http://127.0.0.1:8000/docs for the API. **When memory credentials are absent the
-app runs against the offline `MemWalMock` client** - `/health` reports
-`"memory": {"mode": "mock"}` - so the full flow can be exercised without a
-Walrus account. An LLM provider is still required for `/chat/turn`.
+http://127.0.0.1:8000/docs for the API. **With no credentials at all the app
+still completes full memory cycles**: it runs against the offline `MemWalMock`
+client (`/health` reports `"memory": {"mode": "mock"}`) and the deterministic
+offline model (`/health` reports `"llm": {"providers": ["offline"]}`). That path
+is covered by
+[tests/core/test_offline_llm_gateway.py](tests/core/test_offline_llm_gateway.py),
+so the clone-and-run claim is executable rather than aspirational. Point
+`MEMWAL_*` and a provider key at the real services to leave the fallback behind.
 
 ## The three surfaces
 
@@ -156,9 +167,24 @@ Telegram `setWebhook` API. The FastAPI route is
 [src/routers/telegram_router.py](src/routers/telegram_router.py). The surface
 identity is the Telegram chat id.
 
-**CLI.** The CLI shares the same memory interface as every other surface:
-`POST /chat/turn` with `surface="cli"`. A dedicated `cli_router` is not in the
-tree yet, so today the surface is driven from the API:
+**CLI.** The terminal client in [src/cli.py](src/cli.py) talks to the running
+API over HTTP only, so it stays honest about what the public API can do. Run it
+with the wrapper:
+
+```bash
+bash scripts/ranti
+```
+
+or directly, with `src` on `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src python -m cli
+```
+
+It reads `RANTI_API_URL` (default `http://127.0.0.1:8000`) and persists its
+surface identity in `~/.ranti_cli.json` (`RANTI_CLI_CONFIG` overrides the path).
+Every turn is `POST /chat/turn` with `surface="cli"`; the raw API is also usable
+directly:
 
 ```bash
 curl -s http://127.0.0.1:8000/chat/turn \
@@ -170,8 +196,10 @@ See [scripts/seed_demo_user.py](scripts/seed_demo_user.py) for a scripted
 multi-turn run on this surface.
 
 **Web widget.** Served at `/app` by the static mount in
-[src/main.py](src/main.py) when `src/web` exists. The widget assets are not in
-the tree yet, so `/app` currently has no page to serve.
+[src/main.py](src/main.py). [src/web/index.html](src/web/index.html) is the chat
+widget, with a memory on/off toggle and a live recalled-memory count;
+[src/web/dashboard.html](src/web/dashboard.html) at `/app/dashboard.html` is the
+per-user evidence dashboard.
 
 ## Tests and the architecture check
 
@@ -181,8 +209,8 @@ They are the same command:
 python -m pytest
 ```
 
-The suite is 60 tests and includes the architecture check, so a broken
-dependency direction fails the default test run. The check enforces:
+The suite includes the architecture check, so a broken dependency direction
+fails the default test run. The check enforces:
 
 - the layer contract `routers -> services -> crud -> models.entities`;
 - `models.entities` is innermost and imports no other project layer;

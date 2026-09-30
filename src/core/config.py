@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 
@@ -73,7 +73,13 @@ class Settings:
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         source = env if env is not None else os.environ
 
-        candidates: Sequence[LlmProviderConfig] = (
+        # Ollama needs no API key, so it cannot be detected by looking for one.
+        # It is opt-in instead: otherwise a fresh clone would select a local
+        # daemon that is probably not running and every turn would fail, instead
+        # of falling through to the deterministic offline model.
+        ollama_enabled = _get(source, "OLLAMA_ENABLED", "0").lower() in ("1", "true", "yes", "on")
+
+        candidates: list[LlmProviderConfig] = [
             LlmProviderConfig(
                 name="groq",
                 base_url=_get(source, "GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
@@ -90,13 +96,16 @@ class Settings:
                 api_key=_get(source, "GEMINI_API_KEY"),
                 model=_get(source, "GEMINI_MODEL", "gemini-2.5-flash-lite"),
             ),
-            LlmProviderConfig(
-                name="ollama",
-                base_url=_get(source, "OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1"),
-                api_key="",
-                model=_get(source, "OLLAMA_MODEL", "qwen2.5:1.5b"),
-            ),
-        )
+        ]
+        if ollama_enabled:
+            candidates.append(
+                LlmProviderConfig(
+                    name="ollama",
+                    base_url=_get(source, "OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1"),
+                    api_key="",
+                    model=_get(source, "OLLAMA_MODEL", "qwen2.5:1.5b"),
+                )
+            )
 
         return cls(
             environment=_get(source, "RANTI_ENVIRONMENT", "development"),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,6 +16,7 @@ from core.gateways.llm_gateway import (
     build_provider_boundaries,
 )
 from core.gateways.memwal_gateway import MemWalGateway
+from core.gateways.offline_llm_gateway import OfflineLlm
 from core.gateways.telegram_gateway import TelegramGateway
 from core.resilience import Boundary, ResiliencePolicy, StructuredLogMetricSink
 from crud.contradiction_crud import ContradictionCrud
@@ -25,6 +27,8 @@ from services.conversation_service import ConversationService
 from services.memory_admin_service import MemoryAdminService
 from services.user_service import UserService
 
+logger = logging.getLogger("ranti.container")
+
 
 @dataclass(frozen=True)
 class Container:
@@ -33,7 +37,7 @@ class Container:
     settings: Settings
     database: Database
     memory_gateway: MemWalGateway
-    llm_gateway: LlmGateway | None
+    llm_gateway: LlmGateway | OfflineLlm | None
     telegram_gateway: TelegramGateway | None
     user_service: UserService
     conversation_service: ConversationService
@@ -91,9 +95,21 @@ def _boundary_factory(dependency: str, timeout_seconds: float) -> Boundary:
     )
 
 
-def build_llm_gateway(settings: Settings) -> LlmGateway | None:
+def build_llm_gateway(settings: Settings) -> LlmGateway | OfflineLlm:
+    """Configured providers win. With none configured, fall back to the offline model.
+
+    The fallback keeps the promise in the README: a fresh clone with no API keys
+    still runs a complete turn and still demonstrates consolidation. It is loud
+    about being a fallback, so a missing key in production is visible rather than
+    silently served by a deterministic stub.
+    """
     if not settings.llm_providers:
-        return None
+        logger.warning(
+            "no LLM provider is configured; using the deterministic offline model. "
+            "Set GROQ_API_KEY or GEMINI_API_KEY for real answers."
+        )
+        return OfflineLlm()
+
     from openai import AsyncOpenAI
 
     boundaries = build_provider_boundaries(settings.llm_providers, _boundary_factory)

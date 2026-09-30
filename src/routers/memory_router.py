@@ -43,6 +43,12 @@ def build_router() -> APIRouter:
     def export_passport(user_id: str, container: Container = Depends(get_container)) -> dict:
         return container.memory_admin_service.export_passport(user_id)
 
+    @router.post("/{user_id}/rebuild-index")
+    async def rebuild_index(
+        user_id: str, container: Container = Depends(get_container)
+    ) -> dict:
+        return await container.memory_admin_service.rebuild_index(user_id)
+
     @router.post("/passport/import", response_model=PassportImportResultSchema)
     async def import_passport(
         payload: dict, container: Container = Depends(get_container)

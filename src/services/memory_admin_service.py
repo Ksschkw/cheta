@@ -11,6 +11,11 @@ from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
+from models.entities.memory_index_model import (
+    INDEX_QUERY,
+    IndexedMemoryRecord,
+    decode_snapshot,
+)
 from models.entities.memory_model import (
     STATUS_ACTIVE,
     STATUS_CONTRADICTED,
@@ -85,6 +90,68 @@ class MemoryAdminService:
             relayer_storage_bytes=storage_bytes,
             relayer_degraded=listing.degraded,
         )
+
+    async def rebuild_index(self, user_id: str, max_snapshots: int = 20) -> dict[str, object]:
+        """Rebuild the local index from the newest snapshot in the companion space.
+
+        The memory SDK cannot enumerate memories, so recovery cannot walk the
+        relayer. Instead the conversation path stores a compact snapshot of the
+        index as an ordinary memory; this recalls that fixed marker query,
+        decodes every hit, and trusts the highest sequence. A user with no
+        snapshot gets an empty report, never an error.
+        """
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError(f"user {user_id} does not exist")
+
+        index_namespace = self._settings.index_namespace(user.memory_key)
+        outcome = await self._memory.recall(INDEX_QUERY, index_namespace, limit=max_snapshots)
+
+        snapshots_scanned = 0
+        newest_sequence = -1
+        newest_records: list[IndexedMemoryRecord] = []
+        for hit in outcome.memories:
+            sequence, records = decode_snapshot(hit.text)
+            if sequence < 0:
+                continue
+            snapshots_scanned += 1
+            if sequence > newest_sequence:
+                newest_sequence = sequence
+                newest_records = records
+
+        memory_namespace = self._settings.memory_namespace(user.memory_key)
+        known = {
+            record.blob_id for record in self._memories.list_for_user(user_id, None, 1000)
+        }
+        records_recovered = 0
+        records_already_present = 0
+        for record in newest_records:
+            if record.blob_id in known:
+                records_already_present += 1
+                continue
+            created = self._memories.create(
+                user_id=user_id,
+                blob_id=record.blob_id,
+                namespace=memory_namespace,
+                text=record.text,
+                importance=record.importance,
+                origin_surface=record.origin_surface,
+                occurred_at=record.occurred_at,
+            )
+            # create() always starts a row active; restore the encoded status
+            # and its forwarding pointer when the snapshot says otherwise.
+            if record.status != STATUS_ACTIVE or record.superseded_by is not None:
+                self._memories.mark_status(created.id, record.status, record.superseded_by)
+            known.add(record.blob_id)
+            records_recovered += 1
+
+        return {
+            "snapshots_scanned": snapshots_scanned,
+            "newest_sequence": newest_sequence,
+            "records_recovered": records_recovered,
+            "records_already_present": records_already_present,
+            "namespace": index_namespace,
+        }
 
     def open_contradictions(self, user_id: str) -> list[dict[str, str]]:
         user = self._users.get_by_id(user_id)

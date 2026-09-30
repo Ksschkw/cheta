@@ -64,11 +64,16 @@ class RankingWeights:
 
 @dataclass(frozen=True)
 class ConsolidationThresholds:
-    """Bands used to decide what a newly extracted fact is."""
+    """Bands used to decide what a newly extracted fact is.
+
+    The upper bound matches the published distance bands in the Walrus Memory
+    docs, where 0.25 to 0.55 reads as "related". Above that, recall is weak or
+    unrelated and adjudicating every hit would cost a model call for noise.
+    """
 
     duplicate_distance: float = 0.14
     duplicate_similarity: float = 0.72
-    related_distance: float = 0.45
+    related_distance: float = 0.55
 
 
 @dataclass(frozen=True)

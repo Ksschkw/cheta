@@ -111,7 +111,7 @@ Repository files read (`/home/ksschkw/kss/IDK/.research/MemWal`):
 - `services/server/src/types.rs:1632-1648` - `SearchHit.created_at` is "Always present (column is NOT NULL in migration 001)".
 - `packages/sdk/src/types.ts:70-85` - TypeScript `RecallMemory.created_at?: string`.
 - `docs/relayer/api-reference.md:413` - "the relayer stores no separate event-time metadata and cannot filter or rank by event time" (this is about event time in `occurred_at`, not the write-time `created_at` the recall response returns; worth keeping distinct in the fix).
-- `docs/relayer/api-reference.md:340-360` - manual response includes `created_at` and `importance`.
+- `docs/relayer/api-reference.md:367-397` - manual response includes `created_at` and `importance`.
 
 Commands run:
 

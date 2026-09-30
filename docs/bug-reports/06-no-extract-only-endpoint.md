@@ -32,7 +32,7 @@ Result: only `/api/analyze` (line 2325) and `/api/embed` (line 2326); there is n
 
 3. Inspect the handler contract at `services/server/src/routes/analyze.rs:132-137`: the documented flow is "2. Call LLM to extract memorable facts from text / 3. For each fact concurrently: embed + encrypt -> Walrus upload -> store". The response is `202 Accepted` with `job_ids`, i.e. the write is already queued.
 
-4. Contrast with `POST /api/embed` (`docs/relayer/api-reference.md:434`): "Return an embedding vector for `text` without storing a memory." That is the shape extraction lacks.
+4. Contrast with `POST /api/embed` (`docs/relayer/api-reference.md:430`): "Return an embedding vector for `text` without storing a memory." That is the shape extraction lacks.
 
 ## Expected behaviour
 
@@ -85,11 +85,11 @@ Either way, keep the response aligned with the current `facts` array (including 
 Repository files read (`/home/ksschkw/kss/IDK/.research/MemWal`):
 
 - `services/server/src/main.rs:2325-2326` - only `/api/analyze` and `/api/embed` are routed; no extract-only route.
-- `services/server/src/types.rs` `AnalyzeRequest` (around lines 1938-1965) - fields are `text`, `namespace`, `occurred_at`; no dry-run or persist flag.
+- `services/server/src/types.rs:1791` - `AnalyzeRequest` fields are `text`, `namespace`, `occurred_at`; no dry-run or persist flag.
 - `services/server/src/routes/analyze.rs:132-137` - handler docstring: extract, then "embed + encrypt -> Walrus upload -> store".
 - `services/server/src/services/extractor.rs:203` - `FACT_EXTRACTION_PROMPT_VERSION = "extract.v6"`.
 - `docs/relayer/api-reference.md:399-433` - analyze always enqueues `job_ids`.
-- `docs/relayer/api-reference.md:434-455` - `/api/embed` is the non-storing analogue.
+- `docs/relayer/api-reference.md:430-455` - `/api/embed` is the non-storing analogue.
 
 Files read (installed 0.1.11 wheel, `/home/ksschkw/kss/IDK/.research/venv/lib/python3.12/site-packages/memwal/`):
 

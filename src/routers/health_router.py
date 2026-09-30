@@ -20,7 +20,11 @@ def build_router() -> APIRouter:
                 "degraded": container.memory_gateway.degraded,
             },
             "llm": {
-                "providers": [provider.name for provider in container.settings.llm_providers],
+                "providers": (
+                    list(container.llm_gateway.provider_names)
+                    if container.llm_gateway is not None
+                    else []
+                ),
             },
             "telegram": {"configured": container.settings.telegram_configured},
         }

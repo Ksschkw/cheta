@@ -1,0 +1,8 @@
+cli
+core
+crud
+main
+models
+routers
+schemas
+services

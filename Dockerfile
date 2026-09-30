@@ -12,19 +12,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# pyproject.toml declares the runtime dependencies but no build backend, so
-# pip cannot build the project itself. Read [project].dependencies out of
-# pyproject.toml and install exactly those instead of duplicating the list.
+# Install the project itself so the dependency list has exactly one home,
+# pyproject.toml. Only src/ is needed at build time for the package metadata.
 COPY pyproject.toml ./
-RUN python -c "import pathlib, tomllib; data = tomllib.loads(pathlib.Path('pyproject.toml').read_text('utf-8')); print(chr(10).join(data['project']['dependencies']))" > /tmp/requirements.txt \
-    && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt \
-    && rm -f /tmp/requirements.txt
+COPY src ./src
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir .
 
 # Non-root runtime user. UID 10001 stays clear of the base image users.
 RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin ranti
 
-COPY --chown=ranti:ranti src ./src
 # SQLite needs a writable directory for the local index. On an ephemeral host
 # this file is disposable: it can be rebuilt from Walrus Memory.
 RUN mkdir -p /app/artifacts && chown -R ranti:ranti /app/artifacts

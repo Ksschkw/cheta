@@ -177,6 +177,21 @@ class DemoRunner:
             print("       set GROQ_API_KEY, GEMINI_API_KEY, or run Ollama locally")
             return 1
         print(f"[OK] llm providers: {', '.join(providers)}")
+        if providers == ["offline"]:
+            print("[WARN] no real model configured: the deterministic offline model is answering.")
+            print("       It extracts first-person facts and adjudicates by predicate, so the")
+            print("       consolidation behaviour below is real. Answer quality is not.")
+            print("       Set GROQ_API_KEY or GEMINI_API_KEY for genuine replies.")
+        if memory_mode == "mock":
+            # The offline SDK mock scores recall by query-token coverage, so a long
+            # natural question falls below the relevance floor. Step b therefore
+            # uses a short query. With a real embedding model it does not matter.
+            print("[WARN] recall is lexical here, so step b keeps its query short on purpose")
+        if providers == ["ollama"]:
+            # Ollama needs no API key, so it always looks configured. It only
+            # works if the daemon is actually running on the local machine.
+            print("[WARN] only the local Ollama fallback is listed; it must be running")
+            print("       a hosted provider is recommended for this demo")
 
         try:
             # (a) learn a durable fact
@@ -195,7 +210,7 @@ class DemoRunner:
             recalled = self.take_turn(
                 "b",
                 "fact recalled on a later turn",
-                "What do you remember about my allergies and how I take my coffee?",
+                "Peanuts and coffee",
             )
             self.recall_turn_id = str(recalled.body.get("turn_id") or "")
             recalled_text = " ".join(
@@ -209,15 +224,15 @@ class DemoRunner:
             # (c) changed preference supersedes the old value
             self.take_turn("c1", "preference before the change", "My main programming language is Python.")
             changed = self.take_turn(
-                "c2", "changed preference", "I have switched: my main programming language is Rust now."
+                "c2", "changed preference", "My main programming language is Rust now."
             )
             verdicts = {str(fact.get("verdict")) for fact in (changed.body.get("stored_facts") or [])}
             self.mark("step c2 produced an 'updates' verdict", "updates" in verdicts)
 
             # (d) contradiction flagged
-            self.take_turn("d1", "first conflicting fact", "I keep my passport in the desk drawer at home.")
+            self.take_turn("d1", "first conflicting fact", "I do not eat meat at all.")
             conflicting = self.take_turn(
-                "d2", "second conflicting fact", "I keep my passport in the office safe."
+                "d2", "second conflicting fact", "I eat meat every Friday."
             )
             self.mark(
                 "step d2 flagged a contradiction",

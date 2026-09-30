@@ -20,6 +20,12 @@ from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
+from models.entities.memory_index_model import (
+    MAX_SNAPSHOT_BYTES,
+    IndexedMemoryRecord,
+    encode_snapshot,
+    select_snapshot_records,
+)
 from models.entities.memory_model import STATUS_ACTIVE, STATUS_CONTRADICTED, STATUS_SUPERSEDED
 from models.entities.memory_rank_model import (
     ConsolidationThresholds,
@@ -90,6 +96,10 @@ class ConversationService:
         self._weights = weights or RankingWeights()
         self._thresholds = thresholds or ConsolidationThresholds()
         self._reply_channel = reply_channel
+        # Per-user snapshot bookkeeping, used to keep the encoded sequence
+        # monotonic for the lifetime of this process.
+        self._snapshot_sequences: dict[str, int] = {}
+        self._snapshot_writes: dict[str, int] = {}
 
     # ---------------------------------------------------------------- recall
 
@@ -354,6 +364,7 @@ class ConversationService:
         stored: list[ExtractedFactView] = []
         skipped = 0
         contradictions = 0
+        wrote_anything = False
 
         for fact in facts:
             fact_text = str(fact["text"])
@@ -410,6 +421,7 @@ class ConversationService:
                 origin_surface=surface,
                 occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
             )
+            wrote_anything = True
 
             if verdict == "updates" and best is not None:
                 old = self._memories.get_by_blob_id(best.blob_id)
@@ -432,6 +444,9 @@ class ConversationService:
                 ExtractedFactView(text=fact_text, verdict=verdict, blob_id=written.blob_id)
             )
 
+        if wrote_anything:
+            await self._write_index_snapshot(user_id)
+
         return stored, skipped, contradictions, False
 
     def _idempotency_key(self, user_id: str, fact_text: str) -> str:
@@ -439,6 +454,76 @@ class ConversationService:
         bucket = int(datetime.now(UTC).timestamp() // 1800)
         digest = hashlib.sha256(f"{user_id}|{fact_text}|{bucket}".encode()).hexdigest()
         return digest
+
+    # ----------------------------------------------------------- index snapshots
+
+    def _next_snapshot_sequence(self, user_id: str, record_count: int) -> int:
+        """Monotonic per user, derived from the index size plus a running counter.
+
+        The count of records in the local index survives a restart and grows
+        with the space, while the per-process counter keeps rising even when
+        rows are deleted. The final ``max`` against the previous value is the
+        hard guarantee: this user's sequence never repeats and never goes
+        backwards. Wall-clock time is deliberately not used because clocks move
+        backwards and timezone changes reorder them.
+        """
+        writes = self._snapshot_writes.get(user_id, 0) + 1
+        self._snapshot_writes[user_id] = writes
+        previous = self._snapshot_sequences.get(user_id, -1)
+        sequence = max(record_count + writes, previous + 1)
+        self._snapshot_sequences[user_id] = sequence
+        return sequence
+
+    def _snapshot_idempotency_key(self, user_id: str, sequence: int) -> str:
+        """Stable per snapshot per 30-minute bucket, so a retry cannot duplicate."""
+        bucket = int(datetime.now(UTC).timestamp() // 1800)
+        digest = hashlib.sha256(
+            f"{user_id}|index-snapshot|{sequence}|{bucket}".encode()
+        ).hexdigest()
+        return digest
+
+    def _index_records(self, user_id: str) -> list[IndexedMemoryRecord]:
+        return [
+            IndexedMemoryRecord(
+                blob_id=record.blob_id,
+                text=record.text,
+                status=record.status,
+                importance=record.importance,
+                origin_surface=record.origin_surface,
+                superseded_by=record.superseded_by,
+                occurred_at=record.occurred_at,
+            )
+            for record in self._memories.list_for_user(user_id, None, 1000)
+        ]
+
+    async def _write_index_snapshot(self, user_id: str) -> None:
+        """Persist the current index as one recallable memory.
+
+        A failure here must never fail the turn: the fact is already stored and
+        the snapshot is a recovery aid, not the product. The write goes through
+        the injected gateway so the mock and the live relayer share one path.
+        """
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            return
+        namespace = self._settings.index_namespace(user.memory_key)
+        records = self._index_records(user_id)
+        sequence = self._next_snapshot_sequence(user_id, len(records))
+        selected = select_snapshot_records(records, MAX_SNAPSHOT_BYTES)
+        text = encode_snapshot(
+            selected, sequence, datetime.now(UTC).isoformat(timespec="seconds")
+        )
+        try:
+            await self._memory.remember(
+                text,
+                namespace,
+                idempotency_key=self._snapshot_idempotency_key(user_id, sequence),
+            )
+        except DependencyUnavailableError:
+            logger.warning(
+                "index snapshot write failed for user %s; the turn is still successful",
+                user_id,
+            )
 
     # ------------------------------------------------------------ other reads
 

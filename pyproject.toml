@@ -20,6 +20,18 @@ dev = [
     "respx>=0.21",
 ]
 
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = ["main", "cli"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["core*", "models*", "schemas*", "crud*", "services*", "routers*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 asyncio_mode = "auto"

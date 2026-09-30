@@ -130,11 +130,11 @@ Files read (installed 0.1.11 wheel, `/home/ksschkw/kss/IDK/.research/venv/lib/py
 
 Repository files read (`/home/ksschkw/kss/IDK/.research/MemWal`):
 
-- `services/server/src/types.rs:1517-1536` - `RecallRequest` has `scoring_weights: Option<ScoringWeights>` and `sort: Option<RecallSort>`.
+- `services/server/src/types.rs:1513-1536` - `RecallRequest` has `scoring_weights: Option<ScoringWeights>` and `sort: Option<RecallSort>`.
 - `services/server/src/types.rs:1890-1906` - `RecallManualRequest.scoring_weights`.
 - `packages/sdk/src/memwal.ts:939` - TypeScript `recall()` sends `scoring_weights: scoringWeightsToWire(options.scoringWeights)`.
-- `packages/sdk/src/types.ts:155-200` - TypeScript `RecallOptions.scoringWeights` and `sort`.
-- `docs/relayer/api-reference.md:311-330` - documents `scoring_weights` as working on `/api/recall`, `/api/recall/manual`, and `/api/ask`.
+- `packages/sdk/src/types.ts:184` - TypeScript `RecallOptions.scoringWeights`; `sort` at `types.ts:200`.
+- `docs/relayer/api-reference.md:312-330` - documents `scoring_weights` as working on `/api/recall`, `/api/recall/manual`, and `/api/ask`.
 - `docs/sdk/overview.md:74` - claims the Python SDK mirrors the TypeScript `MemWal` client exactly.
 
 Commands run:
