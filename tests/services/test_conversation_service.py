@@ -10,10 +10,12 @@ import json
 from collections.abc import Sequence
 
 import pytest
+from memwal import MemWalMock
 
 from core.config import Settings
-from core.container import build_memory_gateway
+from core.container import build_memory_boundary, build_memory_gateway
 from core.database import Database
+from core.gateways.memwal_gateway import MemWalGateway
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.turn_crud import TurnCrud
@@ -64,8 +66,99 @@ class FakeLlm:
         return CompletionSchema(text=text, provider="fake", model="fake-1")
 
 
+class RecordingClient:
+    """Wraps the offline mock and records which SDK write method was called.
+
+    ``remember`` only submits a job; ``remember_and_wait`` blocks until the job
+    settles. The turn path must use the first one.
+    """
+
+    def __init__(self, inner: object) -> None:
+        self._inner = inner
+        self.calls: list[tuple[str, str, str | None]] = []
+
+    async def remember(
+        self, text: str, namespace: str | None = None, idempotency_key: str | None = None
+    ):
+        self.calls.append(("remember", namespace or "", idempotency_key))
+        return await self._inner.remember(  # type: ignore[attr-defined]
+            text, namespace, idempotency_key=idempotency_key
+        )
+
+    async def remember_and_wait(
+        self,
+        text: str,
+        namespace: str | None = None,
+        poll_interval_ms: int = 1500,
+        timeout_ms: int = 60_000,
+        idempotency_key: str | None = None,
+    ):
+        self.calls.append(("remember_and_wait", namespace or "", idempotency_key))
+        return await self._inner.remember_and_wait(  # type: ignore[attr-defined]
+            text,
+            namespace,
+            poll_interval_ms=poll_interval_ms,
+            timeout_ms=timeout_ms,
+            idempotency_key=idempotency_key,
+        )
+
+    async def wait_for_remember_job(
+        self, job_id: str, poll_interval_ms: int = 1500, timeout_ms: int = 60_000
+    ):
+        return await self._inner.wait_for_remember_job(  # type: ignore[attr-defined]
+            job_id, poll_interval_ms=poll_interval_ms, timeout_ms=timeout_ms
+        )
+
+    async def recall(self, query: str, **kwargs: object):
+        return await self._inner.recall(query, **kwargs)  # type: ignore[attr-defined]
+
+
+class FailingSettleClient:
+    """Accepts writes, then reports every settle poll as a failure."""
+
+    def __init__(self, inner: object) -> None:
+        self._inner = inner
+
+    async def remember(
+        self, text: str, namespace: str | None = None, idempotency_key: str | None = None
+    ):
+        return await self._inner.remember(  # type: ignore[attr-defined]
+            text, namespace, idempotency_key=idempotency_key
+        )
+
+    async def remember_and_wait(
+        self,
+        text: str,
+        namespace: str | None = None,
+        poll_interval_ms: int = 1500,
+        timeout_ms: int = 60_000,
+        idempotency_key: str | None = None,
+    ):
+        return await self._inner.remember_and_wait(  # type: ignore[attr-defined]
+            text,
+            namespace,
+            poll_interval_ms=poll_interval_ms,
+            timeout_ms=timeout_ms,
+            idempotency_key=idempotency_key,
+        )
+
+    async def wait_for_remember_job(
+        self, job_id: str, poll_interval_ms: int = 1500, timeout_ms: int = 60_000
+    ):
+        raise RuntimeError("the relayer lost the accepted job")
+
+    async def recall(self, query: str, **kwargs: object):
+        return await self._inner.recall(query, **kwargs)  # type: ignore[attr-defined]
+
+
 class Harness:
-    def __init__(self, facts: Sequence[dict[str, object]], verdict: str = "DIFFERENT", thresholds=None):
+    def __init__(
+        self,
+        facts: Sequence[dict[str, object]],
+        verdict: str = "DIFFERENT",
+        thresholds=None,
+        client_wrapper=None,
+    ):
         self.database = Database(":memory:")
         self.database.migrate()
         self.settings = Settings(database_path=":memory:", memwal_namespace_prefix="ranti")
@@ -74,12 +167,23 @@ class Harness:
         self.turns = TurnCrud(self.database)
         self.contradictions = ContradictionCrud(self.database)
         self.llm = FakeLlm(facts, verdict)
+        self.client = None
+        if client_wrapper is not None:
+            raw = MemWalMock.create(namespace=self.settings.memwal_namespace_prefix)
+            self.client = client_wrapper(raw)
+            gateway = MemWalGateway(
+                client=self.client,
+                boundary=build_memory_boundary(self.settings),
+                mode="mock",
+            )
+        else:
+            gateway = build_memory_gateway(self.settings)
         self.service = ConversationService(
             users=self.users,
             memories=self.memories,
             turns=self.turns,
             contradictions=self.contradictions,
-            memory_gateway=build_memory_gateway(self.settings),
+            memory_gateway=gateway,
             llm_gateway=self.llm,
             settings=self.settings,
             thresholds=thresholds,
@@ -88,11 +192,21 @@ class Harness:
     async def say(self, text: str, surface: str = "telegram"):
         return await self.service.handle_turn(surface, "42", "Ada", text)
 
+    async def say_settled(self, text: str, surface: str = "telegram"):
+        """A turn, then a wait for its accepted writes to settle.
+
+        Only the local-index assertions need this; the turn itself returns
+        before the relayer persists anything.
+        """
+        result = await self.say(text, surface)
+        await self.service.await_pending_writes()
+        return result
+
 
 async def test_a_turn_writes_extracted_facts_and_lists_them_back() -> None:
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
 
-    result = await harness.say("I am allergic to peanuts")
+    result = await harness.say_settled("I am allergic to peanuts")
 
     assert len(result.stored_facts) == 1
     assert result.stored_facts[0].verdict == "new"
@@ -106,8 +220,8 @@ async def test_a_turn_writes_extracted_facts_and_lists_them_back() -> None:
 async def test_repeating_the_same_fact_does_not_write_it_twice() -> None:
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
 
-    first = await harness.say("I am allergic to peanuts")
-    second = await harness.say("Just so you know, peanuts are dangerous for me")
+    first = await harness.say_settled("I am allergic to peanuts")
+    second = await harness.say_settled("Just so you know, peanuts are dangerous for me")
 
     assert second.skipped_duplicates == 1
     assert second.stored_facts[0].verdict == "duplicate"
@@ -120,11 +234,11 @@ async def test_an_update_supersedes_the_earlier_memory() -> None:
         [{"text": "Ada works as a backend engineer", "importance": 0.7}],
         thresholds=FORCE_ADJUDICATION,
     )
-    await harness.say("I work as a backend engineer")
+    await harness.say_settled("I work as a backend engineer")
 
     harness.llm.facts = [{"text": "Ada works as a platform engineer", "importance": 0.7}]
     harness.llm.verdict = "UPDATES"
-    second = await harness.say("I moved to platform engineering")
+    second = await harness.say_settled("I moved to platform engineering")
 
     assert second.stored_facts[0].verdict == "updates"
     statuses = {memory.text: memory.status for memory in harness.memories.list_for_user(second.user_id, None)}
@@ -137,11 +251,11 @@ async def test_a_contradiction_is_surfaced_rather_than_silently_overwritten() ->
         [{"text": "Ada does not eat meat", "importance": 0.8}],
         thresholds=FORCE_ADJUDICATION,
     )
-    await harness.say("I do not eat meat")
+    await harness.say_settled("I do not eat meat")
 
     harness.llm.facts = [{"text": "Ada eats steak every Friday", "importance": 0.8}]
     harness.llm.verdict = "CONTRADICTS"
-    second = await harness.say("I had a great steak on Friday")
+    second = await harness.say_settled("I had a great steak on Friday")
 
     assert second.contradiction_count == 1
     open_ones = harness.contradictions.list_open_for_user(second.user_id)
@@ -156,10 +270,10 @@ async def test_superseded_memories_are_dropped_from_the_context_window() -> None
         [{"text": "Ada works as a backend engineer", "importance": 0.7}],
         thresholds=FORCE_ADJUDICATION,
     )
-    first = await harness.say("I work as a backend engineer")
+    first = await harness.say_settled("I work as a backend engineer")
     harness.llm.facts = [{"text": "Ada works as a platform engineer", "importance": 0.7}]
     harness.llm.verdict = "UPDATES"
-    await harness.say("I moved to platform engineering")
+    await harness.say_settled("I moved to platform engineering")
 
     _, recalled, _, _ = await harness.service.recall_context(first.user_id, "engineer", budget=5)
 
@@ -170,7 +284,7 @@ async def test_superseded_memories_are_dropped_from_the_context_window() -> None
 
 async def test_recall_marks_degradation_instead_of_claiming_empty_memory() -> None:
     harness = Harness([{"text": "Ada lives in Lagos", "importance": 0.6}])
-    result = await harness.say("I live in Lagos")
+    result = await harness.say_settled("I live in Lagos")
 
     namespace, recalled, degraded, _ = await harness.service.recall_context(
         result.user_id, "Lagos", budget=5
@@ -183,10 +297,10 @@ async def test_recall_marks_degradation_instead_of_claiming_empty_memory() -> No
 
 async def test_counterfactual_replay_shows_what_memory_changed() -> None:
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
-    await harness.say("I am allergic to peanuts")
+    await harness.say_settled("I am allergic to peanuts")
     # The fact is written at the end of a turn, so the next turn is the first
     # one that can recall it. This is the real flow, not a staged one.
-    result = await harness.say("I am allergic to peanuts")
+    result = await harness.say_settled("I am allergic to peanuts")
 
     counterfactual = await harness.service.replay_without_memory(result.turn_id)
 
@@ -215,3 +329,95 @@ async def test_missing_turn_is_a_not_found_not_an_empty_replay() -> None:
     harness = Harness([])
     with pytest.raises(NotFoundError):
         await harness.service.replay_without_memory("does-not-exist")
+
+
+# --------------------------------------------------- non-blocking persistence
+
+
+async def test_consolidation_accepts_the_write_and_never_blocks_on_it() -> None:
+    """The fact write is submitted as a job; the blocking method is never used.
+
+    A recorded SDK client proves which of the two mutually exclusive write
+    methods the consolidation path actually called.
+    """
+    harness = Harness(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}],
+        client_wrapper=RecordingClient,
+    )
+
+    result = await harness.say("I am allergic to peanuts")
+
+    user_surface = [call for call in harness.client.calls if call[1] == result.memory_namespace]
+    assert [name for name, _, _ in user_surface] == ["remember"]
+    assert "remember_and_wait" not in [name for name, _, _ in user_surface]
+    assert result.stored_facts[0].pending is True
+
+    await harness.service.await_pending_writes()
+
+
+async def test_a_turn_returns_with_facts_marked_pending() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+
+    result = await harness.say("I am allergic to peanuts")
+
+    fact = result.stored_facts[0]
+    assert fact.verdict == "new"
+    assert fact.pending is True
+    assert fact.blob_id is not None and fact.blob_id.startswith("pending:")
+    index_rows = harness.memories.list_for_user(result.user_id)
+    assert [row.blob_id for row in index_rows] == [fact.blob_id]
+
+    await harness.service.await_pending_writes()
+
+
+async def test_settling_replaces_the_placeholder_with_the_real_blob_id() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    result = await harness.say("I am allergic to peanuts")
+    placeholder = result.stored_facts[0].blob_id
+    assert placeholder is not None and placeholder.startswith("pending:")
+
+    await harness.service.await_pending_writes()
+
+    rows = harness.memories.list_for_user(result.user_id)
+    assert len(rows) == 1
+    assert not rows[0].blob_id.startswith("pending:")
+    assert rows[0].blob_id != placeholder
+    assert rows[0].text == "Ada is allergic to peanuts"
+
+
+async def test_a_failed_job_removes_the_pending_row_and_the_turn_still_succeeds() -> None:
+    harness = Harness(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}],
+        client_wrapper=FailingSettleClient,
+    )
+
+    result = await harness.say("I am allergic to peanuts")
+
+    assert result.stored_facts[0].verdict == "new"
+    assert result.stored_facts[0].pending is True
+    assert result.memory_degraded is False
+    assert len(harness.memories.list_for_user(result.user_id)) == 1
+
+    await harness.service.await_pending_writes()
+
+    assert harness.memories.list_for_user(result.user_id) == []
+
+
+async def test_the_accepted_write_keeps_its_deterministic_idempotency_key() -> None:
+    harness = Harness(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}],
+        client_wrapper=RecordingClient,
+    )
+
+    result = await harness.say("I am allergic to peanuts")
+
+    keys = [
+        key
+        for name, namespace, key in harness.client.calls
+        if name == "remember" and namespace == result.memory_namespace
+    ]
+    assert len(keys) == 1
+    assert keys[0] is not None
+    assert keys[0] == harness.service._idempotency_key(result.user_id, "Ada is allergic to peanuts")
+
+    await harness.service.await_pending_writes()

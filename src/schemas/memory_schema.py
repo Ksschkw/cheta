@@ -98,6 +98,19 @@ class StoredMemorySchema:
 
 
 @dataclass(frozen=True)
+class AcceptedMemorySchema:
+    """A write the relayer has accepted as a job but not yet persisted.
+
+    The relayer returns this in about half a second; reaching ``done`` (and a
+    real blob id) takes tens of seconds. Only the acceptance may sit on the
+    turn's critical path.
+    """
+
+    job_id: str
+    status: str
+
+
+@dataclass(frozen=True)
 class ExtractedFactSchema:
     """One fact extracted from a conversation turn."""
 

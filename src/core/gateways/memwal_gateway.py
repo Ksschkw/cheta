@@ -9,6 +9,7 @@ from typing import Any, TypeVar
 from core.errors import DependencyUnavailableError
 from core.resilience import Boundary, Outcome, failure_fallback, outcome_fallback
 from schemas.memory_schema import (
+    AcceptedMemorySchema,
     ExtractedFactSchema,
     MemoryHealthSchema,
     NamespaceListingSchema,
@@ -95,15 +96,23 @@ class MemWalGateway:
         degraded = MemoryHealthSchema(status="degraded", version="unavailable", write_ready=False)
         return await self._read(operation, outcome_fallback("walrus-memory", degraded))
 
+    def _poll_budget_ms(self) -> int:
+        """The SDK's own poll budget, kept inside the boundary timeout.
+
+        The SDK must expire before the boundary so that the error surfaced is
+        its precise one (job timeout, with the job id) rather than a generic
+        boundary timeout with no handle.
+        """
+        return int(max(30.0, self._boundary.policy.timeout_seconds - 10.0) * 1000)
+
     async def remember(
         self, text: str, namespace: str, idempotency_key: str | None = None
     ) -> StoredMemorySchema:
         # A write is accepted as a job and only reaches "done" once the blob is
-        # uploaded and indexed, which on the hosted relayer takes tens of seconds.
-        # The SDK's own poll budget must expire before the boundary timeout, so
-        # that the error surfaced is the SDK's precise one (job timeout, with the
-        # job id) rather than a generic boundary timeout with no handle.
-        poll_budget_ms = int(max(30.0, self._boundary.policy.timeout_seconds - 10.0) * 1000)
+        # uploaded and indexed, which on the hosted relayer takes tens of
+        # seconds. Prefer :meth:`remember_accepted` on a latency-sensitive path:
+        # this method blocks the caller until the job settles.
+        poll_budget_ms = self._poll_budget_ms()
 
         async def operation() -> StoredMemorySchema:
             result = await self._client.remember_and_wait(
@@ -119,6 +128,48 @@ class MemWalGateway:
             )
 
         return await self._write(operation)
+
+    async def remember_accepted(
+        self, text: str, namespace: str, idempotency_key: str | None = None
+    ) -> AcceptedMemorySchema:
+        """Submit a write and return the job id as soon as the relayer accepts.
+
+        This is not a blind retry: it runs through the same non-idempotent write
+        boundary as :meth:`remember`, and the idempotency key is passed through
+        unchanged, so an accepted write is never duplicated.
+        """
+
+        async def operation() -> AcceptedMemorySchema:
+            result = await self._client.remember(
+                text,
+                namespace,
+                idempotency_key=idempotency_key,
+            )
+            return AcceptedMemorySchema(
+                job_id=result.job_id,
+                status=getattr(result, "status", "pending"),
+            )
+
+        return await self._write(operation)
+
+    async def wait_for_remember(self, job_id: str) -> StoredMemorySchema:
+        """Poll an accepted job until it settles. Reading a job is idempotent."""
+        poll_budget_ms = self._poll_budget_ms()
+
+        async def operation() -> StoredMemorySchema:
+            result = await self._client.wait_for_remember_job(
+                job_id,
+                timeout_ms=poll_budget_ms,
+            )
+            return StoredMemorySchema(
+                blob_id=result.blob_id,
+                namespace=result.namespace,
+                owner=result.owner,
+            )
+
+        return await self._read(
+            operation, failure_fallback("walrus-memory", "settle_failed")
+        )
 
     async def recall(
         self,

@@ -121,6 +121,20 @@ class MemoryCrud:
         )
         return self.get_by_id(memory_id) if changed else None
 
+    def set_blob_id(self, memory_id: str, blob_id: str) -> MemoryModel | None:
+        """Replace a placeholder blob id with the one the relayer assigned.
+
+        A row is created with ``pending:<job_id>`` as soon as a write is
+        accepted, so the local index can be consulted during the wait. When the
+        job settles this swaps in the real blob id. Returns None when the row
+        was removed (for example because the job failed first).
+        """
+        changed = self._database.execute(
+            "UPDATE memories SET blob_id = ? WHERE id = ?",
+            (blob_id, memory_id),
+        )
+        return self.get_by_id(memory_id) if changed else None
+
     def delete_by_blob_id(self, blob_id: str) -> bool:
         return bool(
             self._database.execute("DELETE FROM memories WHERE blob_id = ?", (blob_id,))

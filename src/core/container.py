@@ -149,6 +149,10 @@ def build_container(settings: Settings | None = None) -> Container:
         memory_gateway=memory_gateway,
         llm_gateway=llm_gateway,
         settings=resolved,
+        # Without this the Telegram surface parses and stores and then never
+        # replies. It is wired here rather than inside the service so the
+        # service keeps depending on a protocol, not on Telegram.
+        reply_channel=telegram_gateway,
     )
     memory_admin_service = MemoryAdminService(
         users=users,

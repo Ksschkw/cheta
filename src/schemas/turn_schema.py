@@ -27,6 +27,10 @@ class ExtractedFactView(BaseModel):
     text: str
     verdict: str
     blob_id: str | None = None
+    # True when the relayer has only accepted the write as a job. The blob id is
+    # then a local placeholder and the memory is not yet persisted, so the
+    # transport must not present it as stored.
+    pending: bool = False
 
 
 class TurnSchema(BaseModel):

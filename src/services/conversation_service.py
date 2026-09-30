@@ -6,6 +6,7 @@ persist. It is named after the use case, not the entity it starts from.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -100,6 +101,27 @@ class ConversationService:
         # monotonic for the lifetime of this process.
         self._snapshot_sequences: dict[str, int] = {}
         self._snapshot_writes: dict[str, int] = {}
+        # Strong references to background settlement and snapshot tasks. The
+        # event loop only holds a weak reference, so without this a task can be
+        # garbage-collected mid-flight and the local index would keep a
+        # placeholder forever.
+        self._settle_tasks: set[asyncio.Task[None]] = set()
+
+    def _track_task(self, task: asyncio.Task[None]) -> None:
+        self._settle_tasks.add(task)
+        task.add_done_callback(self._settle_tasks.discard)
+
+    async def await_pending_writes(self) -> None:
+        """Wait for every scheduled settlement and snapshot task to finish.
+
+        This is deliberately not on the turn path: a turn returns as soon as the
+        reply and the accepted facts are known. Shutdown and tests call it to
+        observe the settled local index.
+        """
+        while self._settle_tasks:
+            pending = list(self._settle_tasks)
+            await asyncio.gather(*pending, return_exceptions=True)
+            self._settle_tasks.difference_update(task for task in pending if task.done())
 
     # ---------------------------------------------------------------- recall
 
@@ -282,9 +304,14 @@ class ConversationService:
         parts: list[str] = []
         if result.recalled:
             parts.append(f"{len(result.recalled)} recalled")
-        written = sum(1 for fact in result.stored_facts if fact.blob_id)
-        if written:
-            parts.append(f"{written} new")
+        settled = sum(
+            1 for fact in result.stored_facts if fact.blob_id and not fact.pending
+        )
+        accepted = sum(1 for fact in result.stored_facts if fact.pending)
+        if settled:
+            parts.append(f"{settled} new")
+        if accepted:
+            parts.append(f"{accepted} accepted, persisting")
         if result.skipped_duplicates:
             parts.append(f"{result.skipped_duplicates} duplicate skipped")
         if result.contradiction_count:
@@ -365,6 +392,7 @@ class ConversationService:
         skipped = 0
         contradictions = 0
         wrote_anything = False
+        batch: list[asyncio.Task[None]] = []
 
         for fact in facts:
             fact_text = str(fact["text"])
@@ -404,17 +432,25 @@ class ConversationService:
                 stored.append(ExtractedFactView(text=fact_text, verdict="duplicate"))
                 continue
 
+            # Accept the write, never wait for it. The relayer takes tens of
+            # seconds to settle a job; the turn must not pay that cost.
             try:
-                written = await self._memory.remember(
-                    fact_text, namespace, idempotency_key=self._idempotency_key(user_id, fact_text)
+                accepted = await self._memory.remember_accepted(
+                    fact_text,
+                    namespace,
+                    idempotency_key=self._idempotency_key(user_id, fact_text),
                 )
             except DependencyUnavailableError:
                 stored.append(ExtractedFactView(text=fact_text, verdict="write_failed"))
                 continue
 
-            self._memories.create(
+            # The local index gets a row immediately so it can be consulted
+            # while the job settles. The placeholder cannot match a recall hit,
+            # so the read path is unchanged. A failed job removes the row again.
+            placeholder = f"pending:{accepted.job_id}"
+            memory = self._memories.create(
                 user_id=user_id,
-                blob_id=written.blob_id,
+                blob_id=placeholder,
                 namespace=namespace,
                 text=fact_text,
                 importance=importance,
@@ -422,32 +458,100 @@ class ConversationService:
                 occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
             )
             wrote_anything = True
+            if verdict == "contradicts":
+                contradictions += 1
 
+            settle = asyncio.create_task(
+                self._settle_write(user_id, memory.id, accepted.job_id, verdict, best, fact_text)
+            )
+            self._track_task(settle)
+            batch.append(settle)
+
+            stored.append(
+                ExtractedFactView(
+                    text=fact_text,
+                    verdict=verdict,
+                    blob_id=placeholder,
+                    pending=True,
+                )
+            )
+
+        if wrote_anything:
+            # The snapshot is written only after this batch settles, so it
+            # carries real blob ids rather than placeholders. A batch that is
+            # still settling simply produces its final snapshot later.
+            snapshot = asyncio.create_task(self._settle_then_snapshot(user_id, batch))
+            self._track_task(snapshot)
+
+        return stored, skipped, contradictions, False
+
+    async def _settle_write(
+        self,
+        user_id: str,
+        memory_id: str,
+        job_id: str,
+        verdict: str,
+        best: RankedMemory | None,
+        fact_text: str,
+    ) -> None:
+        """Wait for one accepted job, then finish the local index bookkeeping.
+
+        Failures are contained here: a job that times out or fails must never
+        leave a phantom memory in the local index, and must never raise into the
+        request path.
+        """
+        placeholder = f"pending:{job_id}"
+        try:
+            settled = await self._memory.wait_for_remember(job_id)
+        except DependencyUnavailableError:
+            self._memories.delete_by_blob_id(placeholder)
+            logger.warning(
+                "accepted memory did not settle; removed its pending index row",
+                extra={
+                    "event": "memory_settle_failed",
+                    "job_id": job_id,
+                    "memory_id": memory_id,
+                    "user_id": user_id,
+                },
+            )
+            return
+
+        self._memories.set_blob_id(memory_id, settled.blob_id)
+
+        try:
             if verdict == "updates" and best is not None:
                 old = self._memories.get_by_blob_id(best.blob_id)
                 if old is not None:
-                    self._memories.mark_status(old.id, STATUS_SUPERSEDED, written.blob_id)
+                    self._memories.mark_status(old.id, STATUS_SUPERSEDED, settled.blob_id)
             elif verdict == "contradicts" and best is not None:
                 old = self._memories.get_by_blob_id(best.blob_id)
                 if old is not None:
                     self._memories.mark_status(old.id, STATUS_CONTRADICTED, None)
-                if self._contradictions.get_between(best.blob_id, written.blob_id) is None:
+                if self._contradictions.get_between(best.blob_id, settled.blob_id) is None:
                     self._contradictions.create(
                         user_id=user_id,
                         left_blob_id=best.blob_id,
-                        right_blob_id=written.blob_id,
+                        right_blob_id=settled.blob_id,
                         reason=f"new memory conflicts with an earlier one: {fact_text}",
                     )
-                contradictions += 1
-
-            stored.append(
-                ExtractedFactView(text=fact_text, verdict=verdict, blob_id=written.blob_id)
+        except Exception:  # noqa: BLE001 - a background task must never crash the loop
+            logger.warning(
+                "settled memory %s could not be linked into the local index",
+                memory_id,
+                extra={
+                    "event": "memory_settle_bookkeeping_failed",
+                    "job_id": job_id,
+                    "user_id": user_id,
+                },
+                exc_info=True,
             )
 
-        if wrote_anything:
-            await self._write_index_snapshot(user_id)
-
-        return stored, skipped, contradictions, False
+    async def _settle_then_snapshot(
+        self, user_id: str, batch: list[asyncio.Task[None]]
+    ) -> None:
+        if batch:
+            await asyncio.gather(*batch, return_exceptions=True)
+        await self._write_index_snapshot(user_id)
 
     def _idempotency_key(self, user_id: str, fact_text: str) -> str:
         """Stable per fact per 30-minute bucket, so a retried turn cannot duplicate."""

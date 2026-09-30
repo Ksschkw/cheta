@@ -312,6 +312,23 @@
       ]);
     }
 
+    function renderStoredFact(fact) {
+      var pending = Boolean(fact && fact.pending);
+      var blobId = fact && fact.blob_id ? String(fact.blob_id) : "";
+      // A pending fact has only been accepted as a job. Its blob id does not
+      // exist yet, so the chip must not present it as a stored blob.
+      var persistence = pending
+        ? "accepted, persisting (no blob id yet)"
+        : "stored blob " + truncate(blobId, 16);
+      return el("div", { class: "chip" + (pending ? " chip-pending" : "") }, [
+        el("div", { class: "chip-text" }, (fact && fact.text) || "(empty fact text)"),
+        el("div", { class: "chip-meta" }, [
+          el("span", {}, "verdict " + ((fact && fact.verdict) || "new")),
+          el("span", { title: blobId }, persistence)
+        ])
+      ]);
+    }
+
     function renderCfColumn(title, body, cls) {
       return el("div", { class: "cf-col " + cls }, [
         el("h4", {}, title),
@@ -402,12 +419,28 @@
       }
 
       var stored = asArray(turn.stored_facts);
-      var written = stored.filter(function (fact) {
-        return fact && fact.blob_id;
-      }).length;
+      var settled = stored.filter(function (fact) {
+        return fact && fact.blob_id && !fact.pending;
+      });
+      var persisting = stored.filter(function (fact) {
+        return fact && fact.pending;
+      });
+      if (persisting.length) {
+        wrap.appendChild(
+          el(
+            "div",
+            { class: "chips-label" },
+            "Facts accepted this turn (" + persisting.length + " persisting)"
+          )
+        );
+        wrap.appendChild(el("div", { class: "chips" }, persisting.map(renderStoredFact)));
+      }
       var bits = [];
-      if (written) {
-        bits.push(written + " new memory stored");
+      if (settled.length) {
+        bits.push(settled.length + " new memory stored");
+      }
+      if (persisting.length) {
+        bits.push(persisting.length + " accepted, persisting");
       }
       if (turn.skipped_duplicates) {
         bits.push(num(turn.skipped_duplicates) + " duplicate skipped");

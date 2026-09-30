@@ -56,7 +56,10 @@ def test_the_reply_carries_a_memory_receipt_when_something_was_learned() -> None
     client.post("/webhooks/telegram/s3cret", json=update(555, "I am allergic to peanuts"))
 
     _, text = channel.sent[0]
-    assert "memory: 1 new" in text
+    # The turn returns as soon as the relayer accepts the write, so the receipt
+    # must say "accepted, persisting" and never claim the memory is stored.
+    assert "memory: 1 accepted, persisting" in text
+    assert "1 new" not in text
 
 
 def test_a_wrong_secret_is_refused_and_nothing_is_sent() -> None:

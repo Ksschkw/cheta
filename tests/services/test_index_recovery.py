@@ -6,6 +6,7 @@ SQLite index. The model is faked because the model is not under test.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 
 from core.config import Settings
@@ -32,6 +33,20 @@ class IndexFailingGateway:
         if namespace.endswith(".idx"):
             raise DependencyUnavailableError("walrus-memory", "index namespace unavailable")
         return await self._inner.remember(text, namespace, idempotency_key=idempotency_key)
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
+
+
+class SlowSettleGateway:
+    """Delays every settle poll so the snapshot ordering is observable."""
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+
+    async def wait_for_remember(self, job_id: str):
+        await asyncio.sleep(0.05)
+        return await self._inner.wait_for_remember(job_id)
 
     def __getattr__(self, name: str):
         return getattr(self._inner, name)
@@ -89,13 +104,20 @@ async def test_teaching_a_fact_writes_a_snapshot_into_the_index_namespace() -> N
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
 
     result = await harness.say("I am allergic to peanuts")
+    # The turn returns on acceptance; the snapshot arrives once the write has
+    # settled, so that it carries the real blob id and not a placeholder.
+    assert result.stored_facts[0].pending is True
+    await harness.service.await_pending_writes()
 
     namespace = harness.index_namespace(result.user_id)
     outcome = await harness.gateway.recall(INDEX_QUERY, namespace, limit=5)
     assert outcome.memories, "no snapshot was stored in the companion namespace"
     sequence, records = decode_snapshot(outcome.memories[0].text)
     assert sequence >= 0
-    assert [item.blob_id for item in records] == [result.stored_facts[0].blob_id]
+    settled = harness.memories.list_for_user(result.user_id)
+    assert len(settled) == 1
+    assert not settled[0].blob_id.startswith("pending:")
+    assert [item.blob_id for item in records] == [settled[0].blob_id]
     assert records[0].text == "Ada is allergic to peanuts"
     assert records[0].origin_surface == "telegram"
 
@@ -103,7 +125,9 @@ async def test_teaching_a_fact_writes_a_snapshot_into_the_index_namespace() -> N
 async def test_a_wiped_index_is_rebuilt_from_the_snapshot_and_recalls_again() -> None:
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
     result = await harness.say("I am allergic to peanuts")
-    expected_blob_id = result.stored_facts[0].blob_id
+    await harness.service.await_pending_writes()
+    expected_blob_id = harness.memories.list_for_user(result.user_id)[0].blob_id
+    assert not expected_blob_id.startswith("pending:")
 
     harness.wipe_index(result.user_id)
     assert harness.memories.list_for_user(result.user_id) == []
@@ -131,6 +155,7 @@ async def test_a_wiped_index_is_rebuilt_from_the_snapshot_and_recalls_again() ->
 async def test_rebuilding_twice_reports_the_second_pass_as_already_present() -> None:
     harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
     result = await harness.say("I am allergic to peanuts")
+    await harness.service.await_pending_writes()
     harness.wipe_index(result.user_id)
 
     first = await harness.admin.rebuild_index(result.user_id)
@@ -160,6 +185,7 @@ async def test_a_turn_still_succeeds_when_the_snapshot_write_fails() -> None:
     )
 
     result = await harness.say("I am allergic to peanuts")
+    await harness.service.await_pending_writes()
 
     assert result.stored_facts[0].verdict == "new"
     assert result.stored_facts[0].blob_id
@@ -169,3 +195,23 @@ async def test_a_turn_still_succeeds_when_the_snapshot_write_fails() -> None:
     namespace = harness.index_namespace(result.user_id)
     outcome = await harness.gateway.recall(INDEX_QUERY, namespace, limit=5)
     assert outcome.memories == ()
+
+
+async def test_the_snapshot_is_written_only_after_the_pending_writes_settle() -> None:
+    """A slow settle must not produce a snapshot full of placeholder blob ids."""
+    harness = Harness(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}],
+        gateway_factory=SlowSettleGateway,
+    )
+
+    result = await harness.say("I am allergic to peanuts")
+    await harness.service.await_pending_writes()
+
+    namespace = harness.index_namespace(result.user_id)
+    outcome = await harness.gateway.recall(INDEX_QUERY, namespace, limit=5)
+    assert outcome.memories, "no snapshot was written after the batch settled"
+    _, records = decode_snapshot(outcome.memories[0].text)
+    settled = harness.memories.list_for_user(result.user_id)
+    assert len(settled) == 1
+    assert not settled[0].blob_id.startswith("pending:")
+    assert [record.blob_id for record in records] == [settled[0].blob_id]

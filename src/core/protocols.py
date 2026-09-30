@@ -10,6 +10,7 @@ from typing import Protocol
 
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
 from schemas.memory_schema import (
+    AcceptedMemorySchema,
     ExtractedFactSchema,
     MemoryHealthSchema,
     NamespaceListingSchema,
@@ -27,6 +28,12 @@ class MemoryGatewayProtocol(Protocol):
     async def remember(
         self, text: str, namespace: str, idempotency_key: str | None = None
     ) -> StoredMemorySchema: ...
+
+    async def remember_accepted(
+        self, text: str, namespace: str, idempotency_key: str | None = None
+    ) -> AcceptedMemorySchema: ...
+
+    async def wait_for_remember(self, job_id: str) -> StoredMemorySchema: ...
 
     async def analyze(
         self, text: str, namespace: str, occurred_at: str | None = None

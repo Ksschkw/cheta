@@ -412,6 +412,12 @@ button.danger {
   padding: 7px 9px;
 }
 
+/* Accepted by the relayer but not yet persisted: never shown as stored. */
+.chip-pending {
+  border-left-style: dashed;
+  opacity: 0.85;
+}
+
 .chip-text {
   font-size: 13px;
   overflow-wrap: anywhere;
