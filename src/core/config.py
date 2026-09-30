@@ -5,6 +5,55 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
+
+# src/core/config.py -> the repository root.
+DOTENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+
+
+def _parse_dotenv(text: str) -> dict[str, str]:
+    """Parse KEY=VALUE lines.
+
+    Deliberately forgiving about whitespace around the value and about matching
+    surrounding quotes, because both are common in hand-edited .env files and
+    both silently produce an empty variable when a shell sources the file.
+    A '#' inside a value is preserved: only whole-line comments are treated as
+    comments, so a secret containing '#' is not truncated.
+    """
+    values: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        if key:
+            values[key] = value
+    return values
+
+
+def load_environment(path: Path | None = None) -> Mapping[str, str]:
+    """Read ``.env`` and overlay the real process environment on top of it.
+
+    The app loads this itself rather than relying on the caller to source the
+    file. Without that, the documented command ``uvicorn main:app`` would start
+    with no credentials and quietly fall back to the offline mock, which looks
+    exactly like a broken integration.
+    """
+    values: dict[str, str] = {}
+    candidate = path if path is not None else DOTENV_PATH
+    if candidate.is_file():
+        try:
+            values.update(_parse_dotenv(candidate.read_text(encoding="utf-8")))
+        except OSError:
+            # An unreadable .env is not fatal: the process environment may still
+            # carry everything, and the offline fallback keeps the app runnable.
+            pass
+    values.update(os.environ)
+    return values
 
 
 def _get(env: Mapping[str, str], key: str, default: str = "") -> str:
@@ -81,7 +130,9 @@ class Settings:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
-        source = env if env is not None else os.environ
+        # An explicit mapping is used verbatim so tests stay hermetic. The
+        # default reads .env and then the process environment.
+        source = env if env is not None else load_environment()
 
         # Ollama needs no API key, so it cannot be detected by looking for one.
         # It is opt-in instead: otherwise a fresh clone would select a local
@@ -94,7 +145,7 @@ class Settings:
                 name="groq",
                 base_url=_get(source, "GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
                 api_key=_get(source, "GROQ_API_KEY"),
-                model=_get(source, "GROQ_MODEL", "qwen3-32b"),
+                model=_get(source, "GROQ_MODEL", "qwen/qwen3.8-27b"),
             ),
             LlmProviderConfig(
                 name="gemini",
@@ -104,7 +155,7 @@ class Settings:
                     "https://generativelanguage.googleapis.com/v1beta/openai/",
                 ),
                 api_key=_get(source, "GEMINI_API_KEY"),
-                model=_get(source, "GEMINI_MODEL", "gemini-2.5-flash-lite"),
+                model=_get(source, "GEMINI_MODEL", "gemini-3.1-flash-lite"),
             ),
         ]
         if ollama_enabled:
