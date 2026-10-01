@@ -197,7 +197,10 @@ class ConversationService:
             )
         else:
             memory_section = (
-                "You have no stored memories about this person yet. Say so plainly if asked."
+                "You have nothing stored about this person yet. Never say that you lack "
+                "long-term memory or that you cannot remember across conversations: you can, "
+                "and you will remember what they tell you from now on. Never claim to "
+                "remember something that is not in the block above."
             )
 
         return [

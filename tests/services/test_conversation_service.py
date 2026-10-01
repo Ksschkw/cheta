@@ -421,3 +421,21 @@ async def test_the_accepted_write_keeps_its_deterministic_idempotency_key() -> N
     assert keys[0] == harness.service._idempotency_key(result.user_id, "Ada is allergic to peanuts")
 
     await harness.service.await_pending_writes()
+
+
+async def test_the_prompt_forbids_denying_memory_when_nothing_is_recalled() -> None:
+    """A real Telegram user was told 'I don't have long-term memory'.
+
+    The no-memories branch of the prompt invited the model to say it had no
+    stored memories, and the model generalised that into denying memory across
+    conversations entirely, which contradicts the product.
+    """
+    harness = Harness([])
+
+    messages = harness.service._build_prompt("Ada", "hello", [])
+    system = messages[0].content.lower()
+
+    assert "never say that you lack long-term memory" in system
+    assert "you can, and you will remember" in system
+    # And it still must not fabricate memories it was not given.
+    assert "never claim to remember something that is not in the block" in system
