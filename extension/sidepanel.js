@@ -82,7 +82,8 @@
     displayName: "ranti.extension.display_name",
     userId: "ranti.extension.user_id",
     memoryEnabled: "ranti.extension.memory_enabled",
-    history: "ranti.extension.history"
+    history: "ranti.extension.history",
+    onboarded: "ranti.extension.onboarded"
   };
 
   var HELP_TEXT =
@@ -608,6 +609,42 @@
     }
   }
 
+  /* First-run onboarding. The dismissal is persisted through the compatibility
+   * storage layer, so the panel is shown once and never again, whether the
+   * person chose Start or Skip. */
+  function onOnboardingKey(event) {
+    if (event.key === "Escape") {
+      dismissOnboarding();
+    }
+  }
+
+  function showOnboarding() {
+    var onboarding = $("onboarding");
+    if (!onboarding) {
+      return;
+    }
+    onboarding.classList.remove("hidden");
+    document.addEventListener("keydown", onOnboardingKey);
+    var start = $("onboarding-start");
+    if (start) {
+      start.focus();
+    }
+  }
+
+  function dismissOnboarding() {
+    var onboarding = $("onboarding");
+    if (!onboarding || onboarding.classList.contains("hidden")) {
+      return;
+    }
+    onboarding.classList.add("hidden");
+    persist(KEYS.onboarded, true);
+    document.removeEventListener("keydown", onOnboardingKey);
+    var input = $("chat-input");
+    if (input) {
+      input.focus();
+    }
+  }
+
   function userNode(text) {
     return el("div", { class: "msg user" }, [
       el("div", { class: "who" }, "You"),
@@ -716,7 +753,8 @@
           "div",
           { class: "hint" },
           usedMemory
-            ? "No memories were recalled for this turn."
+            ? "Nothing was recalled for this turn. Tell Cheta something durable " +
+                "about yourself and it will be remembered for next time."
             : "Memory was off for this turn, so nothing was recalled and nothing was saved."
         )
       );
@@ -762,9 +800,10 @@
         el(
           "div",
           { id: "empty-hint", class: "empty" },
-          "Say something durable, for example a preference, a constraint, or a fact " +
-            "about your work. Each reply shows the memories that were recalled " +
-            "for it. Type /help for commands."
+          "Nothing here yet. Send a message to start. Tell Cheta something durable, " +
+            "for example a preference, a constraint, or a fact about your work, and " +
+            "it will remember it next time. Commands such as /help are typed as " +
+            "normal messages, and the Help button above opens the full reference."
         )
       );
       return;
@@ -920,7 +959,12 @@
     clear(list);
     if (!rows.length) {
       list.appendChild(
-        el("div", { class: "hint" }, "Nothing stored for this identity yet.")
+        el(
+          "div",
+          { class: "hint" },
+          "Nothing stored yet. Tell Cheta something durable about yourself, such as " +
+            "a preference or a constraint, and it will appear here."
+        )
       );
       return;
     }
@@ -942,7 +986,11 @@
     var includeInactive = $("mem-include-inactive") && $("mem-include-inactive").checked;
     if (!state.userId) {
       renderMemoryList([]);
-      setText(status, "Nothing stored yet. Send a message first.");
+      setText(
+        status,
+        "Nothing stored yet. Send a message that tells Cheta something durable " +
+          "about yourself and it will appear here."
+      );
       return;
     }
     setText(status, "Loading...");
@@ -957,7 +1005,11 @@
         var all = asArray(rows);
         renderMemoryList(all);
         if (!all.length) {
-          setText(status, "Nothing stored for this identity yet.");
+          setText(
+            status,
+            "Nothing stored yet. Tell Cheta something durable about yourself, such " +
+              "as a preference or a constraint, and it will appear here."
+          );
         } else {
           setText(status, all.length === 1 ? "1 memory." : all.length + " memories.");
         }
@@ -965,7 +1017,8 @@
       .catch(function () {
         setText(
           status,
-          "Could not load memories just now. That is not the same as having none."
+          "Could not load memories just now, which is not the same as having " +
+            "none. Nothing was changed; use Refresh to try again."
         );
       });
   }
@@ -1087,7 +1140,11 @@
         }
       })
       .catch(function (err) {
-        var message = "Could not complete the turn. " + err.message;
+        var message =
+          "Could not complete the turn. " +
+          err.message +
+          " Nothing was saved for it, and memory is unchanged. " +
+          "Check Settings and try again.";
         appendNode(errorNode(message));
         record({ role: "error", text: message });
       })
@@ -1203,6 +1260,10 @@
 
     renderHistory();
     checkHealth();
+
+    if (!items[KEYS.onboarded]) {
+      showOnboarding();
+    }
   }
 
   function wire() {
@@ -1277,6 +1338,49 @@
     var reset = $("reset-base-url");
     if (reset) {
       reset.addEventListener("click", resetBaseUrl);
+    }
+
+    var helpButton = $("toggle-help");
+    var helpPanel = $("help-panel");
+    if (helpButton && helpPanel) {
+      helpButton.addEventListener("click", function () {
+        var open = helpPanel.classList.contains("hidden");
+        if (open) {
+          helpPanel.classList.remove("hidden");
+        } else {
+          helpPanel.classList.add("hidden");
+        }
+        helpButton.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    var closeHelp = $("close-help");
+    if (closeHelp && helpPanel) {
+      closeHelp.addEventListener("click", function () {
+        helpPanel.classList.add("hidden");
+        if (helpButton) {
+          helpButton.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    var onboardingStart = $("onboarding-start");
+    if (onboardingStart) {
+      onboardingStart.addEventListener("click", dismissOnboarding);
+    }
+
+    var onboardingSkip = $("onboarding-skip");
+    if (onboardingSkip) {
+      onboardingSkip.addEventListener("click", dismissOnboarding);
+    }
+
+    var onboarding = $("onboarding");
+    if (onboarding) {
+      onboarding.addEventListener("click", function (event) {
+        if (event.target === onboarding) {
+          dismissOnboarding();
+        }
+      });
     }
   }
 

@@ -19,7 +19,8 @@
     displayName: "ranti.display_name",
     surfaceUserId: "ranti.surface_user_id",
     userId: "ranti.user_id",
-    memoryEnabled: "ranti.memory_enabled"
+    memoryEnabled: "ranti.memory_enabled",
+    onboarded: "ranti.onboarded"
   };
 
   /* --------------------------------------------------------------- dom */
@@ -178,12 +179,19 @@
       });
   }
 
-  /* Plain words for a failed call. Never prints a host, port or path. */
+  /* Plain words for a failed call. Never prints a host, port or path. The
+   * message says what happened, what it means for the turn, and what to do. */
   function plainError(err) {
     if (err && err.network) {
-      return "Could not reach the server. Check your connection and try again.";
+      return (
+        "Could not reach the server, so this message was not sent and memory " +
+        "was not changed. Check your connection and try again."
+      );
     }
-    return "The request could not be completed. Please try again.";
+    return (
+      "The request could not be completed, so this message was not sent and " +
+      "memory was not changed. Please try again."
+    );
   }
 
   /* --------------------------------------------------------- formatting */
@@ -255,6 +263,9 @@
     var form = $("composer");
     var sendButton = $("send-button");
     var banner = $("degraded-banner");
+    var onboarding = $("onboarding");
+    var onboardingStart = $("onboarding-start");
+    var onboardingSkip = $("onboarding-skip");
 
     var state = {
       surfaceUserId: getSurfaceUserId(),
@@ -273,6 +284,38 @@
     function scrollToEnd() {
       if (transcript) {
         transcript.scrollTop = transcript.scrollHeight;
+      }
+    }
+
+    /* First-run onboarding. The dismissal is written to storage, so the panel
+     * is shown once and never again on this browser, whether the person chose
+     * Start or Skip. */
+    function dismissOnboarding() {
+      if (!onboarding || onboarding.classList.contains("hidden")) {
+        return;
+      }
+      onboarding.classList.add("hidden");
+      storeSet(KEYS.onboarded, "1");
+      document.removeEventListener("keydown", onOnboardingKey);
+      if (input) {
+        input.focus();
+      }
+    }
+
+    function onOnboardingKey(event) {
+      if (event.key === "Escape") {
+        dismissOnboarding();
+      }
+    }
+
+    function showOnboarding() {
+      if (!onboarding) {
+        return;
+      }
+      onboarding.classList.remove("hidden");
+      document.addEventListener("keydown", onOnboardingKey);
+      if (onboardingStart) {
+        onboardingStart.focus();
       }
     }
 
@@ -476,6 +519,20 @@
       input.style.height = Math.min(input.scrollHeight, 180) + "px";
     }
 
+    if (onboardingStart) {
+      onboardingStart.addEventListener("click", dismissOnboarding);
+    }
+    if (onboardingSkip) {
+      onboardingSkip.addEventListener("click", dismissOnboarding);
+    }
+    if (onboarding) {
+      onboarding.addEventListener("click", function (event) {
+        if (event.target === onboarding) {
+          dismissOnboarding();
+        }
+      });
+    }
+
     form.addEventListener("submit", sendTurn);
     input.addEventListener("input", autoGrow);
     input.addEventListener("keydown", function (event) {
@@ -492,10 +549,16 @@
           "div",
           { class: "bubble" },
           "Hi, I am Cheta. I keep what matters and bring it back on later turns. " +
-            "Tell me something worth remembering, or type /help to see what I can do."
+            "Tell me something worth remembering, such as a preference or a fact " +
+            "about your work. Commands are typed as normal messages: /help shows " +
+            "the reference and /memories shows everything I have stored about you."
         )
       ])
     );
+
+    if (storeGet(KEYS.onboarded, "") !== "1") {
+      showOnboarding();
+    }
   }
 
   /* ========================================================== dashboard */
@@ -591,7 +654,9 @@
       var previous = state.selectedId;
       clear(userSelect);
       if (!state.users.length) {
-        userSelect.appendChild(el("option", { value: "" }, "No users yet"));
+        userSelect.appendChild(
+          el("option", { value: "" }, "Nothing stored yet - start a chat")
+        );
         state.selectedId = "";
         return;
       }
@@ -626,6 +691,24 @@
           );
           renderEvidence();
           populateUserSelect();
+          if (!state.users.length) {
+            setText(
+              memoryStatus,
+              "Nothing stored yet. In the chat, tell Cheta a durable fact about " +
+                "yourself, such as a preference, a constraint, or a fact about your " +
+                "work, and it will appear here."
+            );
+            setText(
+              contradictionStatus,
+              "No open contradictions. If two stored notes conflict, the pair appears " +
+                "here so you can resolve it."
+            );
+            setText(
+              passportStatus,
+              "Nothing to export yet. Start a chat and tell Cheta something durable " +
+                "about yourself."
+            );
+          }
         })
         .catch(function () {
           setText(evidenceStatus, plainError());
@@ -657,7 +740,10 @@
           el(
             "div",
             { class: "muted" },
-            "No memories match the current filter for this user."
+            "Nothing stored for this person yet. In the chat, tell Cheta a durable " +
+              "fact about yourself, such as a preference or a constraint, and it " +
+              "will appear here. If the filters above are hiding records, include " +
+              "them to see retired or contradicted notes."
           )
         );
         return;
@@ -744,7 +830,12 @@
           setText(contradictionStatus, items.length + " open contradiction(s)");
           if (!items.length) {
             contradictionList.appendChild(
-              el("div", { class: "muted" }, "No open contradictions for this user.")
+              el(
+                "div",
+                { class: "muted" },
+                "No open contradictions. If two stored notes conflict, the pair " +
+                  "appears here so you can resolve it."
+              )
             );
             return;
           }

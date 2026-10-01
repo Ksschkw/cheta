@@ -11,15 +11,26 @@
       <header class="topbar">
         <div class="topbar-row">
           <h1 class="brand">Cheta</h1>
-          <button
-            id="toggle-memory-panel"
-            class="btn btn-quiet"
-            type="button"
-            aria-expanded="false"
-            aria-controls="memory-panel"
-          >
-            Memories
-          </button>
+          <div class="topbar-actions">
+            <button
+              id="toggle-help"
+              class="btn btn-quiet"
+              type="button"
+              aria-expanded="false"
+              aria-controls="help-panel"
+            >
+              Help
+            </button>
+            <button
+              id="toggle-memory-panel"
+              class="btn btn-quiet"
+              type="button"
+              aria-expanded="false"
+              aria-controls="memory-panel"
+            >
+              Memories
+            </button>
+          </div>
         </div>
 
         <p id="conn-status" class="status" aria-live="polite"></p>
@@ -61,11 +72,52 @@
         </details>
       </header>
 
+      <section id="help-panel" class="help-panel hidden" aria-label="Cheta reference">
+        <div class="panel-head">
+          <h2>Reference</h2>
+          <button id="close-help" class="btn btn-quiet" type="button">Close</button>
+        </div>
+        <div class="help-body">
+          <h3>Commands</h3>
+          <ul class="help-list">
+            <li><code>/help</code> shows this reference.</li>
+            <li><code>/memories</code> shows everything stored about you, numbered.</li>
+            <li><code>/forget 2</code> retires the note with that number.</li>
+            <li><code>/start</code> says hello and recalls what is known about you.</li>
+            <li><code>/link &lt;handle&gt;</code> joins a shared memory space across your clients.</li>
+          </ul>
+          <p class="hint">Commands are typed as normal messages.</p>
+
+          <h3>What the tools do</h3>
+          <ul class="help-list">
+            <li>Search the web, read a page you name, check Wikipedia or the weather.</li>
+            <li>Do arithmetic and set or list reminders.</li>
+            <li>Answer questions about a document you send; voice notes are transcribed.</li>
+          </ul>
+
+          <h3>Pairing</h3>
+          <p class="help-text">
+            Generate a pairing code on a client you already use, then enter it on the
+            new one.
+          </p>
+
+          <h3>Memory</h3>
+          <p class="help-text">
+            Each reply lists what was recalled for it. "Show it without memory"
+            replays that turn with memory off, so you can see the difference. The
+            Memory switch turns memory off for one message only.
+          </p>
+        </div>
+      </section>
+
       <section id="page-context" class="page-context" aria-label="The page in the active tab">
         <div class="page-row">
           <button id="use-page" class="btn btn-quiet" type="button">Use this page</button>
           <span id="page-status" class="hint page-status" aria-live="polite"></span>
         </div>
+        <p class="hint page-read-hint">
+          "Use this page" reads the tab you are viewing right now, and only that page.
+        </p>
         <div id="page-info" class="page-info hidden">
           <div id="page-title" class="page-title"></div>
           <div id="page-host" class="page-host"></div>
@@ -103,9 +155,10 @@
 
       <main id="transcript" class="transcript" aria-live="polite">
         <div id="empty-hint" class="empty">
-          Say something durable, for example a preference, a constraint, or a fact
-          about your work. Each reply shows the memories that were recalled for it.
-          Type /help for commands.
+          Nothing here yet. Send a message to start. Tell Cheta something durable, for
+          example a preference, a constraint, or a fact about your work, and it will
+          remember it next time. Commands such as /help are typed as normal messages,
+          and the Help button above opens the full reference.
         </div>
       </main>
 
@@ -126,6 +179,61 @@
           <button id="send-button" class="btn btn-accent" type="submit">Send</button>
         </div>
       </form>
+    </div>
+
+    <div
+      id="onboarding"
+      class="onboarding hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-title"
+    >
+      <div class="onboarding-card">
+        <div class="onboarding-scroll">
+        <p class="onboarding-kicker">Welcome to Cheta</p>
+        <h2 id="onboarding-title" class="onboarding-title">
+          Cheta is a memory-first assistant: it remembers what you tell it and shows
+          you what it remembered.
+        </h2>
+
+        <h3 class="onboarding-label">What it does</h3>
+        <ul class="onboarding-list">
+          <li>Remembers what you tell it.</li>
+          <li>
+            Shows exactly what it remembered under each reply, and re-answers with
+            memory off so you can see the difference.
+          </li>
+          <li>Can be corrected or emptied at any time.</li>
+          <li>
+            Works on Telegram, the command line, this browser page, and a browser
+            extension.
+          </li>
+          <li>Your memory follows you between them once you pair them.</li>
+        </ul>
+
+        <h3 class="onboarding-label">Pairing</h3>
+        <p class="onboarding-text">
+          Generate a pairing code on a client you already use, then enter it on the
+          new one.
+        </p>
+
+        <h3 class="onboarding-label">What it cannot do</h3>
+        <ul class="onboarding-list">
+          <li>It cannot log into your accounts.</li>
+          <li>It cannot read private pages you are not viewing.</li>
+          <li>It cannot see images, audio, or video beyond voice transcription.</li>
+        </ul>
+        </div>
+
+        <div class="onboarding-actions">
+          <button id="onboarding-start" class="btn btn-accent onboarding-start" type="button">
+            Start
+          </button>
+          <button id="onboarding-skip" class="btn btn-quiet onboarding-skip" type="button">
+            Skip
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="browser-api.js"></script>
