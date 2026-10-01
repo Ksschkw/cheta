@@ -1,6 +1,8 @@
 /* Cheta extension surface: minimal monochrome shell, one accent color.
  * Sized for a 320px side panel first, then allowed to grow.
  * Palette is closed: #0a0a0a, #141414, #262626, #ededed, #8a8a8a, #35d0ba.
+ * The transcript is the dominant area: bars are one line tall, padding is
+ * small, and nothing overlays the conversation.
  * ASCII only by policy: no emojis, no smart punctuation. */
 
 :root {
@@ -98,7 +100,7 @@ a:hover {
 
 .topbar {
   flex: 0 0 auto;
-  padding: 16px 16px 14px 16px;
+  padding: 10px 12px 8px 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -106,18 +108,18 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .brand {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.2px;
   color: var(--text);
 }
 
 .status {
-  margin: 10px 0 0 0;
+  margin: 5px 0 0 0;
   font-size: 11px;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -131,8 +133,8 @@ a:hover {
 /* -------------------------------------------------------------- notices */
 
 .notice {
-  margin: 12px 0 0 0;
-  padding: 10px 12px;
+  margin: 8px 0 0 0;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -143,11 +145,15 @@ a:hover {
 }
 
 .hint {
-  margin: 6px 0 0 0;
+  margin: 4px 0 0 0;
   font-size: 11px;
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.hint.is-fail {
+  color: var(--text);
 }
 
 /* ------------------------------------------------------------- controls */
@@ -160,7 +166,7 @@ a:hover {
   border: 1px solid var(--line);
   background: transparent;
   color: var(--text);
-  padding: 7px 12px;
+  padding: 5px 9px;
 }
 
 .btn:hover:not(:disabled) {
@@ -186,7 +192,7 @@ a:hover {
   color: var(--bg);
   font-weight: 600;
   margin-left: auto;
-  min-width: 84px;
+  min-width: 76px;
 }
 
 .btn-accent:hover:not(:disabled) {
@@ -201,7 +207,7 @@ textarea {
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   font: inherit;
 }
 
@@ -219,7 +225,7 @@ input[readonly] {
 .check {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   font-size: 12px;
   color: var(--muted);
   cursor: pointer;
@@ -228,8 +234,8 @@ input[readonly] {
 
 .switch input,
 .check input {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   margin: 0;
   accent-color: var(--text);
   flex: 0 0 auto;
@@ -240,59 +246,12 @@ input[readonly] {
   color: var(--muted);
 }
 
-/* ------------------------------------------------------------- settings */
-
-.settings {
-  margin-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
-.settings summary {
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--muted);
-  padding: 10px 0 2px 0;
-  user-select: none;
-}
-
-.settings summary:hover {
-  color: var(--text);
-}
-
-.settings[open] summary {
-  color: var(--text);
-}
-
-.settings-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 0 2px 0;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.field label {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.settings-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 /* ----------------------------------------------------------- help panel */
 
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .help-panel {
@@ -301,18 +260,18 @@ input[readonly] {
   overflow-y: auto;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 .help-body {
-  margin-top: 12px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .help-body h3 {
-  margin: 12px 0 2px 0;
+  margin: 10px 0 2px 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -326,11 +285,11 @@ input[readonly] {
 
 .help-list {
   list-style: none;
-  margin: 6px 0 0 0;
+  margin: 4px 0 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .help-list li {
@@ -338,11 +297,12 @@ input[readonly] {
   line-height: 1.5;
   color: var(--text);
   border-left: 1px solid var(--line);
-  padding-left: 10px;
+  padding-left: 9px;
   overflow-wrap: anywhere;
 }
 
-.help-list code {
+.help-list code,
+.help-text code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
     monospace;
   font-size: 12px;
@@ -350,7 +310,7 @@ input[readonly] {
 }
 
 .help-text {
-  margin: 6px 0 0 0;
+  margin: 4px 0 0 0;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text);
@@ -365,8 +325,8 @@ input[readonly] {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 18px 16px;
+  gap: 14px;
+  padding: 12px;
 }
 
 .empty {
@@ -378,7 +338,7 @@ input[readonly] {
 .msg {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -386,14 +346,23 @@ input[readonly] {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .msg.error {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--surface);
+}
+
+.msg.context {
+  border-left: 1px solid var(--muted);
+  padding-left: 9px;
+}
+
+.msg.command .bubble {
+  color: var(--text);
 }
 
 .who {
@@ -411,12 +380,12 @@ input[readonly] {
 }
 
 .recalled {
-  margin-top: 4px;
-  padding-left: 12px;
+  margin-top: 3px;
+  padding-left: 10px;
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .recalled-label {
@@ -427,7 +396,7 @@ input[readonly] {
 .recalled-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .memory-line {
@@ -440,32 +409,32 @@ input[readonly] {
 /* ------------------------------------------------------- counterfactual */
 
 .cf-zone {
-  margin-top: 6px;
+  margin-top: 5px;
 }
 
 .cf-result {
-  margin-top: 12px;
+  margin-top: 10px;
   border-top: 1px solid var(--line);
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .cf-title {
   font-size: 11px;
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .cf-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .cf-col {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
   min-width: 0;
 }
 
@@ -474,7 +443,7 @@ input[readonly] {
 }
 
 .cf-col h4 {
-  margin: 0 0 6px 0;
+  margin: 0 0 5px 0;
   font-size: 11px;
   color: var(--muted);
 }
@@ -488,7 +457,7 @@ input[readonly] {
 }
 
 .cf-summary {
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 13px;
   line-height: 1.55;
   color: var(--text);
@@ -503,14 +472,14 @@ input[readonly] {
   overflow-y: auto;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .panel-head h2 {
@@ -520,15 +489,15 @@ input[readonly] {
 }
 
 .memory-panel .check {
-  margin: 12px 0 0 0;
+  margin: 8px 0 0 0;
 }
 
 .memory-list {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .memory-card {
-  padding: 12px 0;
+  padding: 9px 0;
 }
 
 .memory-card + .memory-card {
@@ -543,19 +512,36 @@ input[readonly] {
 }
 
 .memory-state {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 11px;
   color: var(--muted);
 }
 
-/* ---------------------------------------------------------- page context */
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+/* ---------------------------------------------------------- page context
+   One line while a page is loaded: title, host and character count, plus the
+   Actions control. The action buttons and the MCP area are hidden until asked
+   for, so the bar never grows into a block over the conversation. */
 
 .page-context {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 7px 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -563,12 +549,23 @@ input[readonly] {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 7px;
+  min-width: 0;
 }
 
-.page-row .hint {
+.page-use {
+  flex: 0 0 auto;
+}
+
+.page-hint {
   margin: 0;
-  flex: 1 1 140px;
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.page-status {
+  margin: 0;
+  flex: 1 1 100%;
   min-width: 0;
 }
 
@@ -576,40 +573,130 @@ input[readonly] {
   color: var(--text);
 }
 
-.page-read-hint {
-  margin: 0;
-  flex: 0 0 auto;
-}
-
-.page-info {
+.page-summary {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 5px;
+  flex: 1 1 0;
   min-width: 0;
-}
-
-.page-title {
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--text);
-  overflow-wrap: anywhere;
 }
 
-.page-host {
-  font-size: 11px;
+.page-summary-title {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-summary-host,
+.page-summary-count {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--muted);
-  overflow-wrap: anywhere;
+}
+
+.page-actions-toggle {
+  flex: 0 0 auto;
 }
 
 .page-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .page-action {
   width: 100%;
   text-align: left;
+}
+
+.mcp-row {
+  min-width: 0;
+}
+
+.mcp-summary {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.mcp-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.mcp-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--text);
+}
+
+.mcp-tool:hover {
+  border-color: var(--muted);
+}
+
+.mcp-tool-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 12px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mcp-tool-desc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.mcp-args {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mcp-args-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mcp-args-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 12px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.mcp-args-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mcp-args textarea {
+  max-height: 160px;
 }
 
 /* -------------------------------------------------------------- composer */
@@ -620,24 +707,69 @@ input[readonly] {
   bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   background: var(--bg);
   border-top: 1px solid var(--line);
-  padding: 12px 16px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 9px 12px;
+  padding-bottom: calc(9px + env(safe-area-inset-bottom, 0px));
 }
 
 .composer textarea {
   resize: vertical;
-  min-height: 46px;
-  max-height: 180px;
+  min-height: 42px;
+  max-height: 140px;
 }
 
 .composer-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+}
+
+/* ----------------------------------------------------------- suggestions
+   Rendered in normal flow above the textarea, inside the composer, so it can
+   never cover the composer or the newest reply. */
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+
+.suggestion + .suggestion {
+  border-top: 1px solid var(--line);
+}
+
+.suggestion:hover,
+.suggestion.is-active {
+  background: var(--line);
+}
+
+.suggestion-cmd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.suggestion-desc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 /* Allow the counterfactual columns to sit side by side once there is room. */
@@ -793,18 +925,4 @@ input[readonly] {
   .tour-body {
     transition: none;
   }
-}
-
-.panel-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.memory-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  margin-top: 0.5rem;
 }

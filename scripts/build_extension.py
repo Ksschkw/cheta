@@ -63,13 +63,14 @@ def shared_files() -> list[Path]:
     """Source files copied into both targets: everything but the manifests."""
     files: list[Path] = []
     for path in sorted(SOURCE.iterdir()):
-        if not path.is_file():
-            continue
         if path in SOURCE_MANIFESTS:
             continue
         if path.name.startswith("."):
             continue
-        files.append(path)
+        # Directories matter: the manifests declare icons/*.png, and copying only
+        # top-level files produced a build whose icons were all missing.
+        if path.is_dir() or path.is_file():
+            files.append(path)
     return files
 
 
@@ -88,6 +89,10 @@ def build_target(name: str, manifest: Path) -> list[Path]:
     written: list[Path] = []
     for source in shared_files():
         destination = target / source.name
+        if source.is_dir():
+            shutil.copytree(source, destination)
+            written.extend(sorted(p for p in destination.rglob("*") if p.is_file()))
+            continue
         shutil.copy2(source, destination)
         written.append(destination)
 

@@ -35,41 +35,6 @@
 
         <p id="conn-status" class="status" aria-live="polite"></p>
         <div id="degraded-banner" class="notice hidden"></div>
-
-        <details id="settings" class="settings">
-          <summary>Settings</summary>
-          <div class="settings-body">
-            <div class="field">
-              <label for="base-url">API base URL</label>
-              <input
-                id="base-url"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="https://example.com"
-              >
-            </div>
-            <div class="field">
-              <label for="display-name">Display name</label>
-              <input
-                id="display-name"
-                type="text"
-                maxlength="128"
-                autocomplete="off"
-                placeholder="Your name"
-              >
-            </div>
-            <div class="field">
-              <label for="surface-user-id">Browser identity</label>
-              <input id="surface-user-id" type="text" readonly>
-            </div>
-            <div class="settings-actions">
-              <button id="save-settings" class="btn btn-quiet" type="button">Save</button>
-              <button id="reset-base-url" class="btn btn-quiet" type="button">Reset URL</button>
-            </div>
-            <p id="settings-status" class="hint" aria-live="polite"></p>
-          </div>
-        </details>
       </header>
 
       <section id="help-panel" class="help-panel hidden" aria-label="Cheta reference">
@@ -85,11 +50,13 @@
         <div class="help-body">
           <h3>Commands</h3>
           <ul class="help-list">
-            <li><code>/help</code> shows this reference.</li>
-            <li><code>/memories</code> shows everything stored about you, numbered.</li>
-            <li><code>/forget 2</code> retires the note with that number.</li>
-            <li><code>/start</code> says hello and recalls what is known about you.</li>
-            <li><code>/link &lt;handle&gt;</code> joins a shared memory space across your clients.</li>
+            <li><code>/start</code> greet, and show what I already remember.</li>
+            <li><code>/memories</code> show every note I have stored about you.</li>
+            <li><code>/forget 2</code> retire a note so I stop bringing it up.</li>
+            <li><code>/pair</code> get a one-time code to add another client.</li>
+            <li><code>/sessions</code> list the clients sharing your memory space.</li>
+            <li><code>/unpair 2</code> leave the shared space, or remove a listed client.</li>
+            <li><code>/help</code> this full reference.</li>
           </ul>
           <p class="hint">Commands are typed as normal messages.</p>
 
@@ -102,8 +69,8 @@
 
           <h3>Pairing</h3>
           <p class="help-text">
-            Generate a pairing code on a client you already use, then enter it on the
-            new one.
+            Type <code>/pair</code> on a client you already use to get a one-time
+            code, then type <code>/pair</code> and that code on the new client.
           </p>
 
           <h3>Memory</h3>
@@ -117,15 +84,21 @@
 
       <section id="page-context" class="page-context" aria-label="The page in the active tab">
         <div class="page-row">
-          <button id="use-page" class="btn btn-quiet" type="button">Use this page</button>
+          <button id="use-page" class="btn btn-quiet page-use" type="button">
+            Read page
+          </button>
+          <span id="page-hint" class="hint page-hint">Reads only the tab you are viewing.</span>
           <span id="page-status" class="hint page-status" aria-live="polite"></span>
-        </div>
-        <p class="hint page-read-hint">
-          "Use this page" reads the tab you are viewing right now, and only that page.
-        </p>
-        <div id="page-info" class="page-info hidden">
-          <div id="page-title" class="page-title"></div>
-          <div id="page-host" class="page-host"></div>
+          <span id="page-summary" class="page-summary hidden"></span>
+          <button
+            id="page-actions-toggle"
+            class="btn btn-quiet page-actions-toggle hidden"
+            type="button"
+            aria-expanded="false"
+            aria-controls="page-actions"
+          >
+            Actions
+          </button>
         </div>
         <div
           id="page-actions"
@@ -143,6 +116,25 @@
             Explain this to me like I am new to it
           </button>
         </div>
+        <div id="mcp-row" class="page-row mcp-row hidden">
+          <span id="mcp-summary" class="hint mcp-summary" aria-live="polite"></span>
+          <button
+            id="mcp-tools-toggle"
+            class="btn btn-quiet hidden"
+            type="button"
+            aria-expanded="false"
+            aria-controls="mcp-tools"
+          >
+            Tools
+          </button>
+        </div>
+        <div
+          id="mcp-tools"
+          class="mcp-tools hidden"
+          role="group"
+          aria-label="Public tools on this page"
+        ></div>
+        <div id="mcp-args" class="mcp-args hidden"></div>
       </section>
 
       <section id="memory-panel" class="memory-panel hidden" aria-label="Stored memories">
@@ -162,12 +154,12 @@
         <div id="empty-hint" class="empty">
           Nothing here yet. Send a message to start. Tell Cheta something durable, for
           example a preference, a constraint, or a fact about your work, and it will
-          remember it next time. Commands such as /help are typed as normal messages,
-          and the Help button above opens the full reference.
+          remember it next time. Type / to see the commands, or open Help above.
         </div>
       </main>
 
       <form id="composer" class="composer">
+        <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Commands"></div>
         <label class="sr-only" for="chat-input">Message</label>
         <textarea
           id="chat-input"
