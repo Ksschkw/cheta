@@ -817,6 +817,8 @@ class ConversationService:
         return self.command_reply(command, surface, surface_user_id, display_name, argument)
 
     HANDLE_MIGRATION_LIMIT = 50
+    #: How many memories /memories prints before naming the remainder.
+    LISTING_LIMIT = 40
 
     async def _link_shared_handle(
         self, surface: str, surface_user_id: str, display_name: str, argument: str
@@ -978,11 +980,18 @@ class ConversationService:
             f"Here is what I have stored about you ({len(records)} notes){scope}:",
             "",
         ]
-        for index, record in enumerate(records[:10], start=1):
+        # Ten was an arbitrary cap; people have more than ten. Telegram splits
+        # long messages already, so list far more and name the remainder rather
+        # than hiding most of someone's memory from them.
+        shown = records[: self.LISTING_LIMIT]
+        for index, record in enumerate(shown, start=1):
             marker = "" if record.status == "active" else f" [{record.status}]"
             lines.append(f"{index}. {record.text}{marker}")
-        if len(records) > 10:
-            lines.append(f"...and {len(records) - 10} more.")
+        if len(records) > self.LISTING_LIMIT:
+            lines.append(
+                f"...and {len(records) - self.LISTING_LIMIT} more. The export button "
+                "in /start sends the complete list as a file."
+            )
         lines.extend(["", "Tell me if any of that is wrong and I will correct it."])
         return "\n".join(lines)
 
@@ -1389,17 +1398,21 @@ class ConversationService:
 
     async def recover_index_if_empty(self, user) -> int:
         """Async half of the recovery above, awaited by the async callers."""
-        if self._memories.count_for_user(user.id, None) > 0:
-            return 0
-
+        # Merge rather than replace, and merge EVERY snapshot rather than only the
+        # newest. Each snapshot is byte-capped, so a person with twenty memories
+        # has them spread across several snapshots; taking the newest alone
+        # recovered about half. Recovery must also run when the index is merely
+        # smaller than the snapshots, which is what a redeploy leaves behind:
+        # otherwise the next snapshot overwrites a fuller one and the index
+        # ratchets down on every deploy.
         namespace = self._settings.index_namespace(user.memory_key)
-        outcome = await self._memory.recall(INDEX_QUERY, namespace, limit=20)
-        best_sequence = -1
-        best_records = []
+        outcome = await self._memory.recall(INDEX_QUERY, namespace, limit=50)
+        by_blob: dict[str, object] = {}
         for hit in outcome.memories:
-            sequence, records = decode_snapshot(hit.text)
-            if sequence > best_sequence:
-                best_sequence, best_records = sequence, records
+            _, records = decode_snapshot(hit.text)
+            for record in records:
+                by_blob.setdefault(record.blob_id, record)
+        best_records = list(by_blob.values())
 
         recovered = 0
         for record in best_records:

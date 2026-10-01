@@ -1048,3 +1048,49 @@ def test_the_extraction_prompt_forbids_facts_about_the_assistant() -> None:
     assert "never record anything" in lowered
     assert "about yourself" in lowered
     assert "assistant identifies as a memory-first assistant" in lowered
+
+
+async def test_recovery_merges_every_snapshot_rather_than_only_the_newest() -> None:
+    """Each snapshot is byte-capped, so a person with twenty memories has them
+    spread across several. Taking only the newest recovered about half of them."""
+    harness = Harness([{"text": "Ada is a software engineering student", "importance": 0.9}])
+    first = await harness.say("I am a software engineering student")
+    await harness.service.await_pending_writes()
+    await harness.say("I also like tea")
+    await harness.service.await_pending_writes()
+
+    harness.database.execute("DELETE FROM memories")
+    assert harness.memories.count_for_user(first.user_id, None) == 0
+
+    recovered = await harness.service.recover_index_if_empty(
+        harness.users.get_by_id(first.user_id)
+    )
+
+    assert recovered >= 1
+    texts = "\n".join(
+        record.text for record in harness.memories.list_for_user(first.user_id, None, 100)
+    )
+    assert "software engineering student" in texts
+
+
+async def test_the_listing_shows_far_more_than_ten_memories() -> None:
+    """Ten was an arbitrary cap; people have more than ten."""
+    harness = Harness([])
+    result = await harness.say("hello")
+    user = harness.users.get_by_id(result.user_id)
+
+    for index in range(15):
+        harness.memories.create(
+            user_id=user.id,
+            blob_id=f"blob-{index}",
+            namespace=result.memory_namespace,
+            text=f"Fact number {index}",
+            importance=0.5,
+            origin_surface="telegram",
+            occurred_at="2026-10-01T00:00:00Z",
+        )
+
+    listing = await harness.service.answer_command("/memories", "telegram", "42", "Ada")
+
+    assert "Fact number 14" in listing
+    assert "and 5 more" not in listing
