@@ -34,6 +34,7 @@ from models.entities.memory_index_model import (
     encode_snapshot,
     select_snapshot_records,
 )
+from models.entities.memory_index_model import INDEX_QUERY, decode_snapshot
 from models.entities.memory_model import STATUS_ACTIVE, STATUS_CONTRADICTED, STATUS_SUPERSEDED
 from models.entities.memory_passport_model import build_passport
 from models.entities.memory_rank_model import (
@@ -450,6 +451,9 @@ class ConversationService:
             raise DependencyUnavailableError("llm", "no language model provider is configured")
 
         user = self._users.get_or_create(surface, surface_user_id, display_name)
+        # Before deciding whether this is a returning user, make sure a fresh
+        # instance has recovered the index it would otherwise be missing.
+        await self.recover_index_if_empty(user)
         namespace = self._settings.memory_namespace(user.memory_key)
         # Read the previous turn before this one is stored: after the insert the
         # current turn is always the most recent and the gap would read as zero.
@@ -602,6 +606,11 @@ class ConversationService:
     ) -> str:
         """Commands that need the network are async; the rest delegate to the
         synchronous renderer. Keeps one entry point for every surface."""
+        # A redeploy wipes the local SQLite index while the memories stay on
+        # Walrus, so recover before answering anything that reads the index.
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        await self.recover_index_if_empty(user)
+
         if command == "/link":
             return await self._link_shared_handle(surface, surface_user_id, display_name, argument)
         if command == "/unlink":
@@ -1032,6 +1041,40 @@ class ConversationService:
         )
         await self._reply_channel.send_message(recipient_id, self._render_reply(result))
         return result
+
+    async def recover_index_if_empty(self, user) -> int:
+        """Async half of the recovery above, awaited by the async callers."""
+        if self._memories.count_for_user(user.id, None) > 0:
+            return 0
+
+        namespace = self._settings.index_namespace(user.memory_key)
+        outcome = await self._memory.recall(INDEX_QUERY, namespace, limit=20)
+        best_sequence = -1
+        best_records = []
+        for hit in outcome.memories:
+            sequence, records = decode_snapshot(hit.text)
+            if sequence > best_sequence:
+                best_sequence, best_records = sequence, records
+
+        recovered = 0
+        for record in best_records:
+            if self._memories.get_by_blob_id(record.blob_id) is not None:
+                continue
+            created = self._memories.create(
+                user_id=user.id,
+                blob_id=record.blob_id,
+                namespace=self._settings.memory_namespace(user.memory_key),
+                text=record.text,
+                importance=record.importance,
+                origin_surface=record.origin_surface,
+                occurred_at=record.occurred_at,
+            )
+            if record.status != STATUS_ACTIVE:
+                self._memories.mark_status(
+                    created.id, record.status, record.superseded_by
+                )
+            recovered += 1
+        return recovered
 
     def _welcome_image(self) -> str | None:
         """Absolute path to the welcome picture, or None when it is absent."""

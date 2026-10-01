@@ -1003,3 +1003,37 @@ async def test_the_listing_shows_which_shared_space_you_are_in() -> None:
     listing = await harness.service.answer_command("/memories", "telegram", "42", "Ada")
 
     assert "shared space: ada-shared" in listing
+
+
+async def test_a_redeployed_instance_still_knows_you() -> None:
+    """The exact failure seen in a real transcript after a deploy.
+
+    The local index is SQLite and a redeploy wipes it, while the memories stay on
+    Walrus. /memories then answered "I have nothing stored about you yet" to
+    someone holding six memories, and listed them minutes later once new notes
+    were written.
+    """
+    harness = Harness([{"text": "Ada is a software engineering student", "importance": 0.9}])
+    first = await harness.say("I am a software engineering student")
+    # The snapshot that makes recovery possible is written by a background task.
+    await harness.service.await_pending_writes()
+
+    # Simulate the redeploy: the process starts with an empty local index.
+    harness.database.execute("DELETE FROM memories")
+    assert harness.memories.count_for_user(first.user_id, None) == 0
+
+    listing = await harness.service.answer_command("/memories", "telegram", "42", "Ada")
+
+    assert "nothing stored about you yet" not in listing
+    assert "software engineering student" in listing
+    assert harness.memories.count_for_user(first.user_id, None) >= 1
+
+
+async def test_recovery_does_not_duplicate_when_the_index_is_already_there() -> None:
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    first = await harness.say("I like tea")
+    before = harness.memories.count_for_user(first.user_id, None)
+
+    await harness.service.answer_command("/memories", "telegram", "42", "Ada")
+
+    assert harness.memories.count_for_user(first.user_id, None) == before
