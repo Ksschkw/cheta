@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Cheta memory side panel",
+  "version": "1.1.0",
+  "description": "Cheta remembers you between chats, across browsers, terminals and Telegram, and can work on the page you are reading.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "cheta-sidebar@ksschkw.github.io",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "scripts": [
+      "browser-api.js",
+      "background.js"
+    ]
+  },
+  "sidebar_action": {
+    "default_panel": "sidepanel.html",
+    "default_title": "Cheta",
+    "open_at_install": true
+  },
+  "commands": {
+    "open-cheta-sidebar": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open or close the Cheta sidebar"
+    }
+  }
+}

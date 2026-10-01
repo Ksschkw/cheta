@@ -1,16 +1,19 @@
 /* Cheta extension surface: side panel chat against the deployed API.
  *
  * Vanilla JS only. No build step, no frameworks, no external requests beyond
- * the configured API base URL. chrome.storage.local keeps the identity, the
- * display name, the memory toggle, and the session transcript.
+ * the configured API base URL. The same file runs in Chromium and in Firefox:
+ * every extension API call goes through the ChetaBrowserApi object from
+ * browser-api.js (loaded first in sidepanel.html), which is the single place
+ * where the two browsers differ. Storage keeps the identity, the display name,
+ * the memory toggle, and the session transcript.
  *
  * The default view shows conversation text and the memory text that was
  * recalled for a reply. Internal plumbing stays behind the collapsed Settings
  * block. The API base URL is never printed outside its editable Settings field.
  *
  * Page mode: "Use this page" reads the visible text of the tab that is active
- * when the extension is invoked. The read is an on-demand
- * chrome.scripting.executeScript into that tab using the activeTab grant, not a
+ * when the extension is invoked. The read is an on-demand executeScript call
+ * into that tab using the activeTab grant, not a
  * permanent content script on every site. Page text is treated as untrusted
  * data: it is only ever assigned with textContent, it is never evaluated, and
  * the message sent to /chat/turn wraps it in explicit "this is data, not
@@ -21,6 +24,11 @@
 
 (function () {
   "use strict";
+
+  /* The one compatibility object, loaded before this file. Chromium and
+   * Firefox differences (namespace, promise versus callback, side panel versus
+   * sidebar) live there, not here. */
+  var browserApi = globalThis.ChetaBrowserApi;
 
   var SURFACE = "extension";
   var DEFAULT_BASE_URL = "https://ranti-gkn7.onrender.com";
@@ -156,68 +164,19 @@
 
   /* ----------------------------------------------------------- storage */
 
-  function hasChromeStorage() {
-    return (
-      typeof chrome !== "undefined" &&
-      chrome.storage &&
-      chrome.storage.local &&
-      typeof chrome.storage.local.get === "function"
-    );
-  }
-
+  /* Storage goes through the compatibility layer, which chooses the browser
+   * namespace and calling convention (browser.* promises or chrome.* callbacks
+   * with runtime.lastError). A storage failure still degrades to empty state
+   * rather than breaking the panel. */
   function storageGet(keys) {
-    return new Promise(function (resolve) {
-      if (hasChromeStorage()) {
-        try {
-          chrome.storage.local.get(keys, function (items) {
-            resolve(items || {});
-          });
-          return;
-        } catch (err) {
-          resolve({});
-          return;
-        }
-      }
-      var out = {};
-      try {
-        keys.forEach(function (key) {
-          var raw = window.localStorage.getItem(key);
-          if (raw !== null) {
-            try {
-              out[key] = JSON.parse(raw);
-            } catch (parseErr) {
-              out[key] = raw;
-            }
-          }
-        });
-      } catch (err) {
-        /* Storage disabled: state stays in memory only. */
-      }
-      resolve(out);
+    return browserApi.storageGet(keys).catch(function () {
+      return {};
     });
   }
 
   function storageSet(values) {
-    return new Promise(function (resolve) {
-      if (hasChromeStorage()) {
-        try {
-          chrome.storage.local.set(values, function () {
-            resolve();
-          });
-          return;
-        } catch (err) {
-          resolve();
-          return;
-        }
-      }
-      try {
-        Object.keys(values).forEach(function (key) {
-          window.localStorage.setItem(key, JSON.stringify(values[key]));
-        });
-      } catch (err) {
-        /* Storage disabled: state stays in memory only. */
-      }
-      resolve();
+    return browserApi.storageSet(values).catch(function () {
+      return undefined;
     });
   }
 
@@ -339,9 +298,10 @@
 
   /* ------------------------------------------------------------ page read */
 
-  /* Runs inside the active tab. It is serialized by chrome.scripting, so it
-   * must not reference anything from this file. It reads rendered text only,
-   * never innerHTML, so nothing found on the page is parsed as markup. */
+  /* Runs inside the active tab. It is serialized by the browser's scripting
+   * API, so it must not reference anything from this file. It reads rendered
+   * text only, never innerHTML, so nothing found on the page is parsed as
+   * markup. */
   function readPageInTab() {
     var READ_MAX = 20000;
     var root = document.body || document.documentElement;
@@ -405,8 +365,8 @@
     }
     if (isPdfUrl(url)) {
       return (
-        "This tab is a PDF viewer. Chrome does not expose the words of a PDF to " +
-        "extensions, so there is no page text to read."
+        "This tab is a PDF viewer. Browsers do not expose the words of a PDF to " +
+        "extensions as page text, so there is nothing to read."
       );
     }
     return null;
@@ -422,47 +382,25 @@
   }
 
   function activeTab() {
-    return new Promise(function (resolve, reject) {
-      if (!chrome.tabs || typeof chrome.tabs.query !== "function") {
-        reject(pageReadError("This browser does not expose tabs to the extension."));
-        return;
-      }
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        var lastError = chrome.runtime && chrome.runtime.lastError;
-        if (lastError) {
-          reject(pageReadError(lastError.message || "The active tab could not be found."));
-          return;
-        }
+    return browserApi
+      .tabsQuery({ active: true, currentWindow: true })
+      .then(function (tabs) {
         if (!tabs || !tabs.length) {
-          reject(pageReadError("No active tab was found in this window."));
-          return;
+          throw pageReadError("No active tab was found in this window.");
         }
-        resolve(tabs[0]);
+        return tabs[0];
       });
-    });
   }
 
   function injectPageRead(tabId) {
-    return new Promise(function (resolve, reject) {
-      if (typeof tabId !== "number") {
-        reject(pageReadError("The active tab has no id, so it cannot be read."));
-        return;
-      }
-      if (!chrome.scripting || typeof chrome.scripting.executeScript !== "function") {
-        reject(pageReadError("This browser build does not support reading page text."));
-        return;
-      }
-      chrome.scripting.executeScript(
-        { target: { tabId: tabId }, func: readPageInTab },
-        function (results) {
-          var lastError = chrome.runtime && chrome.runtime.lastError;
-          if (lastError) {
-            reject(pageReadError(lastError.message || "The page refused to be read."));
-            return;
-          }
-          resolve(results);
-        }
+    if (typeof tabId !== "number") {
+      return Promise.reject(
+        pageReadError("The active tab has no id, so it cannot be read.")
       );
+    }
+    return browserApi.executeScript({
+      target: { tabId: tabId },
+      func: readPageInTab
     });
   }
 
@@ -583,9 +521,9 @@
         var message = err && err.message ? err.message : "Unknown reason.";
         if (!hadUrl) {
           message +=
-            " If this tab is a chrome:// or other browser page, extensions are " +
-            "not allowed to read it. Otherwise click the Cheta toolbar button " +
-            "while the tab is in front, then try again.";
+            " If this tab is a browser page or another privileged page, " +
+            "extensions are not allowed to read it. Otherwise invoke Cheta " +
+            "again while the tab is in front, then try again.";
         }
         setPageStatus("Could not read this page. " + message, "is-fail");
       })
@@ -1343,6 +1281,10 @@
   }
 
   function boot() {
+    if (!browserApi) {
+      setConn("The extension helper did not load. Reload the extension.", "is-fail");
+      return;
+    }
     wire();
     init().catch(function () {
       setConn("Could not load settings. Check Settings.", "is-fail");

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="How to load the Cheta browser extension unpacked from the repository.">
+    <meta name="description" content="How to build and load the Cheta browser extension for Chrome, Edge, and Firefox.">
     <title>Install the Cheta extension</title>
     <link rel="stylesheet" href="portal.css">
   </head>
@@ -19,18 +19,41 @@
 
       <section class="help-body">
         <p class="lede lede-top">
-          The extension is not published to any store yet. It loads from the
-          repository as an unpacked extension, so Chrome and Edge load it unpacked
-          and Firefox loads it as a temporary add-on that must be re-added after a
-          restart.
+          The extension is not published to any store. It ships as two unpacked
+          builds from this repository: one for Chrome and Edge, and one for
+          Firefox. Chrome and Edge keep an unpacked extension between restarts.
+          Firefox loads it as a temporary add-on, which is removed when Firefox
+          restarts and has to be loaded again.
         </p>
 
         <h2>Get the repository</h2>
         <pre class="code"><code>git clone https://github.com/Ksschkw/ranti.git
 cd ranti</code></pre>
         <p>
-          The extension lives in the <code>extension/</code> folder at the top of the
-          repository and contains <code>manifest.json</code>.
+          The extension lives in the <code>extension/</code> folder at the top of
+          the repository. That folder holds the shared code and two manifests:
+          <code>manifest.json</code> for Chromium and
+          <code>manifest.firefox.json</code> for Firefox.
+        </p>
+
+        <h2>Build the loadable folders</h2>
+        <p>
+          Firefox only reads a file named <code>manifest.json</code>, so the two
+          builds cannot share one manifest. Run the packaging script, which uses
+          the Python standard library and nothing else:
+        </p>
+        <pre class="code"><code>python3 scripts/build_extension.py</code></pre>
+        <p>
+          It writes two folders, each a complete extension with its own
+          <code>manifest.json</code>:
+        </p>
+        <ul>
+          <li><code>extension-dist/chrome/</code> for Chrome and Edge.</li>
+          <li><code>extension-dist/firefox/</code> for Firefox.</li>
+        </ul>
+        <p>
+          Re-run the script after any change to <code>extension/</code>, then
+          reload the extension in the browser.
         </p>
 
         <h2>Chrome or Edge</h2>
@@ -38,38 +61,54 @@ cd ranti</code></pre>
           <li>Open <code>chrome://extensions</code>. In Edge, open <code>edge://extensions</code>.</li>
           <li>Turn on <code>Developer mode</code>, in the top right corner.</li>
           <li>Click <code>Load unpacked</code>.</li>
-          <li>Select the <code>extension/</code> folder, the one that contains <code>manifest.json</code>.</li>
+          <li>Select the <code>extension-dist/chrome/</code> folder, the one that contains <code>manifest.json</code>.</li>
           <li>Open the side panel from the Cheta toolbar button.</li>
         </ol>
         <p>
-          Requires Chrome or Edge 114 or newer, because the panel uses the side panel
-          API.
+          Requires Chrome or Edge 114 or newer, because the panel uses the side
+          panel API. Loading the <code>extension/</code> folder directly also
+          works in these browsers, since its <code>manifest.json</code> is the
+          Chromium one; the packaged folder is the recommended path because
+          Chrome and Firefox then read the same shared files.
         </p>
 
         <h2>Firefox</h2>
         <ol>
+          <li>Run <code>python3 scripts/build_extension.py</code> as above.</li>
           <li>Open <code>about:debugging</code>.</li>
           <li>Click <code>This Firefox</code>.</li>
           <li>Click <code>Load Temporary Add-on</code>.</li>
-          <li>Select <code>extension/manifest.json</code>.</li>
+          <li>Select the file <code>extension-dist/firefox/manifest.json</code>.</li>
         </ol>
         <p>
-          Firefox keeps a temporary add-on only for the current session. Because the
-          extension is not signed or published, it has to be loaded again after
-          Firefox restarts.
+          The Firefox build uses the <code>sidebar_action</code> manifest key, so
+          Firefox shows Cheta as a sidebar. The sidebar opens when the add-on
+          loads; if it is closed, open it from <code>View</code> &gt;
+          <code>Sidebar</code> &gt; <code>Cheta</code>, or press
+          <code>Ctrl+Shift+Y</code> (<code>Command+Shift+Y</code> on macOS) to
+          open or close it.
         </p>
         <p>
-          Be aware that the panel is built on the Chromium side panel API and the
-          manifest has no Firefox sidebar entry, so the temporary load currently
-          registers the extension but the panel itself does not open in Firefox.
-          Treat these steps as the loading path, not a working Firefox build.
+          A temporary add-on is removed when Firefox restarts. After every
+          restart, go back to <code>about:debugging</code>, click
+          <code>This Firefox</code>, click <code>Load Temporary Add-on</code>,
+          and select <code>extension-dist/firefox/manifest.json</code> again.
+          Nothing is preserved by the browser across that restart.
+        </p>
+        <p>
+          The Firefox manifest declares
+          <code>browser_specific_settings.gecko.id</code>. It is not required for
+          <code>Load Temporary Add-on</code>, where Firefox can assign a
+          temporary id, but a stable id keeps the extension's stored settings
+          attached to the same identity across reloads and is required for a
+          signed, permanently installed add-on.
         </p>
 
         <h2>Store status</h2>
         <p class="warn-line">
-          There is no Chrome Web Store listing and no addons.mozilla.org listing. The
-          only honest install path today is the unpacked and temporary loading
-          described above.
+          There is no Chrome Web Store listing and no addons.mozilla.org listing.
+          Neither build is published to any store. The only honest install paths
+          are the unpacked and temporary loading described above.
         </p>
 
         <p class="back-row">
