@@ -315,12 +315,24 @@
     function renderStoredFact(fact) {
       var pending = Boolean(fact && fact.pending);
       var blobId = fact && fact.blob_id ? String(fact.blob_id) : "";
+      // A failed fact was never accepted by the relayer, so it has no blob id
+      // and must not be shown as stored.
+      var failed = !pending && !blobId;
       // A pending fact has only been accepted as a job. Its blob id does not
       // exist yet, so the chip must not present it as a stored blob.
       var persistence = pending
         ? "accepted, persisting (no blob id yet)"
-        : "stored blob " + truncate(blobId, 16);
-      return el("div", { class: "chip" + (pending ? " chip-pending" : "") }, [
+        : failed
+          ? "not written to Walrus Memory"
+          : "stored blob " + truncate(blobId, 16);
+      var cls = "chip";
+      if (pending) {
+        cls += " chip-pending";
+      }
+      if (failed) {
+        cls += " chip-failed";
+      }
+      return el("div", { class: cls }, [
         el("div", { class: "chip-text" }, (fact && fact.text) || "(empty fact text)"),
         el("div", { class: "chip-meta" }, [
           el("span", {}, "verdict " + ((fact && fact.verdict) || "new")),
@@ -377,16 +389,23 @@
 
     function appendAssistant(turn, usedMemory) {
       var recalled = asArray(turn.recalled);
+      // A command is answered directly by the API: provider "command", no turn
+      // id, no recalled memories and nothing stored. It has no turn to replay.
+      var isCommand = Boolean(turn.command) || !turn.turn_id;
       var head = el("div", { class: "msg-head" }, [
         el("span", { class: "who" }, "Ranti"),
-        usedMemory
+        isCommand
+          ? el("span", { class: "tag" }, "COMMAND: answered directly, no model call")
+          : null,
+        usedMemory || isCommand
           ? null
           : el("span", { class: "tag tag-warn" }, "[NO MEMORY] answered without memory")
       ]);
-      var wrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
-        head,
-        el("div", { class: "bubble" }, turn.reply || "(empty reply)")
-      ]);
+      var wrap = el(
+        "div",
+        { class: "msg assistant" + (usedMemory || isCommand ? "" : " no-memory") },
+        [head, el("div", { class: "bubble" }, turn.reply || "(empty reply)")]
+      );
 
       if (turn.memory_degraded) {
         var note = turn.memory_note ? " Detail: " + turn.memory_note : "";
@@ -406,7 +425,7 @@
           el("div", { class: "chips-label" }, "Recalled memories for this turn (" + recalled.length + ")")
         );
         wrap.appendChild(el("div", { class: "chips" }, recalled.map(renderChip)));
-      } else if (!turn.memory_degraded) {
+      } else if (!turn.memory_degraded && !isCommand) {
         wrap.appendChild(
           el(
             "div",
@@ -425,6 +444,9 @@
       var persisting = stored.filter(function (fact) {
         return fact && fact.pending;
       });
+      var failed = stored.filter(function (fact) {
+        return fact && fact.verdict === "write_failed";
+      });
       if (persisting.length) {
         wrap.appendChild(
           el(
@@ -435,12 +457,25 @@
         );
         wrap.appendChild(el("div", { class: "chips" }, persisting.map(renderStoredFact)));
       }
+      if (failed.length) {
+        wrap.appendChild(
+          el(
+            "div",
+            { class: "chips-label" },
+            "Facts that could not be written this turn (" + failed.length + ")"
+          )
+        );
+        wrap.appendChild(el("div", { class: "chips" }, failed.map(renderStoredFact)));
+      }
       var bits = [];
       if (settled.length) {
         bits.push(settled.length + " new memory stored");
       }
       if (persisting.length) {
         bits.push(persisting.length + " accepted, persisting");
+      }
+      if (failed.length) {
+        bits.push(failed.length + " write failed");
       }
       if (turn.skipped_duplicates) {
         bits.push(num(turn.skipped_duplicates) + " duplicate skipped");
@@ -452,13 +487,23 @@
         wrap.appendChild(el("div", { class: "meta-line" }, "memory: " + bits.join(", ")));
       }
 
-      var zone = el("div", { class: "cf-zone" });
-      var button = el("button", { type: "button", class: "ghost" }, "Show it without memory");
-      button.addEventListener("click", function () {
-        runCounterfactual(turn.turn_id, button, zone);
-      });
-      zone.appendChild(button);
-      wrap.appendChild(zone);
+      if (isCommand) {
+        wrap.appendChild(
+          el(
+            "div",
+            { class: "muted" },
+            "A command is answered directly: no turn was stored and no memory was changed."
+          )
+        );
+      } else {
+        var zone = el("div", { class: "cf-zone" });
+        var button = el("button", { type: "button", class: "ghost" }, "Show it without memory");
+        button.addEventListener("click", function () {
+          runCounterfactual(turn.turn_id, button, zone);
+        });
+        zone.appendChild(button);
+        wrap.appendChild(zone);
+      }
 
       transcript.appendChild(wrap);
       scrollToEnd();
@@ -508,16 +553,16 @@
         });
     }
 
-    function sendTurn(event) {
-      if (event) {
-        event.preventDefault();
-      }
+    function submitText(rawValue) {
       if (state.busy) {
         return;
       }
-      var value = input.value.trim();
+      var value = String(rawValue === null || rawValue === undefined ? "" : rawValue).trim();
       if (!value) {
         return;
+      }
+      if (value.length > MAX_TEXT) {
+        value = value.slice(0, MAX_TEXT);
       }
       var name = nameInput.value.trim();
       if (!name) {
@@ -540,7 +585,7 @@
           surface: SURFACE,
           surface_user_id: state.surfaceUserId,
           display_name: name,
-          text: value.slice(0, MAX_TEXT),
+          text: value,
           memory_enabled: usedMemory
         }
       })
@@ -559,6 +604,13 @@
         });
     }
 
+    function sendTurn(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      submitText(input.value);
+    }
+
     form.addEventListener("submit", sendTurn);
     input.addEventListener("keydown", function (event) {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -566,6 +618,19 @@
         sendTurn(event);
       }
     });
+
+    var commandMemories = $("cmd-memories");
+    if (commandMemories) {
+      commandMemories.addEventListener("click", function () {
+        submitText("/memories");
+      });
+    }
+    var commandHelp = $("cmd-help");
+    if (commandHelp) {
+      commandHelp.addEventListener("click", function () {
+        submitText("/help");
+      });
+    }
 
     refreshMemoryCount();
   }

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-VALID_SURFACES = ("telegram", "cli", "web")
+# Every surface that can hold a conversation. The Chrome extension was
+# shipped before being added here, so every one of its turns returned 500.
+VALID_SURFACES = ("telegram", "cli", "web", "extension")
 
 
 @dataclass(frozen=True)

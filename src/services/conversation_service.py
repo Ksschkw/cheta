@@ -211,6 +211,89 @@ class ConversationService:
             moment = moment.replace(tzinfo=UTC)
         return max(0.0, (datetime.now(UTC) - moment).total_seconds() / 86400.0)
 
+    def _returning_after_gap(self, latest: TurnModel | None) -> bool:
+        """True when this identity has spoken before, but not recently.
+
+        A first-ever conversation has no previous turn, so it is never a
+        returning session. The rule is deliberately time-based rather than
+        session-based: a rapid exchange is one conversation, and only silence
+        longer than ``resume_after_hours`` marks a new one.
+        """
+        if latest is None:
+            return False
+        return self._age_days(latest.created_at) * 24.0 > self._settings.resume_after_hours
+
+    def _resume_note(
+        self, user_id: str, latest: TurnModel | None, degraded: bool
+    ) -> str | None:
+        """One service-authored greeting naming facts that are really stored.
+
+        Returns None unless every condition holds: the memory read succeeded,
+        the user has spoken before but not within the gap, and at least one
+        active memory exists. The text is built from stored records only, never
+        from the model, so it cannot invent a fact.
+        """
+        if degraded:
+            # A degraded read is not evidence of absence. Saying nothing is
+            # honest; naming a fact we could not confirm would not be.
+            return None
+        if not self._returning_after_gap(latest):
+            return None
+        records = self._memories.list_for_user(user_id, STATUS_ACTIVE, 200)
+        if not records:
+            return None
+        # There is no query here, so semantic distance is undefined and equal
+        # for every note. Salience then ranks by recency and importance, which
+        # is exactly the "most worth volunteering" order, and select_context
+        # still drops near-duplicates.
+        candidates = [
+            RankedMemory(
+                blob_id=record.blob_id,
+                text=record.text,
+                distance=0.0,
+                importance=record.importance,
+                age_days=self._age_days(record.occurred_at),
+                status=record.status,
+                origin_surface=record.origin_surface,
+            )
+            for record in records
+        ]
+        selected = select_context(candidates, self._weights, RESUME_FACT_LIMIT)
+        texts = [memory.text for memory in selected]
+        if not texts:
+            return None
+        if len(texts) == 1:
+            return f"Welcome back. Last time you mentioned {texts[0]}."
+        return f"Welcome back. Last time you mentioned {texts[0]} and {texts[1]}."
+
+    def _contradiction_note(self, pairs: list[tuple[str, str]]) -> str | None:
+        """Tell the person, neutrally, that two stored notes cannot both be true.
+
+        The service writes this from the stored records, so it appears whether
+        or not the model chose to mention it. It names both statements and asks
+        for the decision that append-only storage cannot make.
+        """
+        if not pairs:
+            return None
+        described = "; ".join(
+            f'"{self._one_line(left)}" and "{self._one_line(right)}"'
+            for left, right in pairs
+        )
+        if len(pairs) == 1:
+            return (
+                f"I have two notes about you that conflict: {described}. "
+                "Which one is right?"
+            )
+        return (
+            f"I have {len(pairs)} pairs of notes about you that conflict: {described}. "
+            "Which one is right for each?"
+        )
+
+    @staticmethod
+    def _one_line(text: str) -> str:
+        """Collapse a stored fact to a single line for one-line quoting."""
+        return " ".join(text.split())
+
     async def _assemble_context(
         self, user_id: str, namespace: str, query: str, budget: int
     ) -> tuple[list[RankedMemory], bool, str | None]:
@@ -368,6 +451,9 @@ class ConversationService:
 
         user = self._users.get_or_create(surface, surface_user_id, display_name)
         namespace = self._settings.memory_namespace(user.memory_key)
+        # Read the previous turn before this one is stored: after the insert the
+        # current turn is always the most recent and the gap would read as zero.
+        latest_turn = self._turns.get_latest_for_user(user.id)
 
         recalled: list[RankedMemory] = []
         degraded = False
@@ -380,6 +466,14 @@ class ConversationService:
             recalled, degraded, note, stored_count = await self._assemble_context(
                 user.id, namespace, recall_query or text, context_budget
             )
+
+        # Built before the model runs and appended after it, so the returning
+        # greeting is the service's product rather than something the model has
+        # to remember to say. The read-degraded flag is used here; write
+        # degradation is folded in later and must not suppress a true greeting.
+        resume_note = (
+            self._resume_note(user.id, latest_turn, degraded) if memory_enabled else None
+        )
 
         completion = await self._llm.complete(
             self._build_prompt(display_name, text, recalled, stored_count)
@@ -397,20 +491,33 @@ class ConversationService:
         stored: list[ExtractedFactView] = []
         skipped = 0
         contradiction_count = 0
+        contradiction_note: str | None = None
         if memory_enabled:
-            stored, skipped, contradiction_count, write_degraded = await self._consolidate(
-                user.id, namespace, surface, text, completion.text
-            )
+            (
+                stored,
+                skipped,
+                contradiction_count,
+                contradiction_pairs,
+                write_degraded,
+            ) = await self._consolidate(user.id, namespace, surface, text, completion.text)
             degraded = degraded or write_degraded
+            contradiction_note = self._contradiction_note(contradiction_pairs)
 
         first_turn = self._turns.count_for_user(user.id) == 1
+
+        # Appended, never substituted: the model's answer stays intact and the
+        # service-authored lines follow it.
+        reply = completion.text
+        for addition in (resume_note, contradiction_note):
+            if addition:
+                reply = f"{reply}\n\n{addition}"
 
         return TurnSchema(
             first_turn=first_turn,
             turn_id=turn.id,
             user_id=user.id,
             memory_namespace=namespace,
-            reply=completion.text,
+            reply=reply,
             recalled=[self._memory_view(memory) for memory in recalled],
             stored_facts=stored,
             skipped_duplicates=skipped,
@@ -418,6 +525,8 @@ class ConversationService:
             memory_degraded=degraded,
             memory_note=note,
             provider=completion.provider,
+            resume_note=resume_note,
+            contradiction_note=contradiction_note,
         )
 
     async def handle_surface_turn(
@@ -899,15 +1008,20 @@ class ConversationService:
 
     async def _consolidate(
         self, user_id: str, namespace: str, surface: str, text: str, reply: str
-    ) -> tuple[list[ExtractedFactView], int, int, bool]:
+    ) -> tuple[list[ExtractedFactView], int, int, list[tuple[str, str]], bool]:
         try:
             facts = await self._extract_facts(f"User said: {text}\nAssistant replied: {reply}")
         except DependencyUnavailableError:
-            return [], 0, 0, True
+            return [], 0, 0, [], True
 
         stored: list[ExtractedFactView] = []
         skipped = 0
         contradictions = 0
+        # The two texts of every contradiction this turn produced, kept here so
+        # the turn can tell the person about it. The durable contradiction row
+        # is still created later by the settle task; surfacing must not wait on
+        # it and must not change it.
+        contradiction_pairs: list[tuple[str, str]] = []
         wrote_anything = False
         batch: list[asyncio.Task[None]] = []
 
@@ -977,6 +1091,8 @@ class ConversationService:
             wrote_anything = True
             if verdict == "contradicts":
                 contradictions += 1
+                if best is not None:
+                    contradiction_pairs.append((best.text, fact_text))
 
             settle = asyncio.create_task(
                 self._settle_write(user_id, memory.id, accepted.job_id, verdict, best, fact_text)
@@ -1000,7 +1116,7 @@ class ConversationService:
             snapshot = asyncio.create_task(self._settle_then_snapshot(user_id, batch))
             self._track_task(snapshot)
 
-        return stored, skipped, contradictions, False
+        return stored, skipped, contradictions, contradiction_pairs, False
 
     async def _settle_write(
         self,

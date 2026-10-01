@@ -236,6 +236,20 @@ textarea {
   flex-basis: 100%;
 }
 
+.command-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.command-hint button {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
 button {
   font: inherit;
   cursor: pointer;
@@ -416,6 +430,12 @@ button.danger {
 .chip-pending {
   border-left-style: dashed;
   opacity: 0.85;
+}
+
+/* Never accepted by the relayer: stated plainly as not written. */
+.chip-failed {
+  border-left-color: var(--fail);
+  opacity: 0.9;
 }
 
 .chip-text {

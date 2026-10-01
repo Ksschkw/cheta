@@ -1,11 +1,12 @@
 # Ranti
 
 Ranti is a memory-first chatbot built for the Walrus Session 8 hackathon. It
-keeps one portable memory space per person across three surfaces - a Telegram
-bot, a CLI, and a web widget served at `/app` - using Walrus Memory through the
-`memwal` Python SDK. It is for developers who need an assistant to still be
-accurate after weeks of use, and for anyone testing whether Walrus Memory holds
-up under real conversation.
+keeps one portable memory space per person across four surfaces - a Telegram
+bot, a CLI, a web widget served at `/app`, and a Chromium extension in
+[extension/](extension) - using Walrus Memory through the `memwal` Python SDK.
+It is for developers who need an assistant to still be accurate after weeks of
+use, and for anyone testing whether Walrus Memory holds up under real
+conversation.
 
 The problem it solves is memory rot. Walrus Memory is permanent, encrypted and
 portable, but it is append-only, and the Python SDK's high-level recall is plain
@@ -174,14 +175,18 @@ RANTI_LIVE_TESTS=1 MEMWAL_PRIVATE_KEY=... MEMWAL_ACCOUNT_ID=... \
   python -m pytest tests/integration -q
 ```
 
-## The three surfaces
+## The four surfaces
 
-All three write to the same per-user memory namespace and record which surface
-produced each memory. The namespace is derived in
-[src/core/config.py](src/core/config.py) from the surface identity, and
-`VALID_SURFACES` in
+Each surface records which client produced a memory (`origin_surface`) and
+derives its memory namespace from its own identity: the namespace is
+`{MEMWAL_NAMESPACE_PREFIX}.user.{surface}-{surface_user_id}` plus an `.idx`
+companion, built in [src/core/config.py](src/core/config.py). Recall and listing
+are scoped to one namespace, so two surfaces are two spaces until a Memory
+Passport moves memories between them. The product goal is one memory space per
+person. `VALID_SURFACES` in
 [src/models/entities/user_model.py](src/models/entities/user_model.py) is
-`("telegram", "cli", "web")`.
+`("telegram", "cli", "web")`. [docs/surfaces.md](docs/surfaces.md) has the
+per-surface detail, including the extension load steps.
 
 **Telegram.** Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` and
 `PUBLIC_BASE_URL` (a public HTTPS URL), then register the webhook:
@@ -194,7 +199,24 @@ The script reads `.env`, builds
 `{PUBLIC_BASE_URL}/webhooks/telegram/{TELEGRAM_WEBHOOK_SECRET}` and calls the
 Telegram `setWebhook` API. The FastAPI route is
 [src/routers/telegram_router.py](src/routers/telegram_router.py). The surface
-identity is the Telegram chat id.
+identity is the Telegram chat id. The bot also has:
+
+- **Commands answered without a model call.** `/start` and `/help` print the
+  command list, `/memories` lists what is stored for that chat, and `/forget N`
+  retires note N. `POST /chat/turn` dispatches the same commands on the HTTP
+  path, so the CLI and the web widget get them too.
+- **Inline buttons.** `/start` and `/help` carry a keyboard with "What I know
+  about you", "Export my memory" and "Forget one". The export button sends the
+  passport as a Telegram document; the forget button opens a numbered keyboard.
+  A tap is answered with `answerCallbackQuery` and never stored as a turn.
+- **Local document parsing.** PDF, plain text, markdown, CSV and DOCX
+  attachments up to 20 MB are downloaded and parsed locally, and the extracted
+  text (capped at 12000 characters) is used for that turn. Images, audio, video,
+  archives, spreadsheets and presentations are refused by name.
+
+These Telegram paths are described from the source in this checkout; they were
+not exercised end to end as part of the web-widget verification. See
+[docs/surfaces.md](docs/surfaces.md) for the honest status of each one.
 
 **CLI.** The terminal client in [src/cli.py](src/cli.py) talks to the running
 API over HTTP only, so it stays honest about what the public API can do. Run it
@@ -226,9 +248,18 @@ multi-turn run on this surface.
 
 **Web widget.** Served at `/app` by the static mount in
 [src/main.py](src/main.py). [src/web/index.html](src/web/index.html) is the chat
-widget, with a memory on/off toggle and a live recalled-memory count;
-[src/web/dashboard.html](src/web/dashboard.html) at `/app/dashboard.html` is the
-per-user evidence dashboard.
+widget, with a memory on/off toggle, a live recalled-memory count, and visible
+`/memories` and `/help` command buttons; [src/web/dashboard.html](src/web/dashboard.html)
+at `/app/dashboard.html` is the per-user evidence dashboard.
+
+**Chrome extension.** [extension/](extension) is a Manifest V3 side panel that
+targets `POST /chat/turn` with `surface="extension"`. Load it unpacked from
+`chrome://extensions` (Edge: `edge://extensions`) with Developer mode on and
+the `extension/` folder selected. The default API base URL is
+`https://ranti-gkn7.onrender.com`. Note: the current backend
+`VALID_SURFACES` tuple above does not contain `"extension"`, and a turn with
+that surface was observed to return HTTP 500 against the deployed host, so the
+extension cannot complete a turn until the backend accepts it.
 
 ## Tests and the architecture check
 

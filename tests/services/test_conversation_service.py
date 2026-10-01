@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from memwal import MemWalMock
@@ -22,6 +23,7 @@ from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from models.entities.memory_rank_model import ConsolidationThresholds
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
+from schemas.memory_schema import RecallOutcomeSchema
 from services.conversation_service import ConversationService
 
 EXTRACT_MARKER = "extract durable facts"
@@ -151,6 +153,23 @@ class FailingSettleClient:
         return await self._inner.recall(query, **kwargs)  # type: ignore[attr-defined]
 
 
+class DegradedRecallGateway:
+    """The real gateway with recall forced to its degraded fallback.
+
+    Everything else delegates, so a turn still consolidates; only the read the
+    resume line depends on is unavailable.
+    """
+
+    def __init__(self, inner: object) -> None:
+        self._inner = inner
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._inner, name)
+
+    async def recall(self, query: str, namespace: str, **kwargs: object) -> RecallOutcomeSchema:
+        return RecallOutcomeSchema(memories=(), degraded=True, error="relayer unreachable")
+
+
 class Harness:
     def __init__(
         self,
@@ -158,10 +177,15 @@ class Harness:
         verdict: str = "DIFFERENT",
         thresholds=None,
         client_wrapper=None,
+        resume_after_hours: float = 6.0,
     ):
         self.database = Database(":memory:")
         self.database.migrate()
-        self.settings = Settings(database_path=":memory:", memwal_namespace_prefix="ranti")
+        self.settings = Settings(
+            database_path=":memory:",
+            memwal_namespace_prefix="ranti",
+            resume_after_hours=resume_after_hours,
+        )
         self.users = UserCrud(self.database)
         self.memories = MemoryCrud(self.database)
         self.turns = TurnCrud(self.database)
@@ -201,6 +225,36 @@ class Harness:
         result = await self.say(text, surface)
         await self.service.await_pending_writes()
         return result
+
+    def age_all_turns(self, hours: float) -> None:
+        """Push every stored turn into the past, to simulate a real gap.
+
+        Wall-clock sleeps are not an option in a fast test suite, and the gap is
+        defined purely by the stored turn timestamp, so moving the timestamps is
+        the honest way to exercise it.
+        """
+        for row in self.database.fetch_all("SELECT id, created_at FROM turns"):
+            moment = datetime.fromisoformat(row["created_at"])
+            if moment.tzinfo is None:
+                moment = moment.replace(tzinfo=UTC)
+            shifted = (moment - timedelta(hours=hours)).isoformat(timespec="seconds")
+            self.database.execute(
+                "UPDATE turns SET created_at = ? WHERE id = ?", (shifted, row["id"])
+            )
+
+    def seed_memory(self, text: str, importance: float = 1.0) -> str:
+        """Store a memory without a turn, to isolate the no-prior-turn guard."""
+        user = self.users.get_or_create("telegram", "42", "Ada")
+        self.memories.create(
+            user_id=user.id,
+            blob_id=f"seeded-{abs(hash(text))}",
+            namespace=self.settings.memory_namespace(user.memory_key),
+            text=text,
+            importance=importance,
+            origin_surface="telegram",
+            occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        )
+        return user.id
 
 
 async def test_a_turn_writes_extracted_facts_and_lists_them_back() -> None:
@@ -674,3 +728,172 @@ async def test_the_prompt_names_the_person_and_forbids_false_capability_claims()
     assert "Never claim otherwise" in system
     assert "three surfaces" in system
     assert "never say you have no memory across conversations" in system
+
+
+# ------------------------------------------------- proactive resume on return
+
+
+async def test_a_returning_user_past_the_gap_is_greeted_with_a_stored_fact() -> None:
+    """A person only sees the memory if the bot volunteers it, unprompted."""
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say_settled("I am allergic to peanuts")
+    harness.age_all_turns(10.0)
+
+    result = await harness.say("Hello again")
+
+    assert result.resume_note is not None
+    assert "Welcome back" in result.reply
+    assert "Last time you mentioned" in result.reply
+    assert "Ada is allergic to peanuts" in result.reply
+    # The greeting is appended to the model's answer, never a substitute.
+    assert result.reply.endswith(f"\n\n{result.resume_note}")
+    assert result.reply != result.resume_note
+
+
+async def test_a_first_ever_user_gets_no_resume_line() -> None:
+    """No prior turn means no returning session, even with memory on file.
+
+    The memory is seeded without a turn so the no-prior-turn guard is the only
+    thing that can suppress the greeting.
+    """
+    harness = Harness([])
+    harness.seed_memory("Ada is allergic to peanuts")
+
+    result = await harness.say("Hello for the first time")
+
+    assert result.resume_note is None
+    assert "Welcome back" not in result.reply
+    assert "Last time you mentioned" not in result.reply
+
+
+async def test_a_user_within_the_gap_gets_no_resume_line() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say_settled("I am allergic to peanuts")
+
+    result = await harness.say("Hello again")
+
+    assert result.resume_note is None
+    assert "Last time you mentioned" not in result.reply
+
+
+async def test_a_resume_line_is_never_emitted_twice_in_a_row() -> None:
+    """The gap is stamped by the turn that answers it, so it fires once."""
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say_settled("I am allergic to peanuts")
+    harness.age_all_turns(10.0)
+
+    first = await harness.say("Hello again")
+    second = await harness.say("Are you still there")
+
+    assert first.resume_note is not None
+    assert second.resume_note is None
+    assert "Last time you mentioned" not in second.reply
+
+
+async def test_a_returning_user_with_no_stored_memories_gets_no_resume_line() -> None:
+    harness = Harness([])
+    await harness.say("hello")
+    harness.age_all_turns(10.0)
+
+    result = await harness.say("hello again")
+
+    assert result.resume_note is None
+    assert "Welcome back" not in result.reply
+
+
+async def test_no_resume_line_when_the_memory_gateway_is_degraded() -> None:
+    """A read we could not complete is not evidence of what is stored."""
+    harness = Harness([])
+    first = await harness.say("hello")
+    harness.memories.create(
+        user_id=first.user_id,
+        blob_id="blob-1",
+        namespace=first.memory_namespace,
+        text="Ada is allergic to peanuts",
+        importance=1.0,
+        origin_surface="telegram",
+        occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
+    )
+    harness.age_all_turns(10.0)
+    harness.service._memory = DegradedRecallGateway(harness.service._memory)
+
+    result = await harness.say("hello again")
+
+    assert result.memory_degraded is True
+    assert result.resume_note is None
+    assert "Welcome back" not in result.reply
+
+
+# --------------------------------------------- contradictions told, not buried
+
+
+async def test_a_contradiction_turn_tells_the_user_and_names_both_statements() -> None:
+    harness = Harness(
+        [{"text": "Ada does not eat meat", "importance": 0.8}],
+        thresholds=FORCE_ADJUDICATION,
+    )
+    await harness.say_settled("I do not eat meat")
+    harness.llm.facts = [{"text": "Ada eats steak every Friday", "importance": 0.8}]
+    harness.llm.verdict = "CONTRADICTS"
+
+    second = await harness.say_settled("I had a great steak on Friday")
+
+    assert second.contradiction_note is not None
+    assert "Ada does not eat meat" in second.reply
+    assert "Ada eats steak every Friday" in second.reply
+    assert "Which one is right" in second.reply
+    assert second.reply.endswith(f"\n\n{second.contradiction_note}")
+    assert second.reply != second.contradiction_note
+
+
+async def test_a_turn_without_a_contradiction_adds_no_conflict_note() -> None:
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+
+    result = await harness.say("I like tea")
+
+    assert result.contradiction_note is None
+    assert "Which one is right" not in result.reply
+    assert "that conflict" not in result.reply
+
+
+async def test_a_contradiction_note_is_not_repeated_on_the_next_turn() -> None:
+    """The warning belongs to the turn that produced it, not every turn after."""
+    harness = Harness(
+        [{"text": "Ada does not eat meat", "importance": 0.8}],
+        thresholds=FORCE_ADJUDICATION,
+    )
+    await harness.say_settled("I do not eat meat")
+    harness.llm.facts = [{"text": "Ada eats steak every Friday", "importance": 0.8}]
+    harness.llm.verdict = "CONTRADICTS"
+    first = await harness.say_settled("I had a great steak on Friday")
+    assert first.contradiction_note is not None
+
+    harness.llm.facts = []
+    follow_up = await harness.say("What should I cook tonight?")
+
+    assert follow_up.contradiction_note is None
+    assert "Which one is right" not in follow_up.reply
+    assert "that conflict" not in follow_up.reply
+
+
+async def test_commands_gain_neither_a_resume_nor_a_contradiction_line() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say_settled("I am allergic to peanuts")
+    harness.age_all_turns(10.0)
+
+    for command, argument in (
+        ("/start", ""),
+        ("/help", ""),
+        ("/memories", ""),
+        ("/forget", "1"),
+    ):
+        reply = harness.service.command_reply(command, "telegram", "42", "Ada", argument)
+        assert "Last time you mentioned" not in reply
+        assert "Which one is right" not in reply
+        assert "that conflict" not in reply
+
+    result = await harness.service.handle_turn("telegram", "42", "Ada", "/start")
+    assert result.command == "/start"
+    assert result.resume_note is None
+    assert result.contradiction_note is None
+    assert "Last time you mentioned" not in result.reply

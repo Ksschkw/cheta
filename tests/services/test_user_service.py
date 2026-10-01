@@ -73,3 +73,15 @@ def test_namespace_stays_within_the_server_byte_limit(service: UserService) -> N
 
     assert len(created.memory_namespace.encode("utf-8")) <= 255
     assert created.memory_namespace.startswith("ranti.user.telegram-")
+
+
+def test_every_shipped_surface_is_an_accepted_surface(service: UserService) -> None:
+    """The Chrome extension was shipped before being added to VALID_SURFACES.
+
+    Every turn it sent returned HTTP 500 from the constructor, which is exactly
+    the kind of breakage that only shows up against a real client.
+    """
+    for surface in ("telegram", "cli", "web", "extension"):
+        created = service.register_or_get(surface, f"probe-{surface}", "Probe")
+        assert created.surface == surface
+        assert created.memory_namespace.startswith("ranti.user.")

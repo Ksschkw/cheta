@@ -103,3 +103,10 @@ def test_the_persona_is_configurable_without_touching_the_namespace() -> None:
 def test_memory_receipts_are_off_unless_explicitly_enabled() -> None:
     assert Settings.from_env({}).memory_receipts is False
     assert Settings.from_env({"RANTI_MEMORY_RECEIPTS": "1"}).memory_receipts is True
+
+
+def test_the_resume_gap_defaults_to_six_hours_and_is_configurable() -> None:
+    assert Settings.from_env({}).resume_after_hours == 6.0
+    assert Settings.from_env({"RANTI_RESUME_AFTER_HOURS": "0.5"}).resume_after_hours == 0.5
+    # A malformed value must not crash startup; it falls back to the default.
+    assert Settings.from_env({"RANTI_RESUME_AFTER_HOURS": "soon"}).resume_after_hours == 6.0
