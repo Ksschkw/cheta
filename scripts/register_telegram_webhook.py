@@ -106,7 +106,12 @@ def register_webhook(
 ) -> dict[str, Any]:
     """Call Telegram setWebhook. Raises RuntimeError on any API-level failure."""
     url = webhook_url(public_base_url, webhook_secret)
-    payload: dict[str, Any] = {"url": url, "allowed_updates": ["message"]}
+    # callback_query is required or button taps are never delivered to the
+    # webhook, which makes every inline keyboard button silently do nothing.
+    payload: dict[str, Any] = {
+        "url": url,
+        "allowed_updates": ["message", "callback_query"],
+    }
     if SECRET_TOKEN_PATTERN.match(webhook_secret):
         # Optional in the Bot API; sent only when Telegram will accept the value.
         payload["secret_token"] = webhook_secret
