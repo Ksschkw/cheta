@@ -32,7 +32,7 @@ from core.config import load_environment  # noqa: E402
 
 TELEGRAM_API = "https://api.telegram.org"
 
-SHORT_DESCRIPTION = "Every chatbot remembers. This one decides what to forget."
+SHORT_DESCRIPTION = "Explain yourself once."
 
 DESCRIPTION = (
     "I am Cheta. I keep a private memory per person, shared across Telegram, a CLI, "

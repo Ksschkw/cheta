@@ -107,13 +107,13 @@ def make_welcome(path: Path, width: int = 1280, height: int = 640) -> None:
     # every entrant claims. The differentiator is curation, so the banner names it.
     draw.text(
         (width * 0.08, height * 0.585),
-        "every chatbot remembers",
+        "explain yourself once.",
         font=tagline_font,
         fill=MUTED,
     )
     draw.text(
         (width * 0.08, height * 0.665),
-        "this one decides what to forget",
+        "remembers what matters, forgets what does not",
         font=tagline_font,
         fill=ACCENT,
     )

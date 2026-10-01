@@ -15,8 +15,8 @@
       <div class="hero-type">
         <h1 class="hero-wordmark">CHETA</h1>
         <p class="hero-tagline">
-          <span class="hero-tagline-line">every chatbot remembers</span>
-          <span class="hero-tagline-line">this one <span class="accent-underline">decides</span> what to forget</span>
+          <span class="hero-tagline-line">explain yourself once.</span>
+          <span class="hero-tagline-line"><span class="accent-underline">remembers what matters</span>, forgets what does not</span>
         </p>
       </div>
     </section>
@@ -154,14 +154,13 @@
         <h2 class="label" id="tools-label">Tools the model is actually given</h2>
 
         <p class="section-lede">
-          These twelve definitions are the registry, listed here from the same
+          These thirteen definitions are the registry, listed here from the same
           registry the model is handed. A capability that is not registered is
           not offered, and the model is told exactly this list and nothing else,
           so it cannot claim a tool that does not exist.
         </p>
 
         <ul class="tools">
-          <li class="tool"><span class="tool-name">calculate</span><span class="tool-desc">Exact arithmetic. The expression is parsed against a whitelist; eval is never used. No variables, functions, units or dates.</span></li>
           <li class="tool"><span class="tool-name">memory_recall</span><span class="tool-desc">Search the notes stored about you. Every hit carries the number that <code>/forget</code> uses.</span></li>
           <li class="tool"><span class="tool-name">memory_remember</span><span class="tool-desc">Store one durable fact when you ask it to remember something.</span></li>
           <li class="tool"><span class="tool-name">memory_forget</span><span class="tool-desc">Retire one stored note so it stops being recalled.</span></li>
@@ -173,10 +172,12 @@
           <li class="tool"><span class="tool-name">wikipedia</span><span class="tool-desc">Article summary from the free MediaWiki REST API. No key.</span></li>
           <li class="tool"><span class="tool-name">weather</span><span class="tool-desc">Current weather and a three-day forecast from Open-Meteo. No key.</span></li>
           <li class="tool"><span class="tool-name">document_question</span><span class="tool-desc">Answer from a document attached to the conversation. Registered on every surface; it has something to read where attachments arrive.</span></li>
+          <li class="tool"><span class="tool-name">calendar_event</span><span class="tool-desc">Create one calendar event and send it as an .ics file. No account, API key, OAuth consent or network: you open the file and your own calendar adds it. The assistant cannot add anything to your calendar itself, and says so.</span></li>
+          <li class="tool"><span class="tool-name">calculate</span><span class="tool-desc">Exact arithmetic. The expression is parsed against a whitelist; eval is never used. No variables, functions, units or dates.</span></li>
         </ul>
 
         <p class="fineprint">
-          All twelve run inside the same agent loop on every surface that
+          All thirteen run inside the same agent loop on every surface that
           reaches <code>POST /chat/turn</code>, which is all four. Deliberately
           absent: a tool that logs into a third-party account with a password
           typed into the chat. Accepting a credential in a message and
@@ -206,7 +207,10 @@
         <p class="fineprint">
           Delivery needs a surface with a message channel, and today that is
           Telegram. A reminder stored where there is no push channel is kept and
-          retried rather than reported as delivered.
+          retried rather than reported as delivered. On a surface that can also
+          receive files, setting a reminder sends it as an .ics calendar entry
+          built by the same generator as <code>calendar_event</code>; the
+          reminder itself still fires at the exact due time.
         </p>
       </section>
 
@@ -276,7 +280,7 @@ PYTHONPATH=src python -m cli</code></pre>
         <div class="note">
           <p class="note-title">Where the surfaces are not equal</p>
           <ul class="plain-list">
-            <li>Documents and voice notes arrive as attachments, which is the Telegram surface. The widget, CLI and extension send text.</li>
+            <li>Documents, voice notes and .ics calendar files arrive or leave as attachments, which is the Telegram surface. The widget, CLI and extension send and receive text.</li>
             <li>Reminder push and the pairing notice need a push channel, so both are Telegram today.</li>
             <li>Commands are dispatched by the service on <code>POST /chat/turn</code>, so <code>/start /help /memories /forget /correct /link /unlink /pair /sessions /unpair</code> work on all four. The extension also answers <code>/start</code>, <code>/memories</code> and <code>/help</code> locally.</li>
             <li>The extension declares its own surface identity, which the backend accepts alongside telegram, cli and web.</li>

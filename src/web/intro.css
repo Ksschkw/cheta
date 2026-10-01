@@ -39,7 +39,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 86vh;
+  min-height: min(86vh, 820px);
 }
 
 .hero-canvas {
@@ -140,7 +140,7 @@ body {
 
 @media (max-width: 760px) {
   .hero {
-    min-height: 78vh;
+    min-height: min(78vh, 620px);
   }
 
   .intro-body .hero {

@@ -357,10 +357,32 @@
     }
 
     var rafId = 0;
+    var settleTimer = 0;
     var startedAt = 0;
     var running = false;
+    var finished = false;
+
+    /* One idempotent end state: the loop, the fallback timer and the resize
+       path all land here. The fallback matters when rAF is throttled (a
+       background tab) and would otherwise leave the scene unsettled. */
+    function finish() {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      running = false;
+      if (rafId) {
+        global.cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      renderAt(settleAt);
+      canvas.setAttribute("data-settled", "true");
+    }
 
     function loop(now) {
+      if (finished) {
+        return;
+      }
       if (!startedAt) {
         startedAt = now;
       }
@@ -368,8 +390,7 @@
       frameState.pointer = elapsed;
       renderAt(elapsed);
       if (elapsed >= settleAt) {
-        running = false;
-        canvas.setAttribute("data-settled", "true");
+        finish();
         return;
       }
       rafId = global.requestAnimationFrame(loop);
@@ -379,11 +400,11 @@
       measure();
       buildField();
       if (reduced) {
-        renderAt(settleAt);
-        canvas.setAttribute("data-settled", "true");
+        finish();
         return;
       }
       running = true;
+      settleTimer = global.setTimeout(finish, settleAt + 250);
       rafId = global.requestAnimationFrame(loop);
     }
 
@@ -408,8 +429,12 @@
       settleAt: settleAt,
       stop: function () {
         running = false;
+        finished = true;
         if (rafId) {
           global.cancelAnimationFrame(rafId);
+        }
+        if (settleTimer) {
+          global.clearTimeout(settleTimer);
         }
         global.removeEventListener("resize", onResize);
       }
