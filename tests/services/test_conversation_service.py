@@ -726,7 +726,7 @@ async def test_the_prompt_names_the_person_and_forbids_false_capability_claims()
     assert "PDF" in system
     assert "cannot read or open images, audio, video, archives" in system
     assert "Never claim otherwise" in system
-    assert "three surfaces" in system
+    assert "four surfaces" in system
     assert "never say you have no memory across conversations" in system
 
 
