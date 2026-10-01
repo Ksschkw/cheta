@@ -1094,3 +1094,76 @@ async def test_the_listing_shows_far_more_than_ten_memories() -> None:
 
     assert "Fact number 14" in listing
     assert "and 5 more" not in listing
+
+
+def test_the_advertised_capability_text_comes_from_the_parser() -> None:
+    """The assistant must never describe a capability it does not have.
+
+    This is generated from the parser's advertised set rather than written by
+    hand, because the worst failure in this project was a bot claiming to read a
+    PowerPoint it could not read.
+    """
+    from core.attachment_parser import ADVERTISED_EXTENSIONS
+    from services.conversation_service import READABLE_FORMATS
+
+    for label in ("PDF", "DOCX", "PPTX", "XLSX"):
+        assert label in READABLE_FORMATS, label
+    # And every kind the parser advertises is accounted for in the wording.
+    assert "plain text" in READABLE_FORMATS
+    assert set(ADVERTISED_EXTENSIONS), "the parser advertises nothing"
+
+
+async def test_a_legacy_format_is_refused_before_anything_is_downloaded() -> None:
+    """Fetching a file we cannot read is pointless, and the refusal must name the
+    replacement format rather than failing vaguely."""
+    downloaded: list[str] = []
+
+    class RecordingGateway:
+        async def get_file_path(self, file_id: str) -> str:
+            downloaded.append(file_id)
+            return "path"
+
+        async def download_file(self, file_path: str) -> bytes:
+            downloaded.append(file_path)
+            return b""
+
+    harness = Harness([])
+    from core.attachment_parser import AttachmentParser
+
+    harness.service._attachment_parser = AttachmentParser()  # type: ignore[assignment]
+    harness.service._attachment_gateway = RecordingGateway()  # type: ignore[assignment]
+    harness.service._reply_channel = _Channel()
+
+    from schemas.attachment_schema import AttachmentSchema
+
+    await harness.service.handle_surface_attachment(
+        "telegram",
+        "42",
+        "Ada",
+        "555",
+        AttachmentSchema(
+            file_id="f1",
+            file_name="deck.ppt",
+            mime_type="application/vnd.ms-powerpoint",
+            media_kind="document",
+            file_size=1024,
+        ),
+    )
+
+    assert downloaded == [], "a legacy file must not be downloaded"
+    reply = harness.service._reply_channel.sent[0][1]
+    assert ".pptx" in reply
+
+
+class _Channel:
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, str]] = []
+
+    async def send_message(self, recipient_id, text, reply_markup=None):  # type: ignore[no-untyped-def]
+        self.sent.append((recipient_id, text))
+
+    async def send_typing(self, recipient_id: str) -> None:
+        return None
+
+    async def send_photo(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        return None

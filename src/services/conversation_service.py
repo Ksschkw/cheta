@@ -14,7 +14,13 @@ import re
 import secrets
 from datetime import UTC, datetime
 
-from core.attachment_parser import MAX_ATTACHMENT_BYTES, MAX_EXTRACTED_CHARS
+from core.attachment_parser import (
+    ADVERTISED_EXTENSIONS,
+    LEGACY_KIND,
+    MAX_ATTACHMENT_BYTES,
+    MAX_EXTRACTED_CHARS,
+    legacy_format_message,
+)
 from core.config import Settings
 from core.errors import AttachmentError, DependencyUnavailableError, NotFoundError
 from core.protocols import (
@@ -107,7 +113,39 @@ UNSUPPORTED_MEDIA_LABELS = {
     "dice": "dice",
 }
 
-READABLE_FORMATS = "PDF, plain text, markdown, CSV and DOCX"
+def _readable_formats() -> str:
+    """Human wording for what the parser actually reads.
+
+    Generated from the parser's own advertised set rather than written here, so
+    the assistant can never describe a capability it does not have. That mistake
+    is the one this project has to answer for.
+    """
+    labels = {
+        "pdf": "PDF",
+        "docx": "DOCX",
+        "pptx": "PPTX",
+        "xlsx": "XLSX",
+        "xml": "XML",
+        "json": "JSON",
+        "yaml": "YAML",
+        "html": "HTML",
+        "csv": "CSV",
+    }
+    named = [
+        label
+        for kind, label in labels.items()
+        if ADVERTISED_EXTENSIONS.get(kind)
+    ]
+    if ADVERTISED_EXTENSIONS.get("text"):
+        named.append("any plain text or source file")
+    if not named:
+        return "no document types"
+    if len(named) == 1:
+        return named[0]
+    return ", ".join(named[:-1]) + " and " + named[-1]
+
+
+READABLE_FORMATS = _readable_formats()
 
 
 def main_menu_markup() -> dict[str, object]:
@@ -1513,9 +1551,11 @@ class ConversationService:
     def _unsupported_file_reply(self, file_name: str) -> str:
         name = file_name.strip() or "that file"
         return (
-            f"I cannot read {name}. I read documents only: {READABLE_FORMATS}, "
-            "up to 20 MB each. Images, audio, video, spreadsheets, presentations "
-            "and archives are not supported, and I will not pretend otherwise."
+            f"I cannot read {name}. I read {READABLE_FORMATS}, up to 20 MB each. "
+            "Images, video and archives are not supported, and I will not pretend "
+            "otherwise. The old binary Microsoft formats, .doc, .ppt and .xls, are "
+            "not supported either: save them as .docx, .pptx or .xlsx and send "
+            "again."
         )
 
     def _too_large_reply(self, size_bytes: int) -> str:
@@ -1562,6 +1602,21 @@ class ConversationService:
                 recipient_id, self._unsupported_file_reply(attachment.file_name)
             )
             return None
+
+        # Refused before the download, not after: there is no reason to fetch a
+        # file we already know cannot be read.
+        if kind == LEGACY_KIND:
+            await self._reply_channel.send_message(
+                recipient_id, legacy_format_message(attachment.file_name)
+            )
+            return None
+
+        # An audio file is transcribed, not decoded as text, and it shares the
+        # voice-note path so both behave identically.
+        if kind == "audio":
+            return await self.handle_surface_voice(
+                surface, surface_user_id, display_name, recipient_id, attachment
+            )
 
         # Telegram's own download ceiling. Refusing here means a 100 MB file is
         # never fetched at all.
