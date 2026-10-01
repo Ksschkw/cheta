@@ -501,7 +501,12 @@ def record_web(browser, base: str, console: ConsoleRecorder) -> Path:
     log("web: opening the memory dashboard")
     page.click("a.head-link")
     page.wait_for_selector("#memory-list .memory-card", timeout=30000)
-    page.wait_for_timeout(6000)
+    page.wait_for_timeout(1500)
+    page.evaluate(
+        "document.getElementById('memory-list')"
+        ".scrollIntoView({ block: 'center' })"
+    )
+    page.wait_for_timeout(5200)
 
     context.close()
     return finalize_video("web", raw_dir, DEMO / "web-widget-demo.webm")
@@ -626,7 +631,6 @@ def capture_cli_transcript(base: str) -> list[dict]:
             for row in outputs[index].rstrip("\n").split("\n"):
                 add("out", row)
 
-    console_lines: list[dict] = []
     for argv in (
         ["memories", "--all", "--size", "10"],
         ["stats"],
@@ -637,7 +641,7 @@ def capture_cli_transcript(base: str) -> list[dict]:
         for row in text.rstrip("\n").split("\n"):
             add("out", row)
         add("out", "")
-    return lines, console_lines
+    return lines
 
 
 def wrap_transcript(lines: list[dict], width: int = 106) -> list[dict]:
@@ -970,20 +974,15 @@ def main(argv: list[str] | None = None) -> int:
         report["health"] = health
         log("API healthy: %s" % json.dumps(health))
 
-        # The CLI scene needs captured real CLI output; capture it first while
-        # the server is up, then record the browser scenes.
         transcript: list[dict] = []
-        if not args.skip_cli:
-            log("cli: capturing a real CLI session")
-            raw_lines, _ = capture_cli_transcript(base)
-            transcript = wrap_transcript(raw_lines)
-            log("cli: captured %d transcript lines" % len(transcript))
-
         with sync_playwright() as pw:
             browser = pw.chromium.launch(
                 executable_path=str(CHROME), args=CHROME_ARGS
             )
             try:
+                # The browser scenes run first so the memory dashboard, which
+                # lists the first registered user, shows the web user's own
+                # memories rather than the CLI identity's.
                 if not args.skip_web:
                     rec = ConsoleRecorder("web")
                     path = record_web(browser, base, rec)
@@ -995,6 +994,10 @@ def main(argv: list[str] | None = None) -> int:
                     report["videos"]["extension"] = {"path": str(path)}
                     report["console"]["extension"] = rec.lines
                 if not args.skip_cli:
+                    log("cli: capturing a real CLI session")
+                    raw_lines = capture_cli_transcript(base)
+                    transcript = wrap_transcript(raw_lines)
+                    log("cli: captured %d transcript lines" % len(transcript))
                     scene_path = DEMO / "cli-scene.html"
                     build_cli_scene(transcript, scene_path, type_ms=21000)
                     rec = ConsoleRecorder("cli")
