@@ -107,8 +107,20 @@ def make_welcome(path: Path, width: int = 1280, height: int = 640) -> None:
         width=6,
     )
 
-    tagline = "remembers you between chats"
-    draw.text((width * 0.08, height * 0.62), tagline, font=tagline_font, fill=MUTED)
+    # Not "remembers you between chats": that is the hackathon premise, which
+    # every entrant claims. The differentiator is curation, so the banner names it.
+    draw.text(
+        (width * 0.08, height * 0.585),
+        "every chatbot remembers",
+        font=tagline_font,
+        fill=MUTED,
+    )
+    draw.text(
+        (width * 0.08, height * 0.665),
+        "this one decides what to forget",
+        font=tagline_font,
+        fill=ACCENT,
+    )
 
     labels = ("TELEGRAM", "CLI", "BROWSER", "EXTENSION")
     x = width * 0.08

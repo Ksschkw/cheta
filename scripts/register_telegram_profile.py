@@ -32,12 +32,15 @@ from core.config import load_environment  # noqa: E402
 
 TELEGRAM_API = "https://api.telegram.org"
 
-SHORT_DESCRIPTION = "A memory-first assistant. It remembers you between chats."
+SHORT_DESCRIPTION = "Every chatbot remembers. This one decides what to forget."
 
 DESCRIPTION = (
-    "I am Cheta, a memory-first assistant. What you tell me is stored in your own "
-    "private memory space and comes back in later conversations, so you do not "
-    "have to explain yourself twice. Ask me what I remember about you at any time."
+    "I am Cheta. I keep a private memory space per person, shared across Telegram, "
+    "a CLI, a browser widget and a Chrome extension. What makes me different is what "
+    "I do with it: I collapse repeated facts, retire the ones you have changed your "
+    "mind about, and tell you when two things you told me conflict, instead of "
+    "piling them all up. You can see everything I know with /memories, and remove "
+    "anything with /forget."
 )
 
 COMMANDS = (
