@@ -4,38 +4,223 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Cheta is a memory-first assistant on four surfaces that share one memory space per person.">
+    <meta name="description" content="Cheta is a memory-first assistant on four surfaces that share one memory space per person. It consolidates duplicate facts, retires superseded ones and surfaces contradictions.">
     <title>Cheta - memory-first assistant</title>
-    <link rel="stylesheet" href="portal.css">
+    <link rel="stylesheet" href="/app/portal.css">
+    <link rel="stylesheet" href="/app/intro.css">
   </head>
   <body>
-    <main class="wrap">
-      <header class="masthead">
-        <p class="wordmark">CHETA</p>
-        <h1 class="tagline">
-          <span class="tagline-line">every chatbot remembers</span>
-          <span class="tagline-line">this one <span class="accent-underline">decides</span> what to forget</span>
-        </h1>
-      </header>
+    <section class="hero" id="hero" aria-label="Cheta">
+      <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
+      <div class="hero-type">
+        <h1 class="hero-wordmark">CHETA</h1>
+        <p class="hero-tagline">
+          <span class="hero-tagline-line">every chatbot remembers</span>
+          <span class="hero-tagline-line">this one <span class="accent-underline">decides</span> what to forget</span>
+        </p>
+      </div>
+    </section>
 
+    <main class="wrap">
       <section class="intro">
         <p class="lede">
-          Cheta is a memory-first assistant available on four surfaces that share one
-          memory space per person. It collapses repeated facts, retires things you
-          changed your mind about, and tells you when two things you said conflict.
+          Cheta is a memory-first assistant on four surfaces that share one
+          memory space per person. It mines each turn for durable facts,
+          adjudicates every new fact against the notes it already holds, and
+          keeps the store clean: duplicates are skipped before the write,
+          superseded values are retired, and contradictions are surfaced
+          instead of quietly kept.
+        </p>
+        <nav class="index-row" aria-label="Sections">
+          <a href="#memory">Memory</a>
+          <a href="#documents">Documents</a>
+          <a href="#voice">Voice</a>
+          <a href="#tools">Tools</a>
+          <a href="#reminders">Reminders</a>
+          <a href="#surfaces">Surfaces</a>
+          <a href="#pairing">Pairing</a>
+          <a href="#honesty">Honesty</a>
+        </nav>
+      </section>
+
+      <section class="section" id="memory" aria-labelledby="memory-label">
+        <h2 class="label" id="memory-label">Memory that decides</h2>
+
+        <ul class="claims">
+          <li class="claim">
+            <span class="claim-key">Durable facts</span>
+            <span class="claim-text">Every turn is mined for the things worth keeping: an identity, a constraint, a preference, work, health or plans. Trivia and statements about the assistant itself are dropped.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Consolidation</span>
+            <span class="claim-text">Each candidate fact is compared against its nearest stored notes and adjudicated as new, duplicate, update or contradiction before anything is written.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Duplicates collapse</span>
+            <span class="claim-text">A fact that says the same thing is skipped rather than stored a second time, so the same value never competes with itself in later recall.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Superseded retired</span>
+            <span class="claim-text">When you change your mind, the new value marks the old note superseded. It stops surfacing while the replacement takes its place.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Contradictions</span>
+            <span class="claim-text">When two stored notes conflict and you did not say which wins, the turn tells you about the conflict instead of silently storing both.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Visible recall</span>
+            <span class="claim-text">Under every reply, the web widget and the extension print the exact notes that were recalled for that turn. Nothing vague, nothing hidden.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Counterfactual</span>
+            <span class="claim-text">Any recorded turn can be re-answered with memory switched off, so you can see the answer change rather than take the difference on faith.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Repair pass</span>
+            <span class="claim-text">Asking to see your memory also runs a repair pass over the index that retires exact duplicates and self-contradictions already stored there.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Forget and correct</span>
+            <span class="claim-text"><code>/forget &lt;number&gt;</code> retires one note and <code>/correct &lt;number&gt; &lt;text&gt;</code> replaces it with your own wording. Both are per-memory, not all-or-nothing.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" id="documents" aria-labelledby="documents-label">
+        <h2 class="label" id="documents-label">Documents</h2>
+
+        <p class="section-lede">
+          Attachments are extracted locally, in-process, with no third-party
+          service. The list below is generated from the parser's own advertised
+          set, the same object it routes on, so it cannot overstate what is
+          actually readable. Extracted text is capped at 12000 characters and
+          files up to 20 MB are accepted.
+        </p>
+
+        <ul class="formats">
+          <li class="format"><span class="format-kind">PDF</span><span class="format-ext">.pdf</span></li>
+          <li class="format"><span class="format-kind">Word</span><span class="format-ext">.docx</span></li>
+          <li class="format"><span class="format-kind">PowerPoint</span><span class="format-ext">.pptx</span></li>
+          <li class="format"><span class="format-kind">Excel</span><span class="format-ext">.xlsx .xlsm</span></li>
+          <li class="format"><span class="format-kind">XML</span><span class="format-ext">.xml</span></li>
+          <li class="format"><span class="format-kind">JSON</span><span class="format-ext">.json</span></li>
+          <li class="format"><span class="format-kind">YAML</span><span class="format-ext">.yaml .yml</span></li>
+          <li class="format"><span class="format-kind">HTML</span><span class="format-ext">.html .htm .xhtml</span></li>
+          <li class="format"><span class="format-kind">CSV and TSV</span><span class="format-ext">.csv .tsv</span></li>
+          <li class="format"><span class="format-kind">Plain text and source</span><span class="format-ext">.txt .text .md .markdown .rst .log .ini .cfg .toml .py .js .ts .java .c .cpp .go .rs .sh .rb .php .cs .kt .swift .sql .css</span></li>
+        </ul>
+
+        <p class="section-lede">
+          Audio files are listed on the voice path below. Scanned images inside
+          a PDF are images, and images cannot be read.
+        </p>
+
+        <div class="note">
+          <p class="note-title">Refused by name, with the format to save as</p>
+          <ul class="plain-list">
+            <li><code>.doc</code> is the old binary Word format: save as <code>.docx</code>.</li>
+            <li><code>.ppt</code> is the old binary PowerPoint format: save as <code>.pptx</code>.</li>
+            <li><code>.xls</code> is the old binary Excel format: save as <code>.xlsx</code>.</li>
+          </ul>
+          <p class="fineprint">
+            There is no in-process converter for these, so they are refused with
+            the replacement named rather than decoded into garbage.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="voice" aria-labelledby="voice-label">
+        <h2 class="label" id="voice-label">Voice</h2>
+
+        <p class="section-lede">
+          Send a voice note or an audio file and it is transcribed first. The
+          transcript is shown straight back to you before the answer, because a
+          misheard word is the one failure you cannot see otherwise. Nothing is
+          claimed unless the transcription actually succeeded.
+        </p>
+
+        <ul class="formats">
+          <li class="format"><span class="format-kind">Audio</span><span class="format-ext">.mp3 .m4a .ogg .oga .opus .wav .webm .flac</span></li>
+        </ul>
+
+        <p class="fineprint">
+          Transcription needs a configured transcription provider. When none is
+          configured the service says so and stores nothing, rather than
+          guessing at the audio.
         </p>
       </section>
 
-      <section class="section" aria-labelledby="surfaces-label">
-        <h2 class="label" id="surfaces-label">Four surfaces, one memory</h2>
+      <section class="section" id="tools" aria-labelledby="tools-label">
+        <h2 class="label" id="tools-label">Tools the model is actually given</h2>
+
+        <p class="section-lede">
+          These twelve definitions are the registry, listed here from the same
+          registry the model is handed. A capability that is not registered is
+          not offered, and the model is told exactly this list and nothing else,
+          so it cannot claim a tool that does not exist.
+        </p>
+
+        <ul class="tools">
+          <li class="tool"><span class="tool-name">calculate</span><span class="tool-desc">Exact arithmetic. The expression is parsed against a whitelist; eval is never used. No variables, functions, units or dates.</span></li>
+          <li class="tool"><span class="tool-name">memory_recall</span><span class="tool-desc">Search the notes stored about you. Every hit carries the number that <code>/forget</code> uses.</span></li>
+          <li class="tool"><span class="tool-name">memory_remember</span><span class="tool-desc">Store one durable fact when you ask it to remember something.</span></li>
+          <li class="tool"><span class="tool-name">memory_forget</span><span class="tool-desc">Retire one stored note so it stops being recalled.</span></li>
+          <li class="tool"><span class="tool-name">reminder_set</span><span class="tool-desc">Schedule a reminder that the application delivers later.</span></li>
+          <li class="tool"><span class="tool-name">reminder_list</span><span class="tool-desc">List your pending reminders with their due times.</span></li>
+          <li class="tool"><span class="tool-name">fetch_url</span><span class="tool-desc">Read one public page as text. http and https only, non-public addresses refused, 6000 characters returned.</span></li>
+          <li class="tool"><span class="tool-name">web_search</span><span class="tool-desc">Search the public web; up to 8 results as title, URL and snippet. A snippet is not the page, so a result is fetched before it is quoted.</span></li>
+          <li class="tool"><span class="tool-name">crawl</span><span class="tool-desc">Follow links from a URL. robots.txt is honoured for the RantiBot user agent, and the bounds are in code: 8 pages, 256 KB per page, 12000 characters total, a delay between pages.</span></li>
+          <li class="tool"><span class="tool-name">wikipedia</span><span class="tool-desc">Article summary from the free MediaWiki REST API. No key.</span></li>
+          <li class="tool"><span class="tool-name">weather</span><span class="tool-desc">Current weather and a three-day forecast from Open-Meteo. No key.</span></li>
+          <li class="tool"><span class="tool-name">document_question</span><span class="tool-desc">Answer from a document attached to the conversation. Registered on every surface; it has something to read where attachments arrive.</span></li>
+        </ul>
+
+        <p class="fineprint">
+          All twelve run inside the same agent loop on every surface that
+          reaches <code>POST /chat/turn</code>, which is all four. Deliberately
+          absent: a tool that logs into a third-party account with a password
+          typed into the chat. Accepting a credential in a message and
+          replaying it against an arbitrary site is credential custody, and it
+          is not built.
+        </p>
+      </section>
+
+      <section class="section" id="reminders" aria-labelledby="reminders-label">
+        <h2 class="label" id="reminders-label">Reminders</h2>
+
+        <ul class="claims">
+          <li class="claim">
+            <span class="claim-key">Scheduled</span>
+            <span class="claim-text">Ask in plain words and <code>reminder_set</code> stores the text and a resolved due time. Times can be relative like <code>+30m</code> or absolute like <code>2026-01-31T09:00:00Z</code>.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Delivered later</span>
+            <span class="claim-text">A background scheduler polls the reminder table every 30 seconds and pushes anything due over the surface that stored it, without being asked.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Exactly once</span>
+            <span class="claim-text">Claiming a due reminder is a single atomic database transition, so two overlapping ticks cannot both send it. If the push fails, the reminder is released back to pending and retried, so nothing is lost either.</span>
+          </li>
+        </ul>
+
+        <p class="fineprint">
+          Delivery needs a surface with a message channel, and today that is
+          Telegram. A reminder stored where there is no push channel is kept and
+          retried rather than reported as delivered.
+        </p>
+      </section>
+
+      <section class="section" id="surfaces" aria-labelledby="surfaces-label">
+        <h2 class="label" id="surfaces-label">Four surfaces, one memory space per person</h2>
 
         <div class="grid">
           <article class="card">
             <p class="card-label">Surface 01</p>
             <h3 class="card-title">Telegram</h3>
             <p class="card-desc">
-              Message the bot in Telegram and its memory follows you back to every other
-              surface.
+              The bot is the full surface: commands, inline buttons, document
+              attachments, voice notes, and pushed reminders. Its memory follows
+              you back to every other client.
             </p>
             <p class="card-action">
               <a href="https://t.me/Kosi_test_walrus1_bot" rel="noopener">Open the bot</a>
@@ -44,20 +229,11 @@
 
           <article class="card">
             <p class="card-label">Surface 02</p>
-            <h3 class="card-title">Web widget</h3>
-            <p class="card-desc">
-              Chat in the browser with a live memory count and a per-turn memory switch.
-            </p>
-            <p class="card-action">
-              <a href="./index.html">Open the widget</a>
-            </p>
-          </article>
-
-          <article class="card">
-            <p class="card-label">Surface 03</p>
             <h3 class="card-title">Command line</h3>
             <p class="card-desc">
-              Install the project and run the terminal client against the same memory.
+              The terminal client talks to the running API over HTTP only, so it
+              stays honest about what the public API can do. It shares the same
+              memory space and the same commands.
             </p>
             <pre class="code" id="cli-command"><code>python -m pip install -e .
 PYTHONPATH=src python -m cli</code></pre>
@@ -65,41 +241,91 @@ PYTHONPATH=src python -m cli</code></pre>
           </article>
 
           <article class="card">
+            <p class="card-label">Surface 03</p>
+            <h3 class="card-title">Web widget</h3>
+            <p class="card-desc">
+              Chat in the browser with a per-turn memory switch, a live recalled
+              note count, and a replay that answers the same turn again with
+              memory off. A per-user evidence dashboard sits beside it.
+            </p>
+            <p class="card-action">
+              <a href="/app/index.html">Open the widget</a>
+              <a href="/app/dashboard.html">Open the dashboard</a>
+            </p>
+          </article>
+
+          <article class="card">
             <p class="card-label">Surface 04</p>
             <h3 class="card-title">Browser extension</h3>
             <p class="card-desc">
-              A side panel that shows the exact memories recalled for every reply.
+              A Manifest V3 side panel for Chrome, Edge and Firefox. It shows
+              the exact memories recalled under every reply, and it can read the
+              page you are on when you click, then summarise it, save its facts,
+              or explain it.
             </p>
             <div id="extension-cta">
-              <a class="btn" href="./extension-help.html">Install instructions</a>
+              <a class="btn" href="/app/extension-help.html">Install instructions</a>
             </div>
             <p class="fineprint">
-              The extension is not published to any store yet, so this button opens
+              The extension is not published to any store yet, so this opens
               unpacked install instructions rather than a store listing.
             </p>
           </article>
         </div>
+
+        <div class="note">
+          <p class="note-title">Where the surfaces are not equal</p>
+          <ul class="plain-list">
+            <li>Documents and voice notes arrive as attachments, which is the Telegram surface. The widget, CLI and extension send text.</li>
+            <li>Reminder push and the pairing notice need a push channel, so both are Telegram today.</li>
+            <li>Commands are dispatched by the service on <code>POST /chat/turn</code>, so <code>/start /help /memories /forget /correct /link /unlink /pair /sessions /unpair</code> work on all four. The extension also answers <code>/start</code>, <code>/memories</code> and <code>/help</code> locally.</li>
+            <li>The extension declares its own surface identity, which the backend accepts alongside telegram, cli and web.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="section" aria-labelledby="different-label">
-        <h2 class="label" id="different-label">What makes it different</h2>
+      <section class="section" id="pairing" aria-labelledby="pairing-label">
+        <h2 class="label" id="pairing-label">Pairing</h2>
+
+        <ol class="steps">
+          <li class="step"><span class="step-text">On a client you already use, run <code>/pair</code>. Cheta mints a one-time code bound to your memory space.</span></li>
+          <li class="step"><span class="step-text">On the new client, enter <code>/pair &lt;code&gt;</code>. It joins the same space, and your notes are copied across.</span></li>
+          <li class="step"><span class="step-text">The originating client is told that a new client joined, with the surface and display name, and how to remove it.</span></li>
+        </ol>
+
+        <p class="fineprint">
+          Codes work once and expire. The notice back to the originating client
+          requires that client to have a push channel, so today it is delivered
+          on Telegram; an origin on another surface is not told. <code>/sessions</code>
+          lists every client in the space and <code>/unpair</code> removes one.
+        </p>
+      </section>
+
+      <section class="section" id="honesty" aria-labelledby="honesty-label">
+        <h2 class="label" id="honesty-label">What it cannot do</h2>
+
+        <p class="honesty-lead">
+          In the same words the first message uses: I cannot log into your
+          accounts, I cannot read private pages you are not viewing, and I
+          cannot understand images or video.
+        </p>
 
         <ul class="claims">
           <li class="claim">
-            <span class="claim-key">Visible</span>
-            <span class="claim-text">Memory is readable and correctable in chat: /memories lists it, /forget retires it.</span>
+            <span class="claim-key">No erasure</span>
+            <span class="claim-text">Walrus Memory has no delete and the relayer is append-only. <code>/forget</code> retires a note so it stops surfacing; the blob itself stays until its storage expires.</span>
           </li>
           <li class="claim">
-            <span class="claim-key">Portable</span>
-            <span class="claim-text">A redeployed instance recovers the index from Walrus instead of forgetting everyone.</span>
+            <span class="claim-key">Weak matches</span>
+            <span class="claim-text">Recall has no default relevance floor, so a weak match can still be returned. Salience re-ranking reorders the candidates; it does not invent a cutoff that is not configured.</span>
           </li>
           <li class="claim">
-            <span class="claim-key">Contradictions</span>
-            <span class="claim-text">Conflicting facts are surfaced to you instead of being silently stored.</span>
+            <span class="claim-key">No store listing</span>
+            <span class="claim-text">The extension is not in any store. It is loaded unpacked or as a temporary add-on.</span>
           </li>
           <li class="claim">
-            <span class="claim-key">Counterfactual</span>
-            <span class="claim-text">Any answer can be re-run with memory off, so you can see that it changed.</span>
+            <span class="claim-key">Offline fallback</span>
+            <span class="claim-text">With no credentials the app runs against an offline mock memory client and a deterministic offline model. It is loud about being a fallback, and <code>/health</code> names the mode.</span>
           </li>
         </ul>
       </section>
@@ -110,11 +336,14 @@ PYTHONPATH=src python -m cli</code></pre>
         <nav class="footer-links" aria-label="Project links">
           <a href="https://github.com/Ksschkw/ranti" rel="noopener">GitHub repository</a>
           <a href="https://ranti-gkn7.onrender.com" rel="noopener">Live API</a>
+          <a href="/app/intro.html">3D intro</a>
         </nav>
         <p class="footer-note">Built on Walrus Memory</p>
       </div>
     </footer>
 
-    <script src="portal.js"></script>
+    <script src="/app/vendor/three.min.js"></script>
+    <script src="/app/intro.js"></script>
+    <script src="/app/portal.js"></script>
   </body>
 </html>

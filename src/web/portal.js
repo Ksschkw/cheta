@@ -1,9 +1,20 @@
-/* Cheta portal behaviour: browser detection and copy. No network calls. ASCII only. */
+/* Cheta portal behaviour: the Three.js hero, browser detection and copy.
+   No network calls. ASCII only. */
 
 (function () {
   "use strict";
 
-  var HELP_URL = "./extension-help.html";
+  /* The portal is served at the root of the domain, so every internal link is
+     an absolute path under /app/ rather than a relative one. */
+  var HELP_URL = "/app/extension-help.html";
+
+  function startHero() {
+    var canvas = document.getElementById("hero-canvas");
+    if (!canvas || !window.ChetaHero) {
+      return;
+    }
+    window.ChetaHero.mount(canvas, { settleAt: 7600 });
+  }
 
   function detectBrowser() {
     var ua = navigator.userAgent || "";
@@ -113,6 +124,7 @@
   }
 
   function start() {
+    startHero();
     renderExtensionCta();
     setupCopy();
   }
