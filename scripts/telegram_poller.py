@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import json
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -53,22 +54,39 @@ async def delete_webhook(client: httpx.AsyncClient, token: str) -> bool:
     return ok
 
 
-async def forward(client: httpx.AsyncClient, api_url: str, secret: str, update: dict) -> bool:
-    """Hand one raw update to the app's webhook route."""
-    response = await client.post(
-        f"{api_url}/webhooks/telegram/{secret}", json=update, timeout=300.0
-    )
-    if response.status_code != 200:
-        print(f"[WARN] app returned HTTP {response.status_code} for update {update.get('update_id')}")
-        return False
-    body = response.json()
-    if body.get("handled"):
-        source = (update.get("message") or {}).get("chat", {}).get("id")
-        print(
-            f"[OK] update {update.get('update_id')} handled for chat {source} "
-            f"recalled={body.get('recalled')}"
-        )
-    return True
+async def forward(
+    client: httpx.AsyncClient, api_url: str, secret: str, update: dict, attempts: int = 2
+) -> bool:
+    """Hand one raw update to the app's webhook route.
+
+    This call must never raise. An unhandled httpx error here was what killed the
+    whole worker: Telegram polling kept succeeding, but one dropped connection to
+    the local app took the process down and the bot went silent.
+    """
+    update_id = update.get("update_id")
+    for attempt in range(1, attempts + 1):
+        try:
+            response = await client.post(
+                f"{api_url}/webhooks/telegram/{secret}", json=update, timeout=180.0
+            )
+            if response.status_code != 200:
+                print(f"[WARN] app returned HTTP {response.status_code} for update {update_id}")
+                return False
+            body = response.json()
+        except (httpx.HTTPError, json.JSONDecodeError) as error:
+            if attempt < attempts:
+                await asyncio.sleep(BACKOFF_SECONDS)
+                continue
+            print(f"[WARN] could not forward update {update_id}: {type(error).__name__}")
+            return False
+        if body.get("handled"):
+            source = (update.get("message") or {}).get("chat", {}).get("id")
+            print(
+                f"[OK] update {update_id} handled for chat {source} "
+                f"recalled={body.get('recalled')}"
+            )
+        return True
+    return False
 
 
 async def poll(api_url: str, secret: str, token: str) -> int:
@@ -110,7 +128,11 @@ async def poll(api_url: str, secret: str, token: str) -> int:
                 update_id = update.get("update_id")
                 if isinstance(update_id, int):
                     offset = update_id + 1
-                await forward(client, api_url, secret, update)
+                # Belt and braces: a single bad update must not stop the worker.
+                try:
+                    await forward(client, api_url, secret, update)
+                except Exception as error:  # noqa: BLE001 - worker must survive
+                    print(f"[WARN] update {update_id} failed: {type(error).__name__}: {error}")
 
 
 def main() -> int:
@@ -140,12 +162,19 @@ def main() -> int:
         print("[FAIL] TELEGRAM_WEBHOOK_SECRET is empty. Set any random string in .env.")
         return 1
 
-    try:
-        asyncio.run(poll(api_url, secret, token))
-    except KeyboardInterrupt:
-        print()
-        print("[OK] stopped")
-    return 0
+    # Supervise: a bot that dies quietly is worse than one that never started, so
+    # an unexpected error restarts the loop with backoff instead of ending it.
+    while True:
+        try:
+            asyncio.run(poll(api_url, secret, token))
+            return 0
+        except KeyboardInterrupt:
+            print()
+            print("[OK] stopped")
+            return 0
+        except Exception as error:  # noqa: BLE001 - supervisor
+            print(f"[WARN] poller crashed ({type(error).__name__}: {error}); restarting")
+            time.sleep(BACKOFF_SECONDS)
 
 
 if __name__ == "__main__":
