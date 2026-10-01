@@ -59,6 +59,7 @@ class RecordingReplyChannel:
     def __init__(self) -> None:
         self.sent: list[tuple[str, str]] = []
         self.typing: list[str] = []
+        self.photos: list[tuple[str, str | None, dict | None]] = []
         # Parallel to `sent`: the inline keyboard (or None) for each message.
         self.markups: list[dict[str, object] | None] = []
         self.documents: list[tuple[str, str, bytes]] = []
@@ -87,6 +88,18 @@ class RecordingReplyChannel:
     async def send_typing(self, recipient_id: str) -> None:
         """Kept separate from `sent`, which holds delivered messages."""
         self.typing.append(recipient_id)
+
+    async def send_photo(
+        self,
+        recipient_id: str,
+        image_path: str,
+        caption: str | None = None,
+        reply_markup: dict | None = None,
+    ) -> None:
+        self.photos.append((image_path, caption, reply_markup))
+        # The keyboard travels with the picture, so record it the same way a
+        # text message with a keyboard would be recorded.
+        self.markups.append(reply_markup)
 
 
 def build_test_container(

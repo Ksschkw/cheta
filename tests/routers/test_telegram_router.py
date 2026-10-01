@@ -246,7 +246,13 @@ def test_a_command_skips_the_typing_indicator_because_it_is_instant() -> None:
     client.post("/webhooks/telegram/s3cret", json=update(555, "/start"))
 
     assert channel.typing == []
-    assert len(channel.sent) == 1
+    # /start is delivered as the welcome picture, carrying the reply as caption.
+    assert len(channel.photos) == 1
+    image, caption, markup = channel.photos[0]
+    assert image.endswith("cheta-welcome.png")
+    assert caption and "/memories" in caption
+    assert markup is not None
+    assert len(channel.sent) == 0
 
 
 # ------------------------------------------------------- feature 1: keyboards

@@ -110,6 +110,8 @@ class Settings:
     # Persona name. Renaming the bot must never touch MEMWAL_NAMESPACE_PREFIX or
     # the memory namespaces, or existing users lose everything they stored.
     bot_name: str = "Cheta"
+    # Sent when someone starts a conversation. Relative to the repository root.
+    welcome_image_path: str = "assets/cheta-welcome.png"
     # Internal plumbing like "1 accepted, persisting" must stay out of the chat
     # unless someone explicitly wants it for a demo.
     memory_receipts: bool = False
@@ -211,6 +213,9 @@ class Settings:
             keepalive_enabled=_get(source, "RANTI_KEEPALIVE", "1").lower()
             not in ("0", "false", "no", "off"),
             bot_name=_get(source, "BOT_NAME", "Cheta"),
+            welcome_image_path=_get(
+                source, "RANTI_WELCOME_IMAGE", "assets/cheta-welcome.png"
+            ),
             memory_receipts=_get(source, "RANTI_MEMORY_RECEIPTS", "0").lower()
             in ("1", "true", "yes", "on"),
             resume_after_hours=_get_float(source, "RANTI_RESUME_AFTER_HOURS", 6.0),

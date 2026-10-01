@@ -131,3 +131,11 @@ class ReplyChannelProtocol(Protocol):
     ) -> None: ...
 
     async def send_typing(self, recipient_id: str) -> None: ...
+
+    async def send_photo(
+        self,
+        recipient_id: str,
+        image_path: str,
+        caption: str | None = None,
+        reply_markup: dict | None = None,
+    ) -> None: ...

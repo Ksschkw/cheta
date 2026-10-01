@@ -558,9 +558,23 @@ class ConversationService:
                 # Buttons belong to the menu commands only. An ordinary answer
                 # must not carry a keyboard the person did not ask for.
                 markup = main_menu_markup() if command in ("/start", "/help") else None
-                await self._reply_channel.send_message(
-                    recipient_id, reply, reply_markup=markup
-                )
+                sent = False
+                if command in ("/start", "/help"):
+                    image = self._welcome_image()
+                    if image is not None:
+                        try:
+                            await self._reply_channel.send_photo(
+                                recipient_id, image, reply, reply_markup=markup
+                            )
+                            sent = True
+                        except DependencyUnavailableError:
+                            # A missing or rejected picture must never cost the
+                            # person their welcome message.
+                            sent = False
+                if not sent:
+                    await self._reply_channel.send_message(
+                        recipient_id, reply, reply_markup=markup
+                    )
             return None
         if any(phrase in lowered for phrase in MEMORY_QUERY_PHRASES):
             reply = self.command_reply("/memories", surface, surface_user_id, display_name)
@@ -1018,6 +1032,16 @@ class ConversationService:
         )
         await self._reply_channel.send_message(recipient_id, self._render_reply(result))
         return result
+
+    def _welcome_image(self) -> str | None:
+        """Absolute path to the welcome picture, or None when it is absent."""
+        from pathlib import Path as _Path
+
+        configured = self._settings.welcome_image_path
+        candidate = _Path(configured)
+        if not candidate.is_absolute():
+            candidate = _Path(__file__).resolve().parents[2] / configured
+        return str(candidate) if candidate.is_file() else None
 
     async def notify_unavailable(self, recipient_id: str) -> None:
         """Tell a push-transport user that this turn could not be served."""

@@ -15,6 +15,7 @@ WORKDIR /app
 # Install the project itself so the dependency list has exactly one home,
 # pyproject.toml. Only src/ is needed at build time for the package metadata.
 COPY pyproject.toml ./
+COPY assets ./assets
 COPY src ./src
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir .

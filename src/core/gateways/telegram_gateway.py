@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -188,6 +189,50 @@ class TelegramGateway:
                 "telegram", outcome.error or "could not download the file"
             )
         return outcome.value
+
+    async def send_photo(
+        self,
+        recipient_id: str,
+        image_path: str,
+        caption: str | None = None,
+        reply_markup: dict[str, Any] | None = None,
+    ) -> None:
+        """Upload a local image. Telegram can only receive photos as a file
+        upload, so this uses multipart rather than the JSON helper."""
+        from pathlib import Path as _Path
+
+        path = _Path(image_path)
+        if not path.is_file():
+            raise DependencyUnavailableError("telegram", f"missing image {image_path}")
+
+        async def operation() -> dict[str, Any]:
+            with path.open("rb") as handle:
+                files = {"photo": (path.name, handle, "image/png")}
+                data = {"chat_id": recipient_id}
+                if caption:
+                    data["caption"] = caption[:1024]
+                if reply_markup is not None:
+                    # sendPhoto takes the keyboard as a JSON string in multipart.
+                    data["reply_markup"] = json.dumps(reply_markup)
+                async with self._client_factory(timeout=30.0) as client:
+                    response = await client.post(
+                        f"{self._base_url}/sendPhoto", data=data, files=files
+                    )
+                    response.raise_for_status()
+                    body = response.json()
+            if not body.get("ok", False):
+                raise DependencyUnavailableError(
+                    "telegram", str(body.get("description", "sendPhoto failed"))
+                )
+            return body
+
+        outcome = await self._boundary.call(
+            operation, failure_fallback("telegram", "send_photo_failed"), idempotent=False
+        )
+        if not outcome.ok:
+            raise DependencyUnavailableError(
+                "telegram", outcome.error or "could not deliver photo"
+            )
 
     async def send_typing(self, recipient_id: str) -> None:
         """Show a typing indicator. Cosmetic, so a failure is logged, not raised.
