@@ -576,3 +576,35 @@ async def test_start_does_not_create_a_user_who_has_never_spoken() -> None:
 
     assert harness.users.list() == []
     assert "Hi, I am Cheta" in text
+
+
+async def test_asking_what_the_bot_knows_answers_from_the_store_not_recall() -> None:
+    """"What do you know about me?" cannot be served by semantic recall.
+
+    The query has no embedding similarity to "prefers dark mode", so recall
+    returns nothing and the bot looked forgetful precisely when the person was
+    testing whether it remembers. Real users asked this in words, not commands.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say("I am allergic to peanuts")
+    calls_before = harness.llm.reply_calls
+
+    result = await harness.service.handle_surface_turn(
+        "telegram", "42", "Ada", "What do you know about me?", "42"
+    )
+
+    assert result is None, "a memory question is answered directly, not as a turn"
+    assert harness.llm.reply_calls == calls_before, "and it must not call the model"
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+    assert "Ada is allergic to peanuts" in listing
+
+
+async def test_an_ordinary_question_is_still_a_normal_turn() -> None:
+    """The intent match must not swallow unrelated messages."""
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+
+    result = await harness.service.handle_surface_turn(
+        "telegram", "42", "Ada", "How do I bake bread?", "42"
+    )
+
+    assert result is not None

@@ -46,6 +46,22 @@ from schemas.turn_schema import (
 logger = logging.getLogger("ranti.service.conversation")
 
 COMMANDS = ("/start", "/help", "/memories")
+
+# Natural requests for the memory listing. Semantic recall cannot serve these:
+# "what do you know about me" has no embedding similarity to "prefers dark mode",
+# so the store exists but recall returns nothing and the bot looks forgetful at
+# exactly the moment the person is testing whether it remembers.
+MEMORY_QUERY_PHRASES = (
+    "what do you know about me",
+    "what do you remember about me",
+    "what do you remember",
+    "what have you stored",
+    "what do you have on me",
+    "show me my memories",
+    "show my memories",
+    "list my memories",
+    "my memories",
+)
 RECALL_CANDIDATE_LIMIT = 40
 FACT_BATCH_LIMIT = 6
 _JSON_BLOCK = re.compile(r"\[.*\]", re.DOTALL)
@@ -313,9 +329,16 @@ class ConversationService:
         decides what the person actually sees. Returns None when the message was
         a command, because a command is answered directly and is not a turn.
         """
-        command = text.strip().split()[0].lower() if text.strip() else ""
+        stripped = text.strip()
+        command = stripped.split()[0].lower() if stripped else ""
+        lowered = stripped.lower()
         if command in COMMANDS:
             reply = self.command_reply(command, surface, surface_user_id, display_name)
+            if self._reply_channel is not None:
+                await self._reply_channel.send_message(recipient_id, reply)
+            return None
+        if any(phrase in lowered for phrase in MEMORY_QUERY_PHRASES):
+            reply = self.command_reply("/memories", surface, surface_user_id, display_name)
             if self._reply_channel is not None:
                 await self._reply_channel.send_message(recipient_id, reply)
             return None
