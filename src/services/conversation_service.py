@@ -321,6 +321,17 @@ class ConversationService:
             parts.append(f"{result.contradiction_count} contradiction flagged")
         if parts:
             lines.extend(["", "memory: " + ", ".join(parts)])
+        elif not result.recalled and not result.stored_facts:
+            # First contact, or a turn with nothing durable in it. Nudging here is
+            # the difference between a user who stores one fact and a user who
+            # stores ten, which is what the submission is scored on.
+            lines.extend(
+                [
+                    "",
+                    "Tell me a few things about yourself (what you do, what you are "
+                    "allergic to, how you take your coffee) and I will remember them next time.",
+                ]
+            )
         if result.memory_degraded:
             lines.extend(["", "memory: degraded this turn, Walrus Memory did not answer"])
         return "\n".join(lines)

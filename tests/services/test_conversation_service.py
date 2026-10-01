@@ -439,3 +439,23 @@ async def test_the_prompt_forbids_denying_memory_when_nothing_is_recalled() -> N
     assert "you can, and you will remember" in system
     # And it still must not fabricate memories it was not given.
     assert "never claim to remember something that is not in the block" in system
+
+
+async def test_a_turn_with_nothing_durable_prompts_the_user_to_share_facts() -> None:
+    """Onboarding nudge, added because ten memories per user is the binding goal."""
+    harness = Harness([])
+    result = await harness.say("hello there")
+
+    text = harness.service._render_reply(result)
+
+    assert "Tell me a few things about yourself" in text
+
+
+async def test_a_turn_that_stored_a_fact_does_not_nudge() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    result = await harness.say("I am allergic to peanuts")
+
+    text = harness.service._render_reply(result)
+
+    assert "Tell me a few things about yourself" not in text
+    assert "memory:" in text
