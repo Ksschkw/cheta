@@ -19,9 +19,21 @@ from core.gateways.llm_gateway import (
 from core.gateways.memwal_gateway import MemWalGateway
 from core.gateways.offline_llm_gateway import OfflineLlm
 from core.gateways.telegram_gateway import TelegramGateway
+from core.gateways.transcription_gateway import TranscriptionGateway
+from core.gateways.web_gateway import WebGateway
+from core.reminder_scheduler import ReminderScheduler
 from core.resilience import Boundary, ResiliencePolicy, StructuredLogMetricSink
+from core.tools.calculate_tool import build_calculator_tool
+from core.tools.capability_tools import build_capability_tools
+from core.tools.memory_access import MemoryAccess
+from core.tools.memory_tools import build_memory_tools
+from core.tools.reminder_store import ReminderStore
+from core.tools.reminder_tools import build_reminder_tools
+from core.tools.tool_registry import ToolRegistry
+from core.tools.web_tools import build_web_tools
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.reminder_crud import ReminderCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from services.conversation_service import ConversationService
@@ -43,6 +55,12 @@ class Container:
     user_service: UserService
     conversation_service: ConversationService
     memory_admin_service: MemoryAdminService
+    # Added for the agent surface. They carry defaults so an existing test that
+    # builds a Container by hand keeps working without naming them.
+    tools: ToolRegistry | None = None
+    web_gateway: WebGateway | None = None
+    transcription_gateway: TranscriptionGateway | None = None
+    reminder_scheduler: ReminderScheduler | None = None
 
 
 def build_memory_boundary(settings: Settings) -> Boundary:
@@ -127,6 +145,45 @@ def build_telegram_gateway(settings: Settings) -> TelegramGateway | None:
     )
 
 
+def build_web_gateway(settings: Settings) -> WebGateway:
+    """One outbound boundary for every web tool: timeout and breaker included."""
+    return WebGateway(boundary=_boundary_factory("web", 15.0))
+
+
+def build_transcription_gateway(settings: Settings) -> TranscriptionGateway | None:
+    if not settings.transcription_configured:
+        return None
+    return TranscriptionGateway(
+        api_key=settings.transcription_api_key,
+        base_url=settings.transcription_base_url,
+        model=settings.transcription_model,
+        boundary=_boundary_factory("transcription", settings.transcription_timeout_seconds),
+        timeout_seconds=settings.transcription_timeout_seconds,
+    )
+
+
+def build_tool_registry(
+    memories: MemoryCrud,
+    memory_gateway: MemWalGateway,
+    reminders: ReminderCrud,
+    web_gateway: WebGateway,
+) -> ToolRegistry:
+    """Assemble the capability list. A tool is one declaration, registered here."""
+    registry = ToolRegistry()
+    memory_access = MemoryAccess(memories=memories, gateway=memory_gateway)
+    reminder_store = ReminderStore(reminders=reminders)
+    for spec in build_memory_tools(memory_access):
+        registry.register(spec)
+    for spec in build_reminder_tools(reminder_store):
+        registry.register(spec)
+    for spec in build_web_tools(web_gateway):
+        registry.register(spec)
+    for spec in build_capability_tools():
+        registry.register(spec)
+    registry.register(build_calculator_tool())
+    return registry
+
+
 def build_container(settings: Settings | None = None) -> Container:
     resolved = settings or Settings.from_env()
     database = Database(resolved.database_path)
@@ -136,10 +193,14 @@ def build_container(settings: Settings | None = None) -> Container:
     memories = MemoryCrud(database)
     turns = TurnCrud(database)
     contradictions = ContradictionCrud(database)
+    reminders = ReminderCrud(database)
 
     memory_gateway = build_memory_gateway(resolved)
     llm_gateway = build_llm_gateway(resolved)
     telegram_gateway = build_telegram_gateway(resolved)
+    web_gateway = build_web_gateway(resolved)
+    transcription_gateway = build_transcription_gateway(resolved)
+    tools = build_tool_registry(memories, memory_gateway, reminders, web_gateway)
 
     user_service = UserService(users=users, settings=resolved)
     conversation_service = ConversationService(
@@ -158,6 +219,9 @@ def build_container(settings: Settings | None = None) -> Container:
         # still cannot reach into the Telegram API for anything else.
         attachment_gateway=telegram_gateway,
         attachment_parser=AttachmentParser(),
+        # The agent loop runs inside handle_turn, so every surface reaches it.
+        tools=tools,
+        transcription_gateway=transcription_gateway,
     )
     memory_admin_service = MemoryAdminService(
         users=users,
@@ -166,6 +230,10 @@ def build_container(settings: Settings | None = None) -> Container:
         contradictions=contradictions,
         memory_gateway=memory_gateway,
         settings=resolved,
+    )
+    reminder_scheduler = ReminderScheduler(
+        reminders=reminders,
+        reply_channel=telegram_gateway,
     )
 
     return Container(
@@ -177,6 +245,10 @@ def build_container(settings: Settings | None = None) -> Container:
         user_service=user_service,
         conversation_service=conversation_service,
         memory_admin_service=memory_admin_service,
+        tools=tools,
+        web_gateway=web_gateway,
+        transcription_gateway=transcription_gateway,
+        reminder_scheduler=reminder_scheduler,
     )
 
 

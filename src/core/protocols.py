@@ -18,6 +18,7 @@ from schemas.memory_schema import (
     RestoreReportSchema,
     StoredMemorySchema,
 )
+from schemas.web_schema import FetchedPageSchema, SearchResultSchema
 
 
 class MemoryGatewayProtocol(Protocol):
@@ -109,6 +110,24 @@ class AttachmentParserProtocol(Protocol):
     def classify(self, file_name: str, mime_type: str) -> str | None: ...
 
     def extract(self, kind: str, file_name: str, content: bytes) -> str: ...
+
+
+class WebGatewayProtocol(Protocol):
+    """Bounded, SSRF-guarded outbound web access for the network tools."""
+
+    async def fetch_page(self, url: str, max_bytes: int) -> FetchedPageSchema: ...
+
+    async def fetch_robots(self, origin: str) -> str | None: ...
+
+    async def search(self, query: str, limit: int) -> list[SearchResultSchema]: ...
+
+    def validate_url(self, url: str) -> None: ...
+
+
+class TranscriptionGatewayProtocol(Protocol):
+    """Speech-to-text for an inbound voice note, wrapped in a boundary."""
+
+    async def transcribe(self, filename: str, content: bytes, mime_type: str) -> str: ...
 
 
 class ReplyChannelProtocol(Protocol):

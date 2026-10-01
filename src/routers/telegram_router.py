@@ -98,6 +98,35 @@ def _extract_document(payload: dict[str, Any]) -> tuple[str, str, AttachmentSche
     return chat_id, display_name, attachment
 
 
+def _extract_voice(payload: dict[str, Any]) -> tuple[str, str, AttachmentSchema] | None:
+    """Return (chat_id, display_name, attachment) when the update is a voice note.
+
+    A voice note is handled before the generic media refusal: it is media we can
+    actually read, by transcribing it.
+    """
+    message = _message(payload)
+    if message is None:
+        return None
+    voice = message.get("voice")
+    if not isinstance(voice, dict):
+        return None
+    identity = _identity(message)
+    if identity is None:
+        return None
+    chat_id, display_name, _ = identity
+    raw_size = voice.get("file_size")
+    size = raw_size if isinstance(raw_size, int) else None
+    attachment = AttachmentSchema(
+        media_kind="voice",
+        file_id=str(voice.get("file_id", "")),
+        file_name="",
+        mime_type=str(voice.get("mime_type", "") or "audio/ogg"),
+        file_size=size,
+        caption=str(message.get("caption", "") or ""),
+    )
+    return chat_id, display_name, attachment
+
+
 def _extract_media(payload: dict[str, Any]) -> tuple[str, str, AttachmentSchema] | None:
     """Return an attachment description for media we cannot read, or None."""
     message = _message(payload)
@@ -197,6 +226,19 @@ def build_router() -> APIRouter:
                     "refused": result is None,
                 }
 
+            voice = _extract_voice(payload)
+            if voice is not None:
+                chat_id, display_name, attachment = voice
+                result = await service.handle_surface_voice(
+                    "telegram", chat_id, display_name, chat_id, attachment
+                )
+                return {
+                    "ok": True,
+                    "handled": True,
+                    "voice": True,
+                    "turn_id": result.turn_id if result is not None else None,
+                }
+
             media = _extract_media(payload)
             if media is not None:
                 chat_id, display_name, attachment = media
@@ -239,7 +281,13 @@ def build_router() -> APIRouter:
 
 def _reply_target(payload: dict[str, Any]) -> str | None:
     """Best-effort recipient for a failure notice, without raising."""
-    for extractor in (_extract_text, _extract_document, _extract_media, _extract_callback):
+    for extractor in (
+        _extract_text,
+        _extract_document,
+        _extract_voice,
+        _extract_media,
+        _extract_callback,
+    ):
         parsed = extractor(payload)
         if parsed is not None:
             return str(parsed[0])

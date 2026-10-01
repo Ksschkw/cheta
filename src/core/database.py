@@ -96,12 +96,26 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         created_at TEXT NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS reminders (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        surface TEXT NOT NULL,
+        recipient_id TEXT NOT NULL,
+        text TEXT NOT NULL,
+        due_at TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        sent_at TEXT
+    )
+    """,
 )
 
 INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_memories_user ON memories (user_id, status)",
     "CREATE INDEX IF NOT EXISTS idx_turns_user ON turns (user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_contradictions_user ON contradictions (user_id, status)",
+    "CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders (status, due_at)",
 )
 
 

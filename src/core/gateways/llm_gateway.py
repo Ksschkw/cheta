@@ -13,7 +13,13 @@ from typing import Any, Protocol
 from core.config import LlmProviderConfig
 from core.errors import DependencyUnavailableError
 from core.resilience import Boundary, failure_fallback
-from schemas.llm_schema import ChatMessageSchema, CompletionSchema
+from schemas.llm_schema import (
+    ChatMessageSchema,
+    CompletionSchema,
+    RawCompletionSchema,
+    ToolCallSchema,
+    ToolDefinitionSchema,
+)
 
 logger = logging.getLogger("ranti.gateway.llm")
 
@@ -22,8 +28,17 @@ class ProviderClientProtocol(Protocol):
     """Minimal AsyncOpenAI surface this gateway needs."""
 
     async def complete(
-        self, model: str, messages: Sequence[dict[str, str]], temperature: float, max_tokens: int
+        self, model: str, messages: Sequence[dict[str, object]], temperature: float, max_tokens: int
     ) -> str: ...
+
+    async def complete_with_tools(
+        self,
+        model: str,
+        messages: Sequence[dict[str, object]],
+        tools: Sequence[dict[str, object]],
+        temperature: float,
+        max_tokens: int,
+    ) -> RawCompletionSchema: ...
 
 
 class LlmGateway:
@@ -55,16 +70,48 @@ class LlmGateway:
         temperature: float = 0.2,
         max_tokens: int = 800,
     ) -> CompletionSchema:
-        wire = [{"role": message.role, "content": message.content} for message in messages]
+        wire = [message.to_wire() for message in messages]
         errors: list[str] = []
+        tools: list[dict[str, object]] = []
 
+        return await self._run(wire, tools, temperature, max_tokens, errors)
+
+    async def complete_with_tools(
+        self,
+        messages: Sequence[ChatMessageSchema],
+        tools: Sequence[ToolDefinitionSchema],
+        *,
+        temperature: float = 0.2,
+        max_tokens: int = 800,
+    ) -> CompletionSchema:
+        """Ask the model, offering tools. It may answer with text or with calls."""
+        if not tools:
+            return await self.complete(
+                messages, temperature=temperature, max_tokens=max_tokens
+            )
+        wire = [message.to_wire() for message in messages]
+        payload = [tool.to_openai() for tool in tools]
+        return await self._run(wire, payload, temperature, max_tokens, [])
+
+    async def _run(
+        self,
+        wire: Sequence[dict[str, object]],
+        tools: Sequence[dict[str, object]],
+        temperature: float,
+        max_tokens: int,
+        errors: list[str],
+    ) -> CompletionSchema:
         for index, provider in enumerate(self._providers):
             client = self._clients[provider.name]
             boundary = self._boundaries[provider.name]
 
-            async def operation() -> str:
-                return await client.complete(
-                    provider.model, wire, temperature, max_tokens
+            async def operation() -> RawCompletionSchema:
+                if tools:
+                    return await client.complete_with_tools(
+                        provider.model, wire, tools, temperature, max_tokens
+                    )
+                return RawCompletionSchema(
+                    text=await client.complete(provider.model, wire, temperature, max_tokens)
                 )
 
             outcome = await boundary.call(
@@ -78,15 +125,21 @@ class LlmGateway:
             # "briefly unavailable" even though the model and memory both worked.
             # Reasoning models can return an empty content field with the text in
             # a separate reasoning field, so treat this as a provider failure and
-            # fail over rather than delivering nothing.
-            if outcome.ok and outcome.value is not None and outcome.value.strip():
+            # fail over rather than delivering nothing. A completion that carries
+            # tool calls is not empty even when its text is.
+            raw = outcome.value if outcome.ok else None
+            if (
+                raw is not None
+                and (raw.text.strip() or raw.tool_calls)
+            ):
                 self._last_provider = provider.name
                 return CompletionSchema(
-                    text=outcome.value,
+                    text=raw.text,
                     provider=provider.name,
                     model=provider.model,
                     # Any provider after the first means the primary was down.
                     degraded=index > 0,
+                    tool_calls=raw.tool_calls,
                 )
 
             if outcome.ok:
@@ -112,7 +165,7 @@ def build_openai_provider_clients(
         async def complete(
             self,
             model: str,
-            messages: Sequence[dict[str, str]],
+            messages: Sequence[dict[str, object]],
             temperature: float,
             max_tokens: int,
         ) -> str:
@@ -123,6 +176,37 @@ def build_openai_provider_clients(
                 max_tokens=max_tokens,
             )
             return response.choices[0].message.content or ""
+
+        async def complete_with_tools(
+            self,
+            model: str,
+            messages: Sequence[dict[str, object]],
+            tools: Sequence[dict[str, object]],
+            temperature: float,
+            max_tokens: int,
+        ) -> RawCompletionSchema:
+            response = await self._inner.chat.completions.create(
+                model=model,
+                messages=list(messages),
+                tools=list(tools),
+                tool_choice="auto",
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            message = response.choices[0].message
+            calls: list[ToolCallSchema] = []
+            for raw in message.tool_calls or []:
+                function = raw.function
+                calls.append(
+                    ToolCallSchema(
+                        id=str(raw.id),
+                        name=str(function.name),
+                        arguments=str(function.arguments or "{}"),
+                    )
+                )
+            return RawCompletionSchema(
+                text=message.content or "", tool_calls=tuple(calls)
+            )
 
     return {
         provider.name: _Client(

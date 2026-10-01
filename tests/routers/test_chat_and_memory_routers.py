@@ -187,7 +187,11 @@ def turn(client: TestClient, text: str, memory_enabled: bool = True) -> dict:
 def test_a_turn_returns_the_reply_and_the_stored_fact(client: TestClient) -> None:
     body = turn(client, "I am allergic to peanuts")
 
-    assert body["reply"] == "I have no memory of you."
+    # The first turn now also carries onboarding, so the model's answer leads
+    # and the service-authored onboarding follows it.
+    assert body["reply"].startswith("I have no memory of you.")
+    assert body["first_turn"] is True
+    assert body["onboarding_note"] in body["reply"]
     assert body["memory_namespace"].endswith("web-widget-1")
     assert len(body["stored_facts"]) == 1
     assert body["stored_facts"][0]["blob_id"]

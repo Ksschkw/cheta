@@ -126,6 +126,14 @@ class Settings:
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
 
+    # Voice-note transcription. Groq's Whisper endpoint is on the free tier and
+    # uses the same key as the Groq chat provider, so it is configured by
+    # default from GROQ_API_KEY and can be pointed elsewhere.
+    transcription_api_key: str = ""
+    transcription_base_url: str = "https://api.groq.com/openai/v1"
+    transcription_model: str = "whisper-large-v3"
+    transcription_timeout_seconds: float = 60.0
+
     @property
     def keepalive_target(self) -> str | None:
         """The public https URL to ping, or None when there is nothing to keep awake."""
@@ -142,6 +150,10 @@ class Settings:
     @property
     def telegram_configured(self) -> bool:
         return bool(self.telegram_bot_token)
+
+    @property
+    def transcription_configured(self) -> bool:
+        return bool(self.transcription_api_key and self.transcription_model)
 
     def memory_namespace(self, user_key: str) -> str:
         """Namespace per user. Flat, stable, within the 255-byte server limit."""
@@ -219,5 +231,16 @@ class Settings:
             memory_receipts=_get(source, "RANTI_MEMORY_RECEIPTS", "0").lower()
             in ("1", "true", "yes", "on"),
             resume_after_hours=_get_float(source, "RANTI_RESUME_AFTER_HOURS", 6.0),
+            transcription_api_key=_get(source, "TRANSCRIPTION_API_KEY")
+            or _get(source, "GROQ_API_KEY"),
+            transcription_base_url=_get(
+                source,
+                "TRANSCRIPTION_BASE_URL",
+                _get(source, "GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+            ),
+            transcription_model=_get(source, "TRANSCRIPTION_MODEL", "whisper-large-v3"),
+            transcription_timeout_seconds=_get_float(
+                source, "TRANSCRIPTION_TIMEOUT_SECONDS", 60.0
+            ),
             llm_providers=tuple(candidate for candidate in candidates if candidate.configured),
         )

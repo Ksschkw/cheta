@@ -18,7 +18,11 @@ import json
 import re
 from collections.abc import Sequence
 
-from schemas.llm_schema import ChatMessageSchema, CompletionSchema
+from schemas.llm_schema import (
+    ChatMessageSchema,
+    CompletionSchema,
+    ToolDefinitionSchema,
+)
 
 EXTRACTION_MARKER = "extract durable facts"
 ADJUDICATION_MARKER = "compare one remembered fact"
@@ -272,6 +276,25 @@ class OfflineLlm:
             text = self._reply(system, user_text)
 
         return CompletionSchema(text=text, provider=self.name, model="offline-deterministic")
+
+    async def complete_with_tools(
+        self,
+        messages: Sequence[ChatMessageSchema],
+        tools: Sequence[ToolDefinitionSchema],
+        *,
+        temperature: float = 0.2,
+        max_tokens: int = 800,
+    ) -> CompletionSchema:
+        """The offline model never asks for a tool.
+
+        It is a deterministic stand-in, not a reasoning model, so it always
+        answers in text. Returning the plain completion keeps the zero-key path
+        working: the agent loop simply sees no tool calls and finishes in one
+        round.
+        """
+        return await self.complete(
+            messages, temperature=temperature, max_tokens=max_tokens
+        )
 
     def _reply(self, system: str, user_text: str) -> str:
         match = MEMORY_BLOCK.search(system)

@@ -55,3 +55,20 @@ class AttachmentError(RantiError):
     """
 
     code = "attachment_error"
+
+
+class BlockedUrlError(RantiError):
+    """An outbound URL was refused before any connection was made.
+
+    Refused schemes and private, loopback, link-local and reserved addresses are
+    a policy decision, not a network failure, so they must not be retried and
+    must not be reported as "temporarily unavailable".
+    """
+
+    code = "blocked_url"
+
+
+class WebContentError(RantiError):
+    """A fetched URL answered, but with something that is not readable text."""
+
+    code = "web_content"

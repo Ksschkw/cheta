@@ -93,3 +93,9 @@ type = "forbidden"
 source_modules = ["core.gateways"]
 forbidden_modules = ["crud", "services", "routers"]
 
+[[tool.importlinter.contracts]]
+name = "Tools never reach up into services or routers"
+type = "forbidden"
+source_modules = ["core.tools"]
+forbidden_modules = ["services", "routers"]
+

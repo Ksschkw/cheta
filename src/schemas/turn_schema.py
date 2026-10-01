@@ -51,6 +51,9 @@ class TurnSchema(BaseModel):
     # the exact text the person saw is testable on its own.
     resume_note: str | None = None
     contradiction_note: str | None = None
+    # Set on the first ever turn: the service-authored onboarding that tells the
+    # person what this is and what it cannot do.
+    onboarding_note: str | None = None
     # Set when the message was a command rather than a conversation turn, so a
     # caller can tell the difference and no turn row is implied.
     command: str | None = None

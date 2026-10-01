@@ -37,11 +37,18 @@ def create_app(container: Container | None = None, settings: Settings | None = N
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         pinger = getattr(application.state, "keepalive", None)
+        scheduler = getattr(application.state, "reminder_scheduler", None)
         if pinger is not None:
             pinger.start()
+        # Proactive delivery: the agent opening a conversation when a reminder
+        # falls due, not only answering one.
+        if scheduler is not None:
+            scheduler.start()
         try:
             yield
         finally:
+            if scheduler is not None:
+                await scheduler.stop()
             if pinger is not None:
                 await pinger.stop()
 
@@ -55,6 +62,7 @@ def create_app(container: Container | None = None, settings: Settings | None = N
     # create_app accepts either a Container or a Settings.
     target = resolved.settings.keepalive_target
     app.state.keepalive = KeepAlivePinger(target) if target else None
+    app.state.reminder_scheduler = resolved.reminder_scheduler
 
     @app.exception_handler(RantiError)
     async def _domain_error(_: Request, exc: RantiError) -> JSONResponse:
