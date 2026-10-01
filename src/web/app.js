@@ -155,27 +155,27 @@
         throw networkError;
       })
       .then(function (response) {
-      return response.text().then(function (raw) {
-        var data = null;
-        if (raw) {
-          try {
-            data = JSON.parse(raw);
-          } catch (err) {
-            data = null;
+        return response.text().then(function (raw) {
+          var data = null;
+          if (raw) {
+            try {
+              data = JSON.parse(raw);
+            } catch (err) {
+              data = null;
+            }
           }
-        }
-        if (!response.ok) {
-          var detail = null;
-          if (data && typeof data === "object") {
-            detail = data.detail || data.error;
+          if (!response.ok) {
+            var detail = null;
+            if (data && typeof data === "object") {
+              detail = data.detail || data.error;
+            }
+            var httpError = new Error(detail || "request failed");
+            httpError.httpStatus = response.status;
+            throw httpError;
           }
-          var httpError = new Error(detail || "request failed");
-          httpError.httpStatus = response.status;
-          throw httpError;
-        }
-        return data;
+          return data;
+        });
       });
-    });
   }
 
   /* Plain words for a failed call. Never prints a host, port or path. */
