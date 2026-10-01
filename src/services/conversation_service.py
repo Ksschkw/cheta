@@ -45,6 +45,7 @@ from schemas.turn_schema import (
 
 logger = logging.getLogger("ranti.service.conversation")
 
+COMMANDS = ("/start", "/help", "/memories")
 RECALL_CANDIDATE_LIMIT = 40
 FACT_BATCH_LIMIT = 6
 _JSON_BLOCK = re.compile(r"\[.*\]", re.DOTALL)
@@ -305,18 +306,66 @@ class ConversationService:
         recipient_id: str,
         memory_enabled: bool = True,
         context_budget: int = 6,
-    ) -> TurnSchema:
+    ) -> TurnSchema | None:
         """Handle a turn that arrived on a push transport and answer on it.
 
         The router stays a parser: it hands over primitives and this use case
-        decides what the person actually sees, receipts included.
+        decides what the person actually sees. Returns None when the message was
+        a command, because a command is answered directly and is not a turn.
         """
+        command = text.strip().split()[0].lower() if text.strip() else ""
+        if command in COMMANDS:
+            reply = self.command_reply(command, surface, surface_user_id, display_name)
+            if self._reply_channel is not None:
+                await self._reply_channel.send_message(recipient_id, reply)
+            return None
+
         result = await self.handle_turn(
             surface, surface_user_id, display_name, text, memory_enabled, context_budget
         )
         if self._reply_channel is not None:
             await self._reply_channel.send_message(recipient_id, self._render_reply(result))
         return result
+
+    def command_reply(
+        self, command: str, surface: str, surface_user_id: str, display_name: str
+    ) -> str:
+        """Answer a command with no model call and no stored turn.
+
+        Users asked repeatedly for a start response and a way to see what is
+        remembered. Both are cheap and both should be instant.
+        """
+        if command in ("/start", "/help"):
+            return (
+                f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
+                "what you tell me is stored in your own private memory space and comes "
+                "back in later conversations, on any of my surfaces.\n\n"
+                "Commands:\n"
+                "/memories  show everything I have stored about you\n"
+                "/help      this message\n\n"
+                "Just talk to me normally and I will pick up what is worth keeping."
+            )
+
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        records = sorted(
+            self._memories.list_for_user(user.id, None, 200),
+            key=lambda record: record.importance,
+            reverse=True,
+        )
+        if not records:
+            return (
+                "I have nothing stored about you yet. Tell me a few things about "
+                "yourself and I will remember them for next time."
+            )
+
+        lines = [f"Here is what I have stored about you ({len(records)} notes):", ""]
+        for index, record in enumerate(records[:10], start=1):
+            marker = "" if record.status == "active" else f" [{record.status}]"
+            lines.append(f"{index}. {record.text}{marker}")
+        if len(records) > 10:
+            lines.append(f"...and {len(records) - 10} more.")
+        lines.extend(["", "Tell me if any of that is wrong and I will correct it."])
+        return "\n".join(lines)
 
     async def notify_unavailable(self, recipient_id: str) -> None:
         """Tell a push-transport user that this turn could not be served."""

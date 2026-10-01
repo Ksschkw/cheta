@@ -65,6 +65,8 @@ def build_router() -> APIRouter:
                 text=text,
                 recipient_id=chat_id,
             )
+            if result is None:
+                return {"ok": True, "handled": True, "command": True}
         except RantiError as error:
             # Error mapping is the one branch a router is allowed to own.
             logger.warning("telegram turn failed code=%s", error.code)

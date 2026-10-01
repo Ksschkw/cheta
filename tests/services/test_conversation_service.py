@@ -508,3 +508,50 @@ async def test_the_prompt_forbids_markdown_because_clients_showed_asterisks() ->
 
     assert "no markdown" in system
     assert "no asterisks" in system
+
+
+async def test_the_memories_command_lists_stored_notes_without_calling_the_model() -> None:
+    """The most requested feature in the real transcripts.
+
+    A user asked repeatedly whether they could see what was stored about them.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say("I am allergic to peanuts")
+    calls_before = harness.llm.reply_calls
+
+    text = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "Ada is allergic to peanuts" in text
+    assert "1 notes" in text
+    assert harness.llm.reply_calls == calls_before
+
+
+async def test_the_memories_command_is_honest_when_nothing_is_stored() -> None:
+    harness = Harness([])
+
+    text = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "nothing stored about you yet" in text
+
+
+async def test_the_start_command_explains_the_bot_and_stores_nothing() -> None:
+    harness = Harness([])
+
+    text = harness.service.command_reply("/start", "telegram", "42", "Ada")
+
+    assert "Cheta" in text
+    assert "/memories" in text
+    assert harness.llm.reply_calls == 0
+    assert harness.users.list() == []
+
+
+async def test_a_command_returns_no_turn_so_the_router_can_tell_the_difference() -> None:
+    """A command is not a conversation turn and must not be stored as one."""
+    harness = Harness([])
+
+    result = await harness.service.handle_surface_turn(
+        "telegram", "42", "Ada", "/start", "42"
+    )
+
+    assert result is None
+    assert harness.turns.list_for_user("nobody") == []
