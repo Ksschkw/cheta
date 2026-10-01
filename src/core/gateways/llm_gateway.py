@@ -73,7 +73,13 @@ class LlmGateway:
                 idempotent=True,
             )
 
-            if outcome.ok and outcome.value is not None:
+            # An empty completion is not an answer. Sending it produces a
+            # Telegram 400 ("message text is empty"), which the person sees as
+            # "briefly unavailable" even though the model and memory both worked.
+            # Reasoning models can return an empty content field with the text in
+            # a separate reasoning field, so treat this as a provider failure and
+            # fail over rather than delivering nothing.
+            if outcome.ok and outcome.value is not None and outcome.value.strip():
                 self._last_provider = provider.name
                 return CompletionSchema(
                     text=outcome.value,
@@ -83,7 +89,11 @@ class LlmGateway:
                     degraded=index > 0,
                 )
 
-            errors.append(f"{provider.name}: {outcome.error}")
+            if outcome.ok:
+                errors.append(f"{provider.name}: empty completion")
+                logger.warning("llm provider returned an empty completion: %s", provider.name)
+            else:
+                errors.append(f"{provider.name}: {outcome.error}")
             logger.warning("llm provider failed, failing over provider=%s", provider.name)
 
         raise DependencyUnavailableError("llm", "all providers failed: " + "; ".join(errors))
