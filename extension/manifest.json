@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Ranti memory side panel",
+  "name": "Cheta memory side panel",
   "version": "1.0.0",
-  "description": "Chat with Ranti in a side panel and see the exact Walrus memories that were recalled for every reply.",
+  "description": "Cheta remembers you between chats, and across browsers, terminals and Telegram.",
   "minimum_chrome_version": "114",
   "permissions": [
     "sidePanel",
@@ -16,7 +16,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Open the Ranti memory side panel"
+    "default_title": "Open the Cheta memory side panel"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

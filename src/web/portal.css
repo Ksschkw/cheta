@@ -50,7 +50,7 @@ a:focus {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--text);
   outline-offset: 2px;
 }
 
@@ -354,6 +354,14 @@ button:focus-visible {
   background: var(--surface);
   border: 1px solid var(--line);
   padding: 1px 5px;
+}
+
+.lede-top {
+  margin-top: 32px;
+}
+
+.back-row {
+  margin-top: 56px;
 }
 
 .back-link {

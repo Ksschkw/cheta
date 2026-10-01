@@ -1,18 +1,36 @@
-# Ranti browser extension surface
+# Cheta browser extension surface
 
 This folder is a Manifest V3 Chromium extension (Chrome and Edge) that opens
-Ranti in the browser side panel. It is the fourth surface of the project, next
+Cheta in the browser side panel. It is the fourth surface of the project, next
 to the Telegram bot, the CLI, and the web widget.
 
-The panel is a chat window against the deployed Ranti API. Its job is to make
-memory visible: under every reply it shows the exact memories that were
-recalled for that turn, with the memory text, the salience, the origin surface,
-and the Walrus blob id. It also has a memory panel that lists what is stored
-for the current identity, and a per-turn control that replays the same question
-with memory switched off so the difference is visible side by side.
+The panel is a chat window against the deployed API. Its job is to make memory
+visible without exposing plumbing: under every reply it shows the plain text of
+the memories that were recalled for that turn. It also has a memory panel that
+lists what is stored for the current identity, and a per-turn control that
+replays the same question with memory switched off so the difference is visible
+side by side.
 
 There are no emojis, no web fonts, no external scripts, and no build step. The
 extension is plain HTML, CSS, and JavaScript and loads unpacked as-is.
+
+## Design
+
+Minimal monochrome with a single accent color. The palette is closed:
+
+- Background `#0a0a0a`, surfaces `#141414`, hairline borders `#262626`.
+- Text `#ededed` primary, `#8a8a8a` secondary.
+- One accent, `#35d0ba`, used only for the send button, focus rings, and link
+  hover.
+
+System font stack, generous spacing, no gradients, no glow, no heavy shadows,
+no decorative characters. The composer is pinned at the bottom and is laid out
+for a 320px wide side panel first.
+
+The normal view shows conversation text and recalled memory text. Nothing else:
+no verdicts, no pending or persisting wording, no blob ids, no salience numbers,
+and no "facts accepted this turn" panel. The API base URL is never printed
+outside its editable field in Settings.
 
 ## Load it unpacked
 
@@ -20,7 +38,7 @@ extension is plain HTML, CSS, and JavaScript and loads unpacked as-is.
 2. Turn on **Developer mode** (top right).
 3. Click **Load unpacked**.
 4. Select this `extension/` folder, the one that contains `manifest.json`.
-5. Click the Ranti toolbar button. The side panel opens on the right.
+5. Click the toolbar button. The side panel opens on the right.
 
 The toolbar button is wired in `background.js` with
 `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`, so the
@@ -29,23 +47,26 @@ panel opens from the button in both Chrome and Edge. Requires Chrome or Edge
 
 ## Point it at a different API base URL
 
-The default API base URL is `https://ranti-gkn7.onrender.com`.
+The default API base URL is `https://ranti-gkn7.onrender.com`. It is the only
+place a URL appears in the interface, and the editable base URL field is the
+only place it can be changed.
 
 1. Open the side panel.
 2. Expand **Settings** at the top.
 3. Edit **API base URL**, for example `http://127.0.0.1:8000` for a local
    server.
-4. Click **Save settings**. The value is stored in `chrome.storage.local` and
-   reused after every reload. **Reset to default** restores the deployed URL.
+4. Click **Save**. The value is stored in `chrome.storage.local` and reused
+   after every reload. **Reset URL** restores the deployed default.
 
-The panel calls `GET /health` after saving, so the status line reports whether
-the new base URL is reachable and whether Walrus Memory is degraded.
+The panel calls `GET /health` after saving, and the status line reports the
+result in plain words, for example "Connected." or "Cannot reach the server.
+Check Settings." It never prints the address.
 
 The same Settings block holds the **Display name** and shows the generated
-**Surface user id**. The display name is editable; the surface user id is
-generated once with `crypto.randomUUID()` and kept in `chrome.storage.local`
-so memory stays attached to the same person across reloads. Both are sent with
-every turn.
+**Browser identity**. The display name is editable; the identity is generated
+once with `crypto.randomUUID()` and kept in `chrome.storage.local` so memory
+stays attached to the same person across reloads and across this redesign. The
+storage keys are frozen internal identifiers for exactly that reason.
 
 ## Requests it makes
 
@@ -53,14 +74,14 @@ All requests go to the configured base URL.
 
 - `POST /chat/turn` with
   `{surface: "extension", surface_user_id, display_name, text, memory_enabled}`.
-  `surface` is always `extension`. The response supplies the reply, the
-  recalled memories, the stored facts, and the `memory_degraded` flag.
+  `surface` is always `extension`. The response supplies the reply and the
+  recalled memories. The panel renders the recalled memory text only.
 - `POST /chat/counterfactual/{turn_id}` for the per-turn
   "Show it without memory" control. The response supplies `with_memory`,
-  `without_memory`, `recalled_count`, `reply_changed`, and `summary`.
+  `without_memory`, and `summary`.
 - `GET /memories/{user_id}` for the memory panel, with
   `include_inactive=false` by default and `include_inactive=true` when the
-  "Include inactive" box is checked.
+  "Include superseded and contradicted" box is checked.
 - `GET /health` for the status line.
 
 These are the same request and response shapes the web widget and the CLI use,
@@ -76,11 +97,12 @@ does). Nothing is stored for a command reply.
 
 ## Honest degradation
 
-When a turn returns `memory_degraded`, the reply carries a `[WARN]` notice
-saying Walrus Memory was unreachable for that turn, and the panel never implies
-the person has no memories. Status words are `[OK]`, `[WARN]`, and `[FAIL]`.
-When the memory toggle is off, the turn is sent with `memory_enabled: false`
-and the reply is marked `[NO MEMORY]` with a dashed border.
+When a turn returns `memory_degraded`, the reply carries a notice saying memory
+was unreachable for that turn, so nothing could be recalled or saved, and that
+this is not the same as having no memories. The same wording is used in the
+memory panel and in the command replies, so an unreachable server never implies
+an empty memory. When the memory toggle is off, the turn is sent with
+`memory_enabled: false` and the reply says memory was off for that turn.
 
 ## What it shares with the other surfaces
 
@@ -89,8 +111,8 @@ CLI, and the web widget:
 
 - The same `POST /chat/turn` contract and the same `surface` field vocabulary
   (`telegram`, `cli`, `web`, `extension`).
-- The same Walrus Memory records. A fact stored on one surface comes back as a
-  recalled memory on another, and the recalled chip shows `origin_surface`.
+- The same memory records. A fact stored on one surface comes back as a
+  recalled memory on another.
 - The same `/memories/{user_id}` listing and `/chat/counterfactual/{turn_id}`
   replay used elsewhere.
 

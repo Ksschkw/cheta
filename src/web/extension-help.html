@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="How to load the Cheta browser extension unpacked from the repository.">
+    <title>Install the Cheta extension</title>
+    <link rel="stylesheet" href="portal.css">
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <p class="wordmark">CHETA</p>
+        <h1 class="tagline">
+          <span class="tagline-line">Install the extension</span>
+        </h1>
+      </header>
+
+      <section class="help-body">
+        <p class="lede lede-top">
+          The extension is not published to any store yet. It loads from the
+          repository as an unpacked extension, so Chrome and Edge load it unpacked
+          and Firefox loads it as a temporary add-on that must be re-added after a
+          restart.
+        </p>
+
+        <h2>Get the repository</h2>
+        <pre class="code"><code>git clone https://github.com/Ksschkw/ranti.git
+cd ranti</code></pre>
+        <p>
+          The extension lives in the <code>extension/</code> folder at the top of the
+          repository and contains <code>manifest.json</code>.
+        </p>
+
+        <h2>Chrome or Edge</h2>
+        <ol>
+          <li>Open <code>chrome://extensions</code>. In Edge, open <code>edge://extensions</code>.</li>
+          <li>Turn on <code>Developer mode</code>, in the top right corner.</li>
+          <li>Click <code>Load unpacked</code>.</li>
+          <li>Select the <code>extension/</code> folder, the one that contains <code>manifest.json</code>.</li>
+          <li>Open the side panel from the Cheta toolbar button.</li>
+        </ol>
+        <p>
+          Requires Chrome or Edge 114 or newer, because the panel uses the side panel
+          API.
+        </p>
+
+        <h2>Firefox</h2>
+        <ol>
+          <li>Open <code>about:debugging</code>.</li>
+          <li>Click <code>This Firefox</code>.</li>
+          <li>Click <code>Load Temporary Add-on</code>.</li>
+          <li>Select <code>extension/manifest.json</code>.</li>
+        </ol>
+        <p>
+          Firefox keeps a temporary add-on only for the current session. Because the
+          extension is not signed or published, it has to be loaded again after
+          Firefox restarts.
+        </p>
+        <p>
+          Be aware that the panel is built on the Chromium side panel API and the
+          manifest has no Firefox sidebar entry, so the temporary load currently
+          registers the extension but the panel itself does not open in Firefox.
+          Treat these steps as the loading path, not a working Firefox build.
+        </p>
+
+        <h2>Store status</h2>
+        <p class="warn-line">
+          There is no Chrome Web Store listing and no addons.mozilla.org listing. The
+          only honest install path today is the unpacked and temporary loading
+          described above.
+        </p>
+
+        <p class="back-row">
+          <a class="back-link" href="./portal.html">Back to the portal</a>
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <nav class="footer-links" aria-label="Project links">
+          <a href="https://github.com/Ksschkw/ranti" rel="noopener">GitHub repository</a>
+          <a href="https://ranti-gkn7.onrender.com" rel="noopener">Live API</a>
+        </nav>
+        <p class="footer-note">Built on Walrus Memory</p>
+      </div>
+    </footer>
+  </body>
+</html>

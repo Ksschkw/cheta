@@ -1,8 +1,12 @@
-/* Ranti extension surface: side panel chat against the deployed API.
+/* Cheta extension surface: side panel chat against the deployed API.
  *
  * Vanilla JS only. No build step, no frameworks, no external requests beyond
- * the configured Ranti API base URL. chrome.storage.local keeps the identity,
- * the display name, the memory toggle, and the session transcript.
+ * the configured API base URL. chrome.storage.local keeps the identity, the
+ * display name, the memory toggle, and the session transcript.
+ *
+ * The default view shows conversation text and the memory text that was
+ * recalled for a reply. Internal plumbing stays behind the collapsed Settings
+ * block. The API base URL is never printed outside its editable Settings field.
  *
  * ASCII only by policy: no emojis, no smart punctuation.
  */
@@ -19,6 +23,9 @@
   var HEALTH_TIMEOUT_MS = 12000;
   var DEFAULT_DISPLAY_NAME = "Extension visitor";
 
+  /* Storage keys are frozen identifiers. They are intentionally left unchanged
+   * so the generated surface_user_id and the memory attached to it survive the
+   * redesign instead of resetting to a new identity. */
   var KEYS = {
     baseUrl: "ranti.extension.base_url",
     surfaceUserId: "ranti.extension.surface_user_id",
@@ -36,7 +43,7 @@
     "Send a normal message to talk. Turn memory off to answer one turn without it.";
 
   var GENERIC_INTRO =
-    "Hi, I am Ranti. I am a memory-first assistant: what you tell me is stored in " +
+    "Hi, I am Cheta. I am a memory-first assistant: what you tell me is stored in " +
     "your own private memory space and comes back in later conversations, on any " +
     "of my surfaces.";
 
@@ -228,6 +235,8 @@
 
   /* --------------------------------------------------------------- api */
 
+  /* Transport notes: error messages never echo the base URL or the request
+   * path, because the panel must not display infrastructure addresses. */
   function api(path, options) {
     var opts = options || {};
     var init = {
@@ -253,11 +262,11 @@
 
     return fetch(url, init)
       .catch(function (err) {
-        var reason =
+        throw new Error(
           err && err.name === "AbortError"
-            ? "the request timed out"
-            : (err && err.message) || "network error";
-        throw new Error(reason + " (" + url + ")");
+            ? "The request timed out."
+            : "The server could not be reached."
+        );
       })
       .then(function (response) {
         return response.text().then(function (raw) {
@@ -277,7 +286,7 @@
             if (data && typeof data === "object") {
               detail = data.detail || data.error;
             }
-            throw new Error(detail || "HTTP " + response.status + " from " + path);
+            throw new Error(detail || "The server returned HTTP " + response.status + ".");
           }
           return data;
         });
@@ -288,46 +297,6 @@
 
   function asArray(value) {
     return Array.isArray(value) ? value : [];
-  }
-
-  function num(value) {
-    var n = Number(value);
-    return isFinite(n) ? String(Math.round(n)) : "0";
-  }
-
-  function fixed(value, digits) {
-    var n = Number(value);
-    if (!isFinite(n)) {
-      n = 0;
-    }
-    return n.toFixed(digits);
-  }
-
-  function truncate(value, max) {
-    var text = value === null || value === undefined ? "" : String(value);
-    if (text.length <= max) {
-      return text;
-    }
-    return text.slice(0, Math.max(1, max - 3)) + "...";
-  }
-
-  function safeClass(value) {
-    var text = String(value === null || value === undefined ? "" : value);
-    var cleaned = text.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
-    return cleaned || "unknown";
-  }
-
-  function statusTag(status) {
-    var value = String(status || "unknown");
-    var cls = "tag";
-    if (value === "active") {
-      cls += " tag-ok";
-    } else if (value === "superseded") {
-      cls += " tag-warn";
-    } else if (value === "contradicted") {
-      cls += " tag-fail";
-    }
-    return el("span", { class: cls }, value);
   }
 
   /* ---------------------------------------------------------- rendering */
@@ -348,52 +317,41 @@
 
   function userNode(text) {
     return el("div", { class: "msg user" }, [
-      el("div", { class: "msg-head" }, [el("span", { class: "who" }, "You")]),
+      el("div", { class: "who" }, "You"),
       el("div", { class: "bubble" }, text)
     ]);
   }
 
   function errorNode(message) {
     return el("div", { class: "msg error" }, [
-      el("div", { class: "msg-head" }, [el("span", { class: "who" }, "[FAIL] Error")]),
+      el("div", { class: "who" }, "Error"),
       el("div", { class: "bubble" }, message)
     ]);
   }
 
   function commandNode(text) {
     return el("div", { class: "msg command" }, [
-      el("div", { class: "msg-head" }, [
-        el("span", { class: "who" }, "Ranti"),
-        el("span", { class: "tag" }, "command, no model call")
-      ]),
+      el("div", { class: "who" }, "Cheta"),
       el("div", { class: "bubble" }, text)
     ]);
   }
 
-  function renderChip(memory) {
-    var blobId = memory && memory.blob_id ? String(memory.blob_id) : "";
-    return el("div", { class: "chip" }, [
-      el("div", { class: "chip-text" }, (memory && memory.text) || "(empty memory text)"),
-      el("div", { class: "chip-meta" }, [
-        el("span", {}, "salience " + fixed(memory ? memory.salience : 0, 2)),
-        el("span", {}, "origin " + ((memory && memory.origin_surface) || "unknown")),
-        el("span", { title: blobId }, "blob " + truncate(blobId, 16))
-      ])
-    ]);
-  }
-
-  function renderStoredFact(fact) {
-    var pending = Boolean(fact && fact.pending);
-    var blobId = fact && fact.blob_id ? String(fact.blob_id) : "";
-    var persistence = pending
-      ? "accepted, persisting (no blob id yet)"
-      : "stored blob " + truncate(blobId, 16);
-    return el("div", { class: "chip" + (pending ? " chip-pending" : "") }, [
-      el("div", { class: "chip-text" }, (fact && fact.text) || "(empty fact text)"),
-      el("div", { class: "chip-meta" }, [
-        el("span", {}, "verdict " + ((fact && fact.verdict) || "new")),
-        el("span", { title: blobId }, persistence)
-      ])
+  /* Recalled memories are shown as plain text lines: no verdict, no salience,
+   * no blob id, no origin surface. The memory text itself is the product. */
+  function recalledBlock(recalled) {
+    return el("div", { class: "recalled" }, [
+      el("div", { class: "recalled-label" }, "Recalled"),
+      el(
+        "div",
+        { class: "recalled-list" },
+        recalled.map(function (memory) {
+          return el(
+            "div",
+            { class: "memory-line" },
+            (memory && memory.text) || "(empty memory text)"
+          );
+        })
+      )
     ]);
   }
 
@@ -406,7 +364,7 @@
 
   function runCounterfactual(turnId, button, zone) {
     button.disabled = true;
-    button.textContent = "Replaying without memory...";
+    button.textContent = "Replaying...";
     var previous = zone.querySelector(".cf-result");
     if (previous) {
       zone.removeChild(previous);
@@ -418,29 +376,21 @@
       .then(function (data) {
         zone.appendChild(
           el("div", { class: "cf-result" }, [
-            el("div", { class: "cf-title" }, "Same question, with memory and without"),
+            el("div", { class: "cf-title" }, "The same question, with memory and without"),
             el("div", { class: "cf-grid" }, [
               renderCfColumn("With memory", data.with_memory, "cf-with"),
               renderCfColumn("Without memory", data.without_memory, "cf-without")
             ]),
-            el("div", { class: "cf-summary" }, data.summary),
-            el(
-              "div",
-              { class: "meta-line" },
-              "recalled memories: " +
-                num(data.recalled_count) +
-                " | reply changed: " +
-                (data.reply_changed ? "yes" : "no")
-            )
+            el("div", { class: "cf-summary" }, data.summary || "")
           ])
         );
-        button.textContent = "Refresh without-memory replay";
+        button.textContent = "Show it without memory";
         button.disabled = false;
         scrollToEnd();
       })
       .catch(function (err) {
         zone.appendChild(
-          el("div", { class: "notice notice-fail" }, "[FAIL] Counterfactual failed: " + err.message)
+          el("div", { class: "notice" }, "Could not load the comparison. " + err.message)
         );
         button.textContent = "Show it without memory";
         button.disabled = false;
@@ -450,86 +400,37 @@
   function assistantNode(turn, usedMemory) {
     var recalled = asArray(turn.recalled);
     var wrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
-      el("div", { class: "msg-head" }, [
-        el("span", { class: "who" }, "Ranti"),
-        usedMemory
-          ? null
-          : el("span", { class: "tag tag-warn" }, "[NO MEMORY] answered without memory")
-      ]),
+      el("div", { class: "who" }, "Cheta"),
       el("div", { class: "bubble" }, turn.reply || "(empty reply)")
     ]);
 
     if (turn.memory_degraded) {
-      var note = turn.memory_note ? " Detail: " + turn.memory_note : "";
       wrap.appendChild(
         el(
           "div",
-          { class: "notice notice-warn" },
-          "[WARN] Walrus Memory was unreachable for this turn, so memories could not " +
-            "be recalled or written. This does not mean you have no memories." +
-            note
+          { class: "notice" },
+          "Memory was unreachable for this turn, so nothing could be recalled or " +
+            "saved. That is not the same as having no memories."
         )
       );
     }
 
     if (recalled.length) {
-      wrap.appendChild(
-        el(
-          "div",
-          { class: "chips-label" },
-          "Recalled memories for this turn (" + recalled.length + ")"
-        )
-      );
-      wrap.appendChild(el("div", { class: "chips" }, recalled.map(renderChip)));
+      wrap.appendChild(recalledBlock(recalled));
     } else if (!turn.memory_degraded) {
       wrap.appendChild(
         el(
           "div",
-          { class: "muted" },
+          { class: "hint" },
           usedMemory
             ? "No memories were recalled for this turn."
-            : "Memory was switched off for this turn, so nothing was recalled and nothing was stored."
+            : "Memory was off for this turn, so nothing was recalled and nothing was saved."
         )
       );
-    }
-
-    var stored = asArray(turn.stored_facts);
-    var persisting = stored.filter(function (fact) {
-      return fact && fact.pending;
-    });
-    if (persisting.length) {
-      wrap.appendChild(
-        el(
-          "div",
-          { class: "chips-label" },
-          "Facts accepted this turn (" + persisting.length + " persisting)"
-        )
-      );
-      wrap.appendChild(el("div", { class: "chips" }, persisting.map(renderStoredFact)));
-    }
-
-    var bits = [];
-    var settled = stored.filter(function (fact) {
-      return fact && fact.blob_id && !fact.pending;
-    });
-    if (settled.length) {
-      bits.push(settled.length + " new memory stored");
-    }
-    if (persisting.length) {
-      bits.push(persisting.length + " accepted, persisting");
-    }
-    if (turn.skipped_duplicates) {
-      bits.push(num(turn.skipped_duplicates) + " duplicate skipped");
-    }
-    if (turn.contradiction_count) {
-      bits.push(num(turn.contradiction_count) + " contradiction flagged");
-    }
-    if (bits.length) {
-      wrap.appendChild(el("div", { class: "meta-line" }, "memory: " + bits.join(", ")));
     }
 
     var zone = el("div", { class: "cf-zone" });
-    var button = el("button", { type: "button", class: "ghost" }, "Show it without memory");
+    var button = el("button", { type: "button", class: "btn btn-quiet" }, "Show it without memory");
     button.addEventListener("click", function () {
       runCounterfactual(turn.turn_id, button, zone);
     });
@@ -567,9 +468,9 @@
       transcript.appendChild(
         el(
           "div",
-          { id: "empty-hint", class: "muted" },
+          { id: "empty-hint", class: "empty" },
           "Say something durable, for example a preference, a constraint, or a fact " +
-            "about your work. Each reply shows the exact memories that were recalled " +
+            "about your work. Each reply shows the memories that were recalled " +
             "for it. Type /help for commands."
         )
       );
@@ -648,8 +549,12 @@
         lines.push("", "Tell me if any of that is wrong and I will correct it.");
         return lines.join("\n");
       })
-      .catch(function (err) {
-        return "[FAIL] Could not read stored memories: " + err.message;
+      .catch(function () {
+        return (
+          "I could not read your stored memories just now. That is not the same as " +
+          "having none; please try again.\n\n" +
+          HELP_TEXT
+        );
       });
   }
 
@@ -677,12 +582,11 @@
           HELP_TEXT
         );
       })
-      .catch(function (err) {
+      .catch(function () {
         return (
           GENERIC_INTRO +
-          "\n\n[WARN] I could not read your stored memories just now (" +
-          err.message +
-          "), which is not the same as having none.\n\n" +
+          "\n\nI could not read your stored memories just now, which is not the " +
+          "same as having none.\n\n" +
           HELP_TEXT
         );
       });
@@ -698,6 +602,23 @@
 
   /* --------------------------------------------------------- memory panel */
 
+  function statusWord(status) {
+    var value = String(status || "").toLowerCase();
+    if (value === "superseded") {
+      return "Superseded";
+    }
+    if (value === "contradicted") {
+      return "Contradicted";
+    }
+    if (value === "active") {
+      return "";
+    }
+    return value ? "Archived" : "";
+  }
+
+  /* The stored-memories panel shows memory text. Lifecycle state is only shown
+   * for records that are not active, so the filter is meaningful. No blob id,
+   * no salience, no origin surface. */
   function renderMemoryList(rows) {
     var list = $("memory-list");
     if (!list) {
@@ -706,29 +627,20 @@
     clear(list);
     if (!rows.length) {
       list.appendChild(
-        el("div", { class: "muted" }, "No memories match the current filter for this identity.")
+        el("div", { class: "hint" }, "Nothing stored for this identity yet.")
       );
       return;
     }
     rows.forEach(function (memory) {
-      var status = memory.status || "unknown";
-      var blobId = memory.blob_id ? String(memory.blob_id) : "";
-      list.appendChild(
-        el("div", { class: "memory-card status-" + safeClass(status) }, [
-          el("div", { class: "memory-text" }, memory.text || "(empty memory text)"),
-          el("div", { class: "memory-meta" }, [
-            statusTag(status),
-            el("span", {}, "importance " + fixed(memory.importance, 2)),
-            el("span", {}, "origin " + (memory.origin_surface || "unknown")),
-            el(
-              "span",
-              { title: "occurred_at " + (memory.occurred_at || "") },
-              "when " + truncate(memory.occurred_at || "unknown", 19)
-            ),
-            el("span", { title: blobId }, "blob " + truncate(blobId, 24))
-          ])
-        ])
-      );
+      var status = memory && memory.status ? memory.status : "";
+      var card = el("div", { class: "memory-card" }, [
+        el("div", { class: "memory-text" }, (memory && memory.text) || "(empty memory text)")
+      ]);
+      var state = statusWord(status);
+      if (state) {
+        card.appendChild(el("div", { class: "memory-state" }, state));
+      }
+      list.appendChild(card);
     });
   }
 
@@ -737,13 +649,10 @@
     var includeInactive = $("mem-include-inactive") && $("mem-include-inactive").checked;
     if (!state.userId) {
       renderMemoryList([]);
-      setText(
-        status,
-        "No turns on this extension yet, so no user exists to list memories for."
-      );
+      setText(status, "Nothing stored yet. Send a message first.");
       return;
     }
-    setText(status, "Loading memories for user " + state.userId + " ...");
+    setText(status, "Loading...");
     api(
       "/memories/" +
         encodeURIComponent(state.userId) +
@@ -754,16 +663,17 @@
       .then(function (rows) {
         var all = asArray(rows);
         renderMemoryList(all);
+        if (!all.length) {
+          setText(status, "Nothing stored for this identity yet.");
+        } else {
+          setText(status, all.length === 1 ? "1 memory." : all.length + " memories.");
+        }
+      })
+      .catch(function () {
         setText(
           status,
-          all.length +
-            " record(s) returned (" +
-            (includeInactive ? "including inactive" : "active only") +
-            ")."
+          "Could not load memories just now. That is not the same as having none."
         );
-      })
-      .catch(function (err) {
-        setText(status, "[FAIL] Could not load memories: " + err.message);
       });
   }
 
@@ -775,7 +685,7 @@
       return;
     }
     node.textContent = message;
-    node.className = "conn" + (cls ? " " + cls : "");
+    node.className = "status" + (cls ? " " + cls : "");
   }
 
   function setDegraded(degraded) {
@@ -785,31 +695,29 @@
     }
     if (degraded) {
       banner.textContent =
-        "[WARN] Walrus Memory did not answer for the most recent turn. Memory was " +
-        "unreachable, which is not the same as having no memories. Recalls and " +
-        "writes may be incomplete until it recovers.";
+        "Memory did not answer for the most recent turn. It was unreachable, " +
+        "which is not the same as having no memories. Recalls and saves may be " +
+        "incomplete until it recovers.";
       banner.classList.remove("hidden");
     } else {
       banner.classList.add("hidden");
     }
   }
 
+  /* Health is reported in plain words. The base URL is never printed here. */
   function checkHealth() {
-    setConn("[OK] Checking " + baseUrl() + "/health ...", "");
+    setConn("Connecting...", "");
     return api("/health", { timeoutMs: HEALTH_TIMEOUT_MS })
       .then(function (health) {
         var memory = (health && health.memory) || {};
         if (memory.degraded) {
-          setConn(
-            "[WARN] API reachable at " + baseUrl() + "; Walrus Memory is degraded.",
-            "conn-warn"
-          );
+          setConn("Connected. Memory is degraded right now.", "is-warn");
         } else {
-          setConn("[OK] API reachable at " + baseUrl() + ".", "conn-ok");
+          setConn("Connected.", "is-ok");
         }
       })
-      .catch(function (err) {
-        setConn("[FAIL] Could not reach " + baseUrl() + ": " + err.message, "conn-fail");
+      .catch(function () {
+        setConn("Cannot reach the server. Check Settings.", "is-fail");
       });
   }
 
@@ -820,7 +728,7 @@
     var button = $("send-button");
     if (button) {
       button.disabled = busy;
-      button.textContent = busy ? "Thinking..." : "Send";
+      button.textContent = busy ? "Sending..." : "Send";
     }
   }
 
@@ -830,8 +738,8 @@
     if (!toggle || !label) {
       return;
     }
-    label.textContent = toggle.checked ? "Memory ON" : "Memory OFF for this turn";
-    label.className = toggle.checked ? "tag tag-ok" : "tag tag-warn";
+    label.textContent = toggle.checked ? "On" : "Off";
+    label.className = "switch-state";
   }
 
   function sendTurn(event) {
@@ -902,7 +810,7 @@
         }
       })
       .catch(function (err) {
-        var message = "Could not complete the turn: " + err.message;
+        var message = "Could not complete the turn. " + err.message;
         appendNode(errorNode(message));
         record({ role: "error", text: message });
       })
@@ -918,7 +826,7 @@
     var raw = $("base-url") ? $("base-url").value : "";
     var normalized = normalizeBaseUrl(raw);
     if (!normalized) {
-      setText(status, "[FAIL] Base URL must start with http:// or https://.");
+      setText(status, "Enter a URL that starts with http:// or https://.");
       return;
     }
     state.baseUrl = normalized;
@@ -932,7 +840,7 @@
       if (input) {
         input.value = normalized;
       }
-      setText(status, "[OK] Saved. Base URL is " + normalized + ".");
+      setText(status, "Saved.");
       checkHealth();
     });
   }
@@ -944,7 +852,7 @@
       input.value = DEFAULT_BASE_URL;
     }
     persist(KEYS.baseUrl, DEFAULT_BASE_URL).then(function () {
-      setText($("settings-status"), "[OK] Base URL reset to " + DEFAULT_BASE_URL + ".");
+      setText($("settings-status"), "Reset to the default server.");
       checkHealth();
     });
   }
@@ -952,9 +860,11 @@
   /* -------------------------------------------------------------- boot */
 
   async function init() {
-    var items = await storageGet(Object.keys(KEYS).map(function (key) {
-      return KEYS[key];
-    }));
+    var items = await storageGet(
+      Object.keys(KEYS).map(function (key) {
+        return KEYS[key];
+      })
+    );
 
     state.baseUrl = normalizeBaseUrl(items[KEYS.baseUrl] || DEFAULT_BASE_URL) || DEFAULT_BASE_URL;
     state.displayName = items[KEYS.displayName] || "";
@@ -1053,8 +963,8 @@
 
   function boot() {
     wire();
-    init().catch(function (err) {
-      setConn("[FAIL] Could not load extension settings: " + err.message, "conn-fail");
+    init().catch(function () {
+      setConn("Could not load settings. Check Settings.", "is-fail");
     });
   }
 
