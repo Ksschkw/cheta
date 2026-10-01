@@ -47,6 +47,10 @@ class ToolContext:
     # surface has one. Telegram has a chat id; a web request does not.
     recipient_id: str = ""
     document_text: str | None = None
+    # True only when this surface can hand the person a file. A tool whose real
+    # output is a document uses this to say what it could or could not deliver
+    # instead of pretending, and the service uses it to decide whether to send.
+    can_send_documents: bool = False
 
 
 ToolHandler = Callable[[dict[str, object], ToolContext], Awaitable[ToolResultSchema]]

@@ -75,6 +75,7 @@ from models.entities.pairing_code_model import (
 from models.entities.turn_model import TurnModel
 from schemas.attachment_schema import AttachmentSchema
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
+from schemas.tool_schema import ToolDocumentSchema
 from schemas.turn_schema import (
     CounterfactualSchema,
     ExtractedFactView,
@@ -713,6 +714,10 @@ class ConversationService:
                 surface_user_id=surface_user_id,
                 recipient_id=recipient_id,
                 document_text=document_text,
+                # A tool whose output is a file can only hand it over when this
+                # surface has a push transport and an address to push to. The
+                # service owns that decision; the tool states it honestly.
+                can_send_documents=self._reply_channel is not None and bool(recipient_id),
             ),
         )
 
@@ -803,6 +808,34 @@ class ConversationService:
             "something else."
         )
 
+    async def _deliver_tool_document(
+        self, context: ToolContext, document: ToolDocumentSchema
+    ) -> str | None:
+        """Send a tool-produced file. Returns a readable failure, or None on success.
+
+        Delivery belongs to the service because a tool handler is pure and never
+        touches a transport. When this surface cannot carry a file, the failure
+        says the file was not delivered; it never says the underlying action was
+        done. The assistant has no way to know whether a calendar accepted the
+        event, so nothing here may claim that it did.
+        """
+        if self._reply_channel is None or not context.recipient_id:
+            return (
+                f"the {document.filename} file could not be delivered because "
+                "this surface has no file delivery; nothing was sent and nothing "
+                "was added anywhere"
+            )
+        try:
+            await self._reply_channel.send_document(
+                context.recipient_id,
+                document.filename,
+                document.content,
+                caption=document.caption,
+            )
+        except DependencyUnavailableError as error:
+            return f"the {document.filename} file could not be sent ({error.message})"
+        return None
+
     async def _run_agent(
         self,
         display_name: str,
@@ -855,6 +888,16 @@ class ConversationService:
                 result = await self._tools.execute(call.name, call.parsed_arguments(), context)
                 if not result.ok and result.error:
                     failures.append(result.error)
+                if result.document is not None:
+                    # A tool handler is pure and cannot touch a transport, so
+                    # the file it produced is handed over here. A surface with no
+                    # file channel gets an honest failure, never a claim that the
+                    # work landed somewhere it never reached.
+                    delivery_error = await self._deliver_tool_document(
+                        context, result.document
+                    )
+                    if delivery_error:
+                        failures.append(delivery_error)
                 conversation.append(
                     ChatMessageSchema(
                         role="tool",

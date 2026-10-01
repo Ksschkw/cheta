@@ -24,6 +24,7 @@ from core.gateways.web_gateway import WebGateway
 from core.reminder_scheduler import ReminderScheduler
 from core.resilience import Boundary, ResiliencePolicy, StructuredLogMetricSink
 from core.tools.calculate_tool import build_calculator_tool
+from core.tools.calendar_tools import build_calendar_tools
 from core.tools.capability_tools import build_capability_tools
 from core.tools.memory_access import MemoryAccess
 from core.tools.memory_tools import build_memory_tools
@@ -180,6 +181,8 @@ def build_tool_registry(
     for spec in build_web_tools(web_gateway):
         registry.register(spec)
     for spec in build_capability_tools():
+        registry.register(spec)
+    for spec in build_calendar_tools():
         registry.register(spec)
     registry.register(build_calculator_tool())
     return registry
