@@ -16,6 +16,9 @@
           <details class="help" id="help">
             <summary class="help-toggle">Help</summary>
             <div class="help-panel" role="dialog" aria-label="Cheta reference">
+              <p class="help-replay">
+                <button id="help-tour" class="help-tour" type="button">Show me around</button>
+              </p>
               <h3>Commands</h3>
               <ul class="help-list">
                 <li><code>/help</code> shows this reference.</li>
@@ -86,7 +89,7 @@
           placeholder="Message Cheta"
         ></textarea>
         <div class="composer-row">
-          <label class="mini-switch" for="memory-toggle">
+          <label id="memory-switch" class="mini-switch" for="memory-toggle">
             <input id="memory-toggle" type="checkbox" checked>
             <span class="mini-track" aria-hidden="true"><span class="mini-thumb"></span></span>
             <span class="mini-label">Memory</span>
@@ -98,52 +101,23 @@
     </div>
 
     <div
-      id="onboarding"
-      class="onboarding hidden"
+      id="tour"
+      class="tour hidden"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="onboarding-title"
+      aria-labelledby="tour-title"
     >
-      <div class="onboarding-card">
-        <div class="onboarding-scroll">
-        <p class="onboarding-kicker">Welcome to Cheta</p>
-        <h2 id="onboarding-title" class="onboarding-title">
-          Cheta is a memory-first assistant: it remembers what you tell it and shows
-          you what it remembered.
-        </h2>
-
-        <h3 class="onboarding-label">What it does</h3>
-        <ul class="onboarding-list">
-          <li>Remembers what you tell it.</li>
-          <li>
-            Shows exactly what it remembered under each reply, and re-answers with
-            memory off so you can see the difference.
-          </li>
-          <li>Can be corrected or emptied at any time.</li>
-          <li>
-            Works on Telegram, the command line, this browser page, and a browser
-            extension.
-          </li>
-          <li>Your memory follows you between them once you pair them.</li>
-        </ul>
-
-        <h3 class="onboarding-label">Pairing</h3>
-        <p class="onboarding-text">
-          Generate a pairing code on a client you already use, then enter it on the
-          new one.
-        </p>
-
-        <h3 class="onboarding-label">What it cannot do</h3>
-        <ul class="onboarding-list">
-          <li>It cannot log into your accounts.</li>
-          <li>It cannot read private pages you are not viewing.</li>
-          <li>It cannot see images, audio, or video beyond voice transcription.</li>
-        </ul>
+      <div id="tour-ring" class="tour-ring" aria-hidden="true"></div>
+      <div id="tour-card" class="tour-card">
+        <div id="tour-body" class="tour-body">
+          <p id="tour-progress" class="tour-progress"></p>
+          <h2 id="tour-title" class="tour-title"></h2>
+          <p id="tour-text" class="tour-text"></p>
         </div>
-
-        <div class="onboarding-actions">
-          <button id="onboarding-start" class="send" type="button">Start</button>
-          <button id="onboarding-skip" class="onboarding-skip" type="button">Skip</button>
+        <div class="tour-actions">
+          <button id="tour-back" class="tour-btn" type="button">Back</button>
+          <button id="tour-next" class="tour-btn tour-btn-next" type="button">Next</button>
+          <button id="tour-skip" class="tour-skip" type="button">Skip tour</button>
         </div>
       </div>
     </div>

@@ -647,39 +647,63 @@ input[readonly] {
   }
 }
 
-/* ------------------------------------------------ first-run onboarding */
+/* ---------------------------------------------------------- guided tour */
 
-.onboarding {
+/* The scrim is the ring's box-shadow: everything outside the ring is dimmed,
+ * the ring itself is a hole over the element being explained. Both the ring
+ * and the card are positioned from the element's live bounding box, so they
+ * follow the layout and the panel width. Only transitions, no libraries. */
+
+.tour {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  background: rgba(10, 10, 10, 0.92);
-}
-
-.onboarding-card {
-  width: 100%;
-  max-width: 460px;
-  max-height: calc(100vh - 24px);
-  max-height: calc(100dvh - 24px);
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
   overflow: hidden;
 }
 
-.onboarding-scroll {
-  overflow-y: auto;
-  padding: 20px 20px 16px 20px;
+.tour-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(10, 10, 10, 0.84);
+  opacity: 0;
+  pointer-events: none;
+  transition: top 0.24s ease, left 0.24s ease, width 0.24s ease,
+    height 0.24s ease, opacity 0.24s ease;
 }
 
-.onboarding-kicker {
-  margin: 0 0 8px 0;
+.tour.is-visible .tour-ring {
+  opacity: 1;
+}
+
+.tour-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(300px, calc(100vw - 20px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 14px 12px 14px;
+  box-shadow: 0 16px 36px rgba(10, 10, 10, 0.6);
+  transition: top 0.24s ease, left 0.24s ease;
+}
+
+.tour-body {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.tour-body.is-swapping {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.tour-progress {
+  margin: 0 0 6px 0;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -687,66 +711,94 @@ input[readonly] {
   color: var(--muted);
 }
 
-.onboarding-title {
-  margin: 0;
-  font-size: 16px;
+.tour-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.3;
   color: var(--text);
 }
 
-.onboarding-label {
-  margin: 18px 0 8px 0;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+.tour-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
-.onboarding-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.onboarding-list li {
-  border-left: 1px solid var(--line);
-  padding-left: 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-
-.onboarding-text {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text);
-}
-
-.onboarding-actions {
-  flex: 0 0 auto;
+.tour-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 20px 18px 20px;
-  border-top: 1px solid var(--line);
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.onboarding-start {
-  margin-left: 0;
-  min-width: 0;
-  padding: 8px 20px;
+.tour-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 
-.onboarding-skip {
-  padding: 8px 4px;
+.tour-btn:hover:not(:disabled),
+.tour-btn:focus-visible {
+  border-color: var(--muted);
+}
+
+.tour-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tour-btn-next {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.tour-btn-next:hover:not(:disabled),
+.tour-btn-next:focus-visible {
+  background: transparent;
+  color: var(--accent);
+}
+
+.tour-skip {
+  margin-left: auto;
   border: 0;
+  padding: 7px 2px;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.tour-skip:hover,
+.tour-skip:focus {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-ring,
+  .tour-card,
+  .tour-body {
+    transition: none;
+  }
+}
+
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .memory-actions {

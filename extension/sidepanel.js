@@ -111,6 +111,8 @@
     memoryPage: 1
   };
 
+  var tour = null;
+
   /* --------------------------------------------------------------- dom */
 
   function $(id) {
@@ -594,6 +596,308 @@
     return Array.isArray(value) ? value : [];
   }
 
+  /* --------------------------------------------------------------- tour */
+
+  /* A guided tour, not a wall of text. Each step points at a real element: a
+   * ring cuts a hole in a dimming scrim over that element, and a small card
+   * sits beside it with Back, Next and Skip. The ring and the card are placed
+   * from getBoundingClientRect at runtime, so they still point correctly after
+   * a reflow or a panel resize. CSS transitions do all the motion; there is no
+   * animation library and nothing is hardcoded. */
+
+  var TOUR_PAD = 8;
+  var TOUR_GAP = 12;
+  var TOUR_EDGE = 10;
+  var TOUR_MS = 240;
+  var TOUR_SWAP_MS = 110;
+
+  function tourReduced() {
+    return Boolean(
+      window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  }
+
+  function createTour(options) {
+    var root = $("tour");
+    var ring = $("tour-ring");
+    var card = $("tour-card");
+    var body = $("tour-body");
+    var progress = $("tour-progress");
+    var titleNode = $("tour-title");
+    var textNode = $("tour-text");
+    var back = $("tour-back");
+    var next = $("tour-next");
+    var skip = $("tour-skip");
+    if (!root || !ring || !card || !body || !progress || !titleNode || !textNode) {
+      return null;
+    }
+    if (!back || !next || !skip) {
+      return null;
+    }
+
+    var steps = [];
+    var index = 0;
+    var active = false;
+    var rafId = 0;
+
+    function targetAt(i) {
+      if (i < 0 || i >= steps.length) {
+        return null;
+      }
+      return document.querySelector(steps[i].select);
+    }
+
+    function boxFor(target) {
+      var rect = target.getBoundingClientRect();
+      return {
+        top: rect.top - TOUR_PAD,
+        left: rect.left - TOUR_PAD,
+        width: rect.width + TOUR_PAD * 2,
+        height: rect.height + TOUR_PAD * 2
+      };
+    }
+
+    function applyRing(box) {
+      ring.style.top = box.top + "px";
+      ring.style.left = box.left + "px";
+      ring.style.width = Math.max(0, box.width) + "px";
+      ring.style.height = Math.max(0, box.height) + "px";
+    }
+
+    /* Places the card on whichever side of the ring has room, then clamps it
+     * inside the viewport so it is never cut off and never sits on the hole. */
+    function placeCard(box) {
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var cw = card.offsetWidth;
+      var ch = card.offsetHeight;
+      var below = vh - (box.top + box.height);
+      var above = box.top;
+      var top;
+      if (below >= ch + TOUR_GAP) {
+        top = box.top + box.height + TOUR_GAP;
+      } else if (above >= ch + TOUR_GAP) {
+        top = box.top - TOUR_GAP - ch;
+      } else if (below >= above) {
+        top = box.top + box.height + TOUR_GAP;
+      } else {
+        top = box.top - TOUR_GAP - ch;
+      }
+      top = Math.max(TOUR_EDGE, Math.min(top, vh - ch - TOUR_EDGE));
+      var left = Math.max(TOUR_EDGE, Math.min(box.left, vw - cw - TOUR_EDGE));
+      card.style.top = Math.round(top) + "px";
+      card.style.left = Math.round(left) + "px";
+    }
+
+    function fullyVisible(target) {
+      var rect = target.getBoundingClientRect();
+      var margin = 16;
+      return (
+        rect.top >= margin &&
+        rect.bottom <= window.innerHeight - margin &&
+        rect.left >= 0 &&
+        rect.right <= window.innerWidth
+      );
+    }
+
+    /* Resolves once a smooth scroll has stopped moving the element, so the ring
+     * animates to where the element actually is rather than to a stale box. */
+    function scrollSettled(target) {
+      return new Promise(function (resolve) {
+        var last = null;
+        var stable = 0;
+        var started = Date.now();
+        function tick() {
+          var rect = target.getBoundingClientRect();
+          var key = Math.round(rect.top) + ":" + Math.round(rect.left);
+          if (key === last) {
+            stable += 1;
+          } else {
+            stable = 0;
+            last = key;
+          }
+          if (stable >= 3 || Date.now() - started > 700) {
+            resolve();
+            return;
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+    }
+
+    function ensureVisible(target) {
+      if (fullyVisible(target)) {
+        return Promise.resolve();
+      }
+      var rect = target.getBoundingClientRect();
+      var opts = {
+        block: rect.height > window.innerHeight * 0.7 ? "start" : "center",
+        inline: "nearest"
+      };
+      if (tourReduced()) {
+        target.scrollIntoView(opts);
+        return Promise.resolve();
+      }
+      opts.behavior = "smooth";
+      target.scrollIntoView(opts);
+      return scrollSettled(target);
+    }
+
+    function syncButtons() {
+      back.disabled = index <= 0;
+      next.textContent = index >= steps.length - 1 ? "Done" : "Next";
+      progress.textContent = "Step " + (index + 1) + " of " + steps.length;
+    }
+
+    function setCopy(step) {
+      titleNode.textContent = step.title;
+      textNode.textContent = step.text;
+    }
+
+    function showStep(i) {
+      if (!active) {
+        return;
+      }
+      if (i >= steps.length) {
+        finish();
+        return;
+      }
+      var target = targetAt(i);
+      if (!target) {
+        showStep(i + 1);
+        return;
+      }
+      index = i;
+      syncButtons();
+      var animate = !tourReduced();
+      if (animate) {
+        body.classList.add("is-swapping");
+      }
+      ensureVisible(target).then(function () {
+        if (!active || index !== i) {
+          return;
+        }
+        var box = boxFor(target);
+        applyRing(box);
+        if (!animate) {
+          body.classList.remove("is-swapping");
+          setCopy(steps[i]);
+          placeCard(box);
+          return;
+        }
+        window.setTimeout(function () {
+          if (!active || index !== i) {
+            return;
+          }
+          setCopy(steps[i]);
+          placeCard(box);
+          requestAnimationFrame(function () {
+            body.classList.remove("is-swapping");
+          });
+        }, TOUR_SWAP_MS);
+      });
+    }
+
+    function onKey(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        finish();
+      }
+    }
+
+    function onResize() {
+      if (!active || rafId) {
+        return;
+      }
+      rafId = requestAnimationFrame(function () {
+        rafId = 0;
+        var target = targetAt(index);
+        if (!active || !target) {
+          return;
+        }
+        var box = boxFor(target);
+        applyRing(box);
+        placeCard(box);
+      });
+    }
+
+    function finish() {
+      if (!active) {
+        return;
+      }
+      active = false;
+      document.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("resize", onResize);
+      body.classList.remove("is-swapping");
+      root.classList.remove("is-visible");
+      window.setTimeout(
+        function () {
+          root.classList.add("hidden");
+        },
+        tourReduced() ? 0 : TOUR_MS + 20
+      );
+      if (options.onFinish) {
+        options.onFinish();
+      }
+    }
+
+    function start() {
+      if (active) {
+        return;
+      }
+      steps = options.steps.filter(function (step) {
+        return Boolean(document.querySelector(step.select));
+      });
+      if (!steps.length) {
+        return;
+      }
+      active = true;
+      index = 0;
+      if (!tourReduced()) {
+        body.classList.add("is-swapping");
+      }
+      root.classList.remove("hidden");
+      document.addEventListener("keydown", onKey, true);
+      window.addEventListener("resize", onResize);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (active) {
+            root.classList.add("is-visible");
+          }
+        });
+      });
+      showStep(0);
+      next.focus();
+    }
+
+    back.addEventListener("click", function () {
+      if (active && index > 0) {
+        showStep(index - 1);
+      }
+    });
+    next.addEventListener("click", function () {
+      if (!active) {
+        return;
+      }
+      if (index >= steps.length - 1) {
+        finish();
+        return;
+      }
+      showStep(index + 1);
+    });
+    skip.addEventListener("click", finish);
+
+    return {
+      start: start,
+      isActive: function () {
+        return active;
+      }
+    };
+  }
+
   /* ---------------------------------------------------------- rendering */
 
   function scrollToEnd() {
@@ -607,42 +911,6 @@
     var hint = $("empty-hint");
     if (hint) {
       hint.classList.add("hidden");
-    }
-  }
-
-  /* First-run onboarding. The dismissal is persisted through the compatibility
-   * storage layer, so the panel is shown once and never again, whether the
-   * person chose Start or Skip. */
-  function onOnboardingKey(event) {
-    if (event.key === "Escape") {
-      dismissOnboarding();
-    }
-  }
-
-  function showOnboarding() {
-    var onboarding = $("onboarding");
-    if (!onboarding) {
-      return;
-    }
-    onboarding.classList.remove("hidden");
-    document.addEventListener("keydown", onOnboardingKey);
-    var start = $("onboarding-start");
-    if (start) {
-      start.focus();
-    }
-  }
-
-  function dismissOnboarding() {
-    var onboarding = $("onboarding");
-    if (!onboarding || onboarding.classList.contains("hidden")) {
-      return;
-    }
-    onboarding.classList.add("hidden");
-    persist(KEYS.onboarded, true);
-    document.removeEventListener("keydown", onOnboardingKey);
-    var input = $("chat-input");
-    if (input) {
-      input.focus();
     }
   }
 
@@ -762,7 +1030,11 @@
     }
 
     var zone = el("div", { class: "cf-zone" });
-    var button = el("button", { type: "button", class: "btn btn-quiet" }, "Show it without memory");
+    var button = el(
+      "button",
+      { type: "button", class: "btn btn-quiet cf-toggle" },
+      "Show it without memory"
+    );
     button.addEventListener("click", function () {
       runCounterfactual(turn.turn_id, button, zone);
     });
@@ -1286,6 +1558,91 @@
 
   /* -------------------------------------------------------------- boot */
 
+  /* The first-run guided tour, and the "Show me around" replay control that
+   * lives in Help. Finishing or skipping is persisted through the same storage
+   * layer as the rest of the panel, so the tour never returns on its own. */
+  function setupTour() {
+    tour = createTour({
+      steps: [
+        {
+          select: "#empty-hint",
+          title: "What Cheta is",
+          text:
+            "Cheta is a memory-first assistant. What you tell it is stored in " +
+            "your own memory space and comes back on later turns, on every " +
+            "surface you pair."
+        },
+        {
+          select: "#composer",
+          title: "Ask anything",
+          text:
+            "Type here and press Enter; Shift+Enter adds a line. Commands such " +
+            "as /help and /memories are typed as ordinary messages."
+        },
+        {
+          select: "#memory-switch",
+          title: "Memory switch",
+          text:
+            "On, this turn can recall from memory and store into it. Off, one " +
+            "message is answered without memory and nothing is saved."
+        },
+        {
+          select: ".recalled",
+          title: "Recalled memory",
+          text:
+            "Recalled lists exactly what was brought back for that reply. " +
+            "Nothing is hidden from you."
+        },
+        {
+          select: ".cf-toggle",
+          title: "Show it without memory",
+          text:
+            "This replays the same turn with memory off, so you can compare the " +
+            "two answers and see what memory changed."
+        },
+        {
+          select: "#use-page",
+          title: "Use this page",
+          text:
+            "Use this page reads the tab you are viewing right now, and only " +
+            "that page. It then offers three actions: summarise the page, save " +
+            "its useful facts to memory, or explain it plainly."
+        },
+        {
+          select: "#toggle-help",
+          title: "Help",
+          text:
+            "Help holds the full reference at any time, and Show me around " +
+            "replays this tour whenever you want it."
+        }
+      ],
+      onFinish: function () {
+        persist(KEYS.onboarded, true);
+        var input = $("chat-input");
+        if (input) {
+          input.focus();
+        }
+      }
+    });
+
+    var helpTour = $("help-tour");
+    var helpPanel = $("help-panel");
+    var helpButton = $("toggle-help");
+    if (helpTour) {
+      helpTour.addEventListener("click", function () {
+        if (helpPanel) {
+          helpPanel.classList.add("hidden");
+        }
+        if (helpButton) {
+          helpButton.setAttribute("aria-expanded", "false");
+        }
+        if (tour) {
+          tour.start();
+        }
+      });
+    }
+  }
+
   async function init() {
     var items = await storageGet(
       Object.keys(KEYS).map(function (key) {
@@ -1326,8 +1683,8 @@
     renderHistory();
     checkHealth();
 
-    if (!items[KEYS.onboarded]) {
-      showOnboarding();
+    if (!items[KEYS.onboarded] && tour) {
+      tour.start();
     }
   }
 
@@ -1428,25 +1785,6 @@
         }
       });
     }
-
-    var onboardingStart = $("onboarding-start");
-    if (onboardingStart) {
-      onboardingStart.addEventListener("click", dismissOnboarding);
-    }
-
-    var onboardingSkip = $("onboarding-skip");
-    if (onboardingSkip) {
-      onboardingSkip.addEventListener("click", dismissOnboarding);
-    }
-
-    var onboarding = $("onboarding");
-    if (onboarding) {
-      onboarding.addEventListener("click", function (event) {
-        if (event.target === onboarding) {
-          dismissOnboarding();
-        }
-      });
-    }
   }
 
   function boot() {
@@ -1455,6 +1793,7 @@
       return;
     }
     wire();
+    setupTour();
     init().catch(function () {
       setConn("Could not load settings. Check Settings.", "is-fail");
     });
