@@ -126,7 +126,11 @@ async def test_breaker_opens_short_circuits_then_half_opens_and_closes() -> None
 
 
 async def test_bulkhead_caps_concurrency_per_dependency() -> None:
-    policy = make_policy(max_concurrency=1)
+    # A generous timeout on purpose. The default of 50ms is shorter than
+    # three queued calls can take on a loaded machine, so this test failed
+    # intermittently while parallel work was running. Flakiness here is worse
+    # than no test, because it teaches people to ignore a red suite.
+    policy = make_policy(max_concurrency=1, timeout_seconds=5.0)
     boundary = Boundary(policy, RecordingSink(), sleep=_no_sleep)
     inside = {"current": 0, "peak": 0}
 
