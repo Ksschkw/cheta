@@ -60,6 +60,7 @@ from models.entities.memory_rank_model import (
     ConsolidationThresholds,
     RankedMemory,
     RankingWeights,
+    canonical_fact_text,
     classify_candidate,
     exact_fact_match,
     select_context,
@@ -388,11 +389,7 @@ class ConversationService:
             return None
         if not self._returning_after_gap(latest):
             return None
-        records = [
-            record
-            for record in self._memories.list_for_user(user_id, STATUS_ACTIVE, 200)
-            if is_person_fact(record.text)
-        ]
+        records = self._greeting_records(user_id, display_names)
         if not records:
             return None
         # There is no query here, so semantic distance is undefined and equal
@@ -979,6 +976,10 @@ class ConversationService:
                     )
             return None
         if any(phrase in lowered for phrase in MEMORY_QUERY_PHRASES):
+            # The same recovered, repaired view the /memories command uses, so a
+            # natural question can never answer "nothing stored" while notes exist.
+            user = self._users.get_or_create(surface, surface_user_id, display_name)
+            await self.recover_index_if_empty(user)
             reply = self.command_reply("/memories", surface, surface_user_id, display_name)
             if self._reply_channel is not None:
                 await self._reply_channel.send_message(recipient_id, reply)
@@ -1494,20 +1495,42 @@ class ConversationService:
 
         if command == "/start":
             existing = self._users.get_by_identity(surface, surface_user_id)
-            remembered = self._person_records(existing.id) if existing is not None else []
             greeting_names = subject_names(display_name)
-            heading = (
-                f"Welcome back. I remember {len(remembered)} things about you, including: "
-                + "; ".join(
-                    record_facing(record, greeting_names).rstrip(".")
-                    for record in remembered[:3]
-                )
-                + "."
-                if remembered
-                else f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
-                "what you tell me is stored in your own private memory space and comes "
-                "back in later conversations, on any of my surfaces."
+            # The greeting runs the same repaired, recovered, person-fact view
+            # the listing uses, so it can never quote an assistant fact, a
+            # retired record, or a note the listing would collapse.
+            remembered = (
+                self._greeting_records(existing.id, greeting_names)
+                if existing is not None
+                else []
             )
+            has_stored = (
+                existing is not None
+                and self._memories.count_for_user(existing.id, None) > 0
+            )
+            if remembered:
+                heading = (
+                    f"Welcome back. I remember {len(remembered)} things about you, "
+                    "including: "
+                    + "; ".join(
+                        record_facing(record, greeting_names).rstrip(".")
+                        for record in remembered[:3]
+                    )
+                    + "."
+                )
+            elif has_stored:
+                # A person with stored notes is never greeted as a new person,
+                # even when none of the notes can currently be shown.
+                heading = (
+                    "Welcome back. I do not have anything current about you to "
+                    "quote, but tell me something and I will keep it."
+                )
+            else:
+                heading = (
+                    f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
+                    "what you tell me is stored in your own private memory space and comes "
+                    "back in later conversations, on any of my surfaces."
+                )
             return (
                 heading
                 + "\n\nCommands:\n"
@@ -1816,6 +1839,25 @@ class ConversationService:
         records = self._memories.list_for_user(user_id, None, 1000)
         repairs = self._repair_active_memories(records, display_names)
         return self._person_records(user_id), repairs
+
+    def _greeting_records(self, user_id: str, display_names: tuple[str, ...]) -> list:
+        """The ordered, current facts a greeting may quote.
+
+        The repair pass runs first, so a record the listing would collapse is
+        never quoted. Only active person facts survive: a record about the
+        assistant or the conversation is not a fact about the person, and a
+        retired or contradicted record is not current. A meta identity note
+        ("your name is ...") is placed after a specific, durable fact.
+        """
+        records, _ = self._listing_records(user_id, display_names)
+        active = [record for record in records if record.status == STATUS_ACTIVE]
+
+        def priority(record) -> tuple[bool, float, int]:
+            canonical = canonical_fact_text(record.text, display_names)
+            meta = canonical.startswith("your name is")
+            return (meta, -float(record.importance), -len(record.text))
+
+        return sorted(active, key=priority)
 
     @staticmethod
     def _repair_report_lines(
@@ -2380,10 +2422,19 @@ class ConversationService:
             parts.append(f"{result.contradiction_count} contradiction flagged")
         if parts and self._settings.memory_receipts:
             lines.extend(["", "memory: " + ", ".join(parts)])
-        elif result.first_turn and not result.stored_facts and not result.recalled:
+        elif (
+            result.first_turn
+            and not result.stored_facts
+            and not result.recalled
+            and not self._greeting_records(
+                result.user_id, self._display_names_for(result.user_id)
+            )
+        ):
             # First contact, or a turn with nothing durable in it. Nudging here is
             # the difference between a user who stores one fact and a user who
-            # stores ten, which is what the submission is scored on.
+            # stores ten, which is what the submission is scored on. A person who
+            # already has notes is not a first contact and is never nudged to
+            # introduce themselves.
             lines.extend(
                 [
                     "",

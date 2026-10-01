@@ -393,6 +393,59 @@ async def test_the_forget_menu_is_never_shown_with_a_nothing_stored_message() ->
     ), "a menu of notes and a nothing-stored message must never coexist"
 
 
+async def test_no_surface_tells_a_person_with_notes_that_they_are_new() -> None:
+    container, _, channel = build_test_container([])
+    service = container.conversation_service
+    # The person exists and has notes but has never been through a turn: the
+    # exact shape that used to be greeted as a first contact.
+    user = service._users.get_or_create("telegram", "555", "Ada")
+    namespace = service._settings.memory_namespace(user.memory_key)
+    for index in range(19):
+        service._memories.create(
+            user_id=user.id,
+            blob_id=f"blob-{index}",
+            namespace=namespace,
+            text=f"Preference number {index}",
+            importance=0.5,
+            origin_surface="telegram",
+            occurred_at=f"2026-10-{index + 1:02d}T00:00:00Z",
+        )
+
+    greeting = await service.answer_command("/start", "telegram", "555", "Ada")
+    listing = await service.answer_command("/memories", "telegram", "555", "Ada")
+
+    channel.sent.clear()
+    channel.markups.clear()
+    await service.handle_callback_query(
+        "telegram", "555", "Ada", "555", "cb-forget", "mem:forget"
+    )
+
+    assert "Hi, I am" not in greeting
+    assert "Welcome back" in greeting
+    assert "Preference number 0" in listing
+    assert "nothing stored" not in listing.lower()
+    assert channel.markups[-1] is not None
+    assert not any(
+        "there is nothing to forget" in text for _, text in channel.sent
+    )
+
+    result = await service.handle_turn(
+        "telegram", "555", "Ada", "Tell me about the weather in Oslo"
+    )
+    assert result is not None
+    assert result.first_turn is True
+    rendered = service._render_reply(result)
+    assert "Tell me a few things about yourself" not in rendered
+
+    recalled, _, _, stored = await service._assemble_context(
+        user.id, namespace, "Tell me about the weather in Oslo", 6, subject_names("Ada")
+    )
+    system = service._build_prompt(
+        "Ada", "Tell me about the weather in Oslo", recalled, stored
+    )[0].content
+    assert "nothing stored about this person yet" not in system
+
+
 @pytest.fixture
 def cli_env(tmp_path, monkeypatch):
     config = tmp_path / "ranti_cli.json"

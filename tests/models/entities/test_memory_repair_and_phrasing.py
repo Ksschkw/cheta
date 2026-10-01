@@ -10,7 +10,7 @@ from models.entities.memory_phrasing_model import (
     subject_names,
     to_second_person,
 )
-from models.entities.memory_rank_model import contains_fact
+from models.entities.memory_rank_model import contains_fact, exact_fact_match
 from models.entities.memory_repair_model import (
     KIND_CONTRADICTION,
     KIND_DUPLICATE,
@@ -237,6 +237,14 @@ def test_a_named_subject_and_the_user_subject_are_one_claim_with_extra_detail() 
 
 
 def test_an_exact_duplicate_is_still_collapsed_across_subjects() -> None:
+    assert (
+        exact_fact_match(
+            "The user is interested in purchasing a MacBook.",
+            "Kosisochukwu is interested in purchasing a MacBook.",
+            KOSI_NAMES,
+        )
+        is True
+    )
     actions = plan_repairs(
         [
             record("The user is interested in purchasing a MacBook.", "m11", "blob-11"),
@@ -251,6 +259,9 @@ def test_an_exact_duplicate_is_still_collapsed_across_subjects() -> None:
     )
 
     assert [action.kind for action in actions] == [KIND_DUPLICATE]
+    # The deterministic exact-match guard, not the containment fallback, is what
+    # caught this pair.
+    assert actions[0].reason == "exact duplicate of an active record"
     assert actions[0].retired_id in {"m11", "m13"}
 
 

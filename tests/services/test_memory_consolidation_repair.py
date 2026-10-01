@@ -211,3 +211,53 @@ async def test_a_contradiction_retires_a_record_whose_local_blob_is_still_pendin
 
     assert result.stored_facts[0].verdict == "contradicts"
     assert statuses(harness, user.id)[PHONE] == "contradicted"
+
+
+GREETING_ASSISTANT_FACT = (
+    "The assistant's name is Cheta, though some people still call them Ranti."
+)
+GREETING_NAME_FACT = "The user's name is Kosisochukwu."
+GREETING_OPINION_FACT = (
+    "The user holds a negative opinion of football player Lionel Messi, "
+    "describing him as a fraud."
+)
+GREETING_GOOD_FACT = (
+    "The user is a software engineering student at the Federal University of "
+    "Technology Owerri (FUTO)."
+)
+
+
+async def test_the_greeting_never_quotes_an_assistant_or_conversation_fact() -> None:
+    """The exact /start greeting from the owner's screenshot, junk included."""
+    harness = Harness([])
+    user = harness.users.get_or_create("telegram", "42", "Kosisochukwu")
+    namespace = harness.settings.memory_namespace(user.memory_key)
+    seeded = [
+        GREETING_NAME_FACT,
+        GREETING_ASSISTANT_FACT,
+        GREETING_OPINION_FACT,
+        GREETING_GOOD_FACT,
+    ]
+    for index, text in enumerate(seeded):
+        harness.memories.create(
+            user_id=user.id,
+            blob_id=f"blob-{index}",
+            namespace=namespace,
+            text=text,
+            importance=0.9,
+            origin_surface="telegram",
+            occurred_at=f"2026-01-{index + 1:02d}T00:00:00+00:00",
+        )
+
+    greeting = harness.service.command_reply("/start", "telegram", "42", "Kosisochukwu")
+    lowered = greeting.lower()
+
+    assert "Welcome back" in greeting
+    assert "assistant" not in lowered
+    assert "cheta" not in lowered
+    assert "ranti" not in lowered
+    assert "conversation" not in lowered
+    # The real, durable fact is still quoted.
+    assert "software engineering student" in greeting
+    # And the assistant fact was retired by the repair the greeting runs.
+    assert statuses(harness, user.id)[GREETING_ASSISTANT_FACT] == "superseded"
