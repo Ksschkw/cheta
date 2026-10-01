@@ -608,3 +608,44 @@ async def test_an_ordinary_question_is_still_a_normal_turn() -> None:
     )
 
     assert result is not None
+
+
+async def test_forget_retires_a_note_so_it_stops_being_recalled() -> None:
+    """The correction path, promised as part of making the bot act on its memory.
+
+    Walrus Memory cannot erase a blob, so this is honest about what it does.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    first = await harness.say("I am allergic to peanuts")
+    assert harness.memories.count_for_user(first.user_id, "active") == 1
+
+    reply = harness.service.command_reply("/forget", "telegram", "42", "Ada", "1")
+
+    assert "will not bring up" in reply
+    assert "cannot erase a blob" in reply
+    assert harness.memories.count_for_user(first.user_id, "active") == 0
+
+
+async def test_forget_without_a_valid_number_explains_itself() -> None:
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    await harness.say("I like tea")
+
+    assert "which number" in harness.service.command_reply(
+        "/forget", "telegram", "42", "Ada", "banana"
+    )
+    assert "no note 9" in harness.service.command_reply(
+        "/forget", "telegram", "42", "Ada", "9"
+    )
+
+
+async def test_the_listing_shows_a_retired_note_marked_not_hidden() -> None:
+    """Transparency: the note still exists on Walrus, so it is shown as retired
+    rather than silently disappearing, which would be its own kind of lie."""
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    await harness.say("I like tea")
+
+    harness.service.command_reply("/forget", "telegram", "42", "Ada", "1")
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "Ada likes tea" in listing
+    assert "[superseded]" in listing

@@ -45,7 +45,7 @@ from schemas.turn_schema import (
 
 logger = logging.getLogger("ranti.service.conversation")
 
-COMMANDS = ("/start", "/help", "/memories")
+COMMANDS = ("/start", "/help", "/memories", "/forget")
 
 # Natural requests for the memory listing. Semantic recall cannot serve these:
 # "what do you know about me" has no embedding similarity to "prefers dark mode",
@@ -330,10 +330,14 @@ class ConversationService:
         a command, because a command is answered directly and is not a turn.
         """
         stripped = text.strip()
-        command = stripped.split()[0].lower() if stripped else ""
+        parts = stripped.split()
+        command = parts[0].lower() if parts else ""
+        argument = parts[1] if len(parts) > 1 else ""
         lowered = stripped.lower()
         if command in COMMANDS:
-            reply = self.command_reply(command, surface, surface_user_id, display_name)
+            reply = self.command_reply(
+                command, surface, surface_user_id, display_name, argument
+            )
             if self._reply_channel is not None:
                 await self._reply_channel.send_message(recipient_id, reply)
             return None
@@ -354,7 +358,12 @@ class ConversationService:
         return result
 
     def command_reply(
-        self, command: str, surface: str, surface_user_id: str, display_name: str
+        self,
+        command: str,
+        surface: str,
+        surface_user_id: str,
+        display_name: str,
+        argument: str = "",
     ) -> str:
         """Answer a command with no model call and no stored turn.
 
@@ -390,6 +399,10 @@ class ConversationService:
             )
 
         user = self._users.get_or_create(surface, surface_user_id, display_name)
+
+        if command == "/forget":
+            return self._forget_reply(user.id, argument)
+
         records = sorted(
             self._memories.list_for_user(user.id, None, 200),
             key=lambda record: record.importance,
@@ -409,6 +422,33 @@ class ConversationService:
             lines.append(f"...and {len(records) - 10} more.")
         lines.extend(["", "Tell me if any of that is wrong and I will correct it."])
         return "\n".join(lines)
+
+    def _forget_reply(self, user_id: str, argument: str) -> str:
+        """Retire a note so it stops being recalled.
+
+        Walrus Memory has no delete method and the relayer is append-only, so
+        this is honest about what it does: the note is marked retired and will no
+        longer surface. The blob itself remains on Walrus until it expires.
+        """
+        records = sorted(
+            self._memories.list_for_user(user_id, None, 200),
+            key=lambda record: record.importance,
+            reverse=True,
+        )
+        try:
+            index = int(argument)
+        except ValueError:
+            return "Tell me which number to forget, like /forget 2. See /memories for the list."
+
+        if index < 1 or index > min(len(records), 10):
+            return f"There is no note {index}. Send /memories to see what I have."
+
+        target = records[index - 1]
+        self._memories.mark_status(target.id, STATUS_SUPERSEDED, "user-retracted")
+        return (
+            f"Done. I will not bring up \"{target.text}\" again. It stays on Walrus "
+            "until its storage expires, because Walrus Memory cannot erase a blob."
+        )
 
     async def notify_unavailable(self, recipient_id: str) -> None:
         """Tell a push-transport user that this turn could not be served."""
