@@ -14,3 +14,8 @@ __pycache__/
 artifacts/
 exports/
 *.log
+
+# Internal working files: for the owner only, never published.
+TASKS.md
+PLAN.md
+docs/submission.md
