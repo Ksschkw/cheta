@@ -649,3 +649,22 @@ async def test_the_listing_shows_a_retired_note_marked_not_hidden() -> None:
 
     assert "Ada likes tea" in listing
     assert "[superseded]" in listing
+
+
+async def test_the_prompt_names_the_person_and_forbids_false_capability_claims() -> None:
+    """Both failures are from a real transcript.
+
+    The bot claimed it could read PDFs and PPTs when it cannot, so the user asked
+    three times whether it was lying. It also described itself as "a language
+    model" with "no visual interface", understating its own product.
+    """
+    harness = Harness([])
+
+    system = harness.service._build_prompt("Kosisochukwu", "hello", [], 0)[0].content
+
+    assert "called Kosisochukwu" in system
+    assert "Only use a different name if they explicitly ask" in system
+    assert "cannot read or open attachments" in system
+    assert "Never claim otherwise" in system
+    assert "three surfaces" in system
+    assert "never say you have no memory across conversations" in system
