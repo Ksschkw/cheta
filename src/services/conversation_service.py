@@ -339,11 +339,28 @@ class ConversationService:
         remembered. Both are cheap and both should be instant.
         """
         if command in ("/start", "/help"):
-            return (
-                f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
+            existing = self._users.get_by_identity(surface, surface_user_id)
+            remembered = (
+                sorted(
+                    self._memories.list_for_user(existing.id, None, 200),
+                    key=lambda record: record.importance,
+                    reverse=True,
+                )
+                if existing is not None
+                else []
+            )
+            heading = (
+                f"Welcome back. I remember {len(remembered)} things about you, including: "
+                + "; ".join(record.text for record in remembered[:3])
+                + "."
+                if remembered
+                else f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
                 "what you tell me is stored in your own private memory space and comes "
-                "back in later conversations, on any of my surfaces.\n\n"
-                "Commands:\n"
+                "back in later conversations, on any of my surfaces."
+            )
+            return (
+                heading
+                + "\n\nCommands:\n"
                 "/memories  show everything I have stored about you\n"
                 "/help      this message\n\n"
                 "Just talk to me normally and I will pick up what is worth keeping."

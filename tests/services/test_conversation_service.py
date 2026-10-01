@@ -555,3 +555,24 @@ async def test_a_command_returns_no_turn_so_the_router_can_tell_the_difference()
 
     assert result is None
     assert harness.turns.list_for_user("nobody") == []
+
+
+async def test_a_returning_user_is_greeted_with_what_is_remembered() -> None:
+    """The moment that makes the product's promise visible, immediately."""
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say("I am allergic to peanuts")
+
+    text = harness.service.command_reply("/start", "telegram", "42", "Ada")
+
+    assert "Welcome back" in text
+    assert "I remember 1 things about you" in text
+    assert "Ada is allergic to peanuts" in text
+
+
+async def test_start_does_not_create_a_user_who_has_never_spoken() -> None:
+    harness = Harness([])
+
+    text = harness.service.command_reply("/start", "telegram", "999", "Stranger")
+
+    assert harness.users.list() == []
+    assert "Hi, I am Cheta" in text
