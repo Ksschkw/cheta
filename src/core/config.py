@@ -102,9 +102,23 @@ class Settings:
 
     llm_providers: tuple[LlmProviderConfig, ...] = field(default_factory=tuple)
 
+    # Hold a free host awake. Enabled by default only for an https deployment,
+    # because a always-on free instance consumes essentially the whole monthly
+    # instance-hour allowance.
+    keepalive_enabled: bool = True
+
     memwal_timeout_seconds: float = 90.0
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
+
+    @property
+    def keepalive_target(self) -> str | None:
+        """The public https URL to ping, or None when there is nothing to keep awake."""
+        if not self.keepalive_enabled:
+            return None
+        if not self.public_base_url.startswith("https://"):
+            return None
+        return self.public_base_url
 
     @property
     def memwal_configured(self) -> bool:
@@ -181,5 +195,7 @@ class Settings:
             telegram_webhook_secret=_get(source, "TELEGRAM_WEBHOOK_SECRET"),
             public_base_url=_get(source, "PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
             memwal_timeout_seconds=_get_float(source, "MEMWAL_TIMEOUT_SECONDS", 90.0),
+            keepalive_enabled=_get(source, "RANTI_KEEPALIVE", "1").lower()
+            not in ("0", "false", "no", "off"),
             llm_providers=tuple(candidate for candidate in candidates if candidate.configured),
         )

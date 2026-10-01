@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -12,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from core.config import Settings
 from core.container import Container, build_container
 from core.errors import RantiError
+from core.keepalive import KeepAlivePinger
 from routers import (
     chat_router,
     evidence_router,
@@ -32,12 +34,27 @@ logging.basicConfig(
 def create_app(container: Container | None = None, settings: Settings | None = None) -> FastAPI:
     resolved = container or build_container(settings)
 
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        pinger = getattr(application.state, "keepalive", None)
+        if pinger is not None:
+            pinger.start()
+        try:
+            yield
+        finally:
+            if pinger is not None:
+                await pinger.stop()
+
     app = FastAPI(
+        lifespan=lifespan,
         title="Ranti",
         description="One mind, every app. Portable Walrus Memory that consolidates instead of rot.",
         version="0.1.0",
     )
     app.state.container = resolved
+    # create_app accepts either a Container or a Settings.
+    target = resolved.settings.keepalive_target
+    app.state.keepalive = KeepAlivePinger(target) if target else None
 
     @app.exception_handler(RantiError)
     async def _domain_error(_: Request, exc: RantiError) -> JSONResponse:
