@@ -45,6 +45,7 @@ class TurnSchema(BaseModel):
     memory_degraded: bool
     memory_note: str | None = None
     provider: str | None = None
+    first_turn: bool = False
 
 
 class CounterfactualSchema(BaseModel):

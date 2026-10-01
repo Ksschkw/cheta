@@ -50,16 +50,19 @@ def test_a_valid_update_is_handled_and_replies_on_the_channel() -> None:
     assert text.startswith("I have no memory of you.")
 
 
-def test_the_reply_carries_a_memory_receipt_when_something_was_learned() -> None:
+def test_internal_memory_plumbing_is_not_shown_to_users() -> None:
+    """Real users saw "memory: 1 accepted, persisting" and asked what it was.
+
+    This replaces an earlier test asserting the receipt was present. Showing
+    plumbing in the chat was the wrong default, so the contract changed.
+    """
     client, channel = make_client(secret="s3cret")
 
     client.post("/webhooks/telegram/s3cret", json=update(555, "I am allergic to peanuts"))
 
     _, text = channel.sent[0]
-    # The turn returns as soon as the relayer accepts the write, so the receipt
-    # must say "accepted, persisting" and never claim the memory is stored.
-    assert "memory: 1 accepted, persisting" in text
-    assert "1 new" not in text
+    assert "memory:" not in text
+    assert "persisting" not in text
 
 
 def test_a_wrong_secret_is_refused_and_nothing_is_sent() -> None:

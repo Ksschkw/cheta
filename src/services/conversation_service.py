@@ -223,7 +223,9 @@ class ConversationService:
             ChatMessageSchema(
                 role="system",
                 content=(
-                    "You are Ranti, a memory-first assistant. You are warm, concrete and brief. "
+                    f"You are {self._settings.bot_name}, a memory-first assistant. Some "
+                    "people still call you Ranti, so answer naturally to either name. "
+                    "You are warm, concrete and brief. "
                     "Answer in at most 120 words unless asked for more. Write plain text only: "
                     "no markdown, no asterisks, no headings. " + memory_section
                 ),
@@ -277,7 +279,10 @@ class ConversationService:
             )
             degraded = degraded or write_degraded
 
+        first_turn = self._turns.count_for_user(user.id) == 1
+
         return TurnSchema(
+            first_turn=first_turn,
             turn_id=turn.id,
             user_id=user.id,
             memory_namespace=namespace,
@@ -339,17 +344,17 @@ class ConversationService:
             parts.append(f"{result.skipped_duplicates} duplicate skipped")
         if result.contradiction_count:
             parts.append(f"{result.contradiction_count} contradiction flagged")
-        if parts:
+        if parts and self._settings.memory_receipts:
             lines.extend(["", "memory: " + ", ".join(parts)])
-        elif not result.recalled and not result.stored_facts:
+        elif result.first_turn and not result.stored_facts and not result.recalled:
             # First contact, or a turn with nothing durable in it. Nudging here is
             # the difference between a user who stores one fact and a user who
             # stores ten, which is what the submission is scored on.
             lines.extend(
                 [
                     "",
-                    "Tell me a few things about yourself (what you do, what you are "
-                    "allergic to, how you take your coffee) and I will remember them next time.",
+                    "Tell me a few things about yourself and I will remember them for "
+                    "next time.",
                 ]
             )
         if result.memory_degraded:

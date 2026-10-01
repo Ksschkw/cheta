@@ -458,7 +458,7 @@ async def test_a_turn_that_stored_a_fact_does_not_nudge() -> None:
     text = harness.service._render_reply(result)
 
     assert "Tell me a few things about yourself" not in text
-    assert "memory:" in text
+    assert "memory:" not in text
 
 
 async def test_the_prompt_never_denies_memory_when_notes_are_stored() -> None:

@@ -107,6 +107,13 @@ class Settings:
     # instance-hour allowance.
     keepalive_enabled: bool = True
 
+    # Persona name. Renaming the bot must never touch MEMWAL_NAMESPACE_PREFIX or
+    # the memory namespaces, or existing users lose everything they stored.
+    bot_name: str = "Cheta"
+    # Internal plumbing like "1 accepted, persisting" must stay out of the chat
+    # unless someone explicitly wants it for a demo.
+    memory_receipts: bool = False
+
     memwal_timeout_seconds: float = 90.0
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
@@ -197,5 +204,8 @@ class Settings:
             memwal_timeout_seconds=_get_float(source, "MEMWAL_TIMEOUT_SECONDS", 90.0),
             keepalive_enabled=_get(source, "RANTI_KEEPALIVE", "1").lower()
             not in ("0", "false", "no", "off"),
+            bot_name=_get(source, "BOT_NAME", "Cheta"),
+            memory_receipts=_get(source, "RANTI_MEMORY_RECEIPTS", "0").lower()
+            in ("1", "true", "yes", "on"),
             llm_providers=tuple(candidate for candidate in candidates if candidate.configured),
         )

@@ -87,3 +87,19 @@ def test_the_repository_dotenv_path_points_at_the_repo_root() -> None:
 
     assert DOTENV_PATH.name == ".env"
     assert (DOTENV_PATH.parent / "pyproject.toml").is_file()
+
+
+def test_the_persona_is_configurable_without_touching_the_namespace() -> None:
+    """Renaming the bot must never move the memory namespace."""
+    default = Settings.from_env({})
+    renamed = Settings.from_env({"BOT_NAME": "Something Else"})
+
+    assert default.bot_name == "Cheta"
+    assert renamed.bot_name == "Something Else"
+    assert renamed.memory_namespace("telegram-1") == default.memory_namespace("telegram-1")
+    assert default.memory_namespace("telegram-1").startswith("ranti.user.")
+
+
+def test_memory_receipts_are_off_unless_explicitly_enabled() -> None:
+    assert Settings.from_env({}).memory_receipts is False
+    assert Settings.from_env({"RANTI_MEMORY_RECEIPTS": "1"}).memory_receipts is True
