@@ -68,12 +68,13 @@ def make_icon(path: Path, size: int = 512) -> None:
             fill=ACCENT + (230,),
         )
 
-    # The monogram. anchor="mm" centres on the glyph's own metrics rather than
-    # on a bounding box computed from the origin, which is why the first version
-    # sat visibly high and left of centre.
-    font = load_font(int(size * 0.40))
-    draw.text((centre, centre), "C", font=font, fill=TEXT, anchor="mm")
-
+    # The monogram, drawn as geometry rather than set in a font: a thick arc with
+    # round caps, so it is centred by construction rather than by measuring a
+    # glyph's bounding box, and so it looks the same wherever it is rendered.
+    stroke = int(size * 0.088)
+    radius = int(size * 0.20)
+    box = (centre - radius, centre - radius, centre + radius, centre + radius)
+    draw.arc(box, start=55, end=305, fill=TEXT, width=stroke)
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, "PNG")
     print(f"[OK] {path.relative_to(REPO_ROOT)} {image.size[0]}x{image.size[1]}")

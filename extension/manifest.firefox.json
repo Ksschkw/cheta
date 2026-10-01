@@ -27,7 +27,13 @@
   "sidebar_action": {
     "default_panel": "sidepanel.html",
     "default_title": "Cheta",
-    "open_at_install": true
+    "open_at_install": true,
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "commands": {
     "open-cheta-sidebar": {
@@ -37,5 +43,11 @@
       },
       "description": "Open or close the Cheta sidebar"
     }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }

@@ -19,6 +19,7 @@ from core.database import Database
 from core.gateways.memwal_gateway import MemWalGateway
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.pairing_crud import PairingCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from models.entities.memory_rank_model import ConsolidationThresholds
@@ -178,6 +179,7 @@ class Harness:
         thresholds=None,
         client_wrapper=None,
         resume_after_hours: float = 6.0,
+        reply_channel=None,
     ):
         self.database = Database(":memory:")
         self.database.migrate()
@@ -211,6 +213,8 @@ class Harness:
             llm_gateway=self.llm,
             settings=self.settings,
             thresholds=thresholds,
+            reply_channel=reply_channel,
+            pairing=PairingCrud(self.database),
         )
 
     async def say(self, text: str, surface: str = "telegram"):

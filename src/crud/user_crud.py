@@ -23,6 +23,7 @@ def _row_to_model(row) -> UserModel:
         memory_handle=(
             row["memory_handle"] if "memory_handle" in row.keys() else None
         ),
+        linked_at=(row["linked_at"] if "linked_at" in row.keys() else None),
     )
 
 
@@ -81,7 +82,11 @@ class UserCrud:
         return existing
 
     def set_memory_handle(self, user_id: str, handle: str | None) -> UserModel | None:
-        """Bind or clear the shared handle. Validation lives in the entity."""
+        """Bind or clear the shared handle. Validation lives in the entity.
+
+        Joining a space records when it happened, so /sessions can say when each
+        client was linked; leaving clears it again.
+        """
         from models.entities.user_model import UserModel as _UserModel
 
         current = self.get_by_id(user_id)
@@ -96,10 +101,21 @@ class UserCrud:
             created_at=current.created_at,
             memory_handle=handle,
         )
+        linked_at = _now() if handle is not None else None
         changed = self._database.execute(
-            "UPDATE users SET memory_handle = ? WHERE id = ?", (handle, user_id)
+            "UPDATE users SET memory_handle = ?, linked_at = ? WHERE id = ?",
+            (handle, linked_at, user_id),
         )
         return self.get_by_id(user_id) if changed else None
+
+    def list_by_memory_handle(self, handle: str) -> list[UserModel]:
+        """Every identity currently sharing one handle. One entity, no joins."""
+        rows = self._database.fetch_all(
+            "SELECT * FROM users WHERE memory_handle = ?"
+            " ORDER BY linked_at ASC, created_at ASC, surface ASC",
+            (handle,),
+        )
+        return [_row_to_model(row) for row in rows]
 
     def update(self, user_id: str, display_name: str) -> UserModel | None:
         if not display_name.strip():

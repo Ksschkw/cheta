@@ -126,6 +126,13 @@ class Settings:
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
 
+    # How long a pairing code stays valid. Ten minutes is long enough to walk to
+    # another device and short enough that a leaked code is soon worthless.
+    pairing_code_ttl_seconds: float = 600.0
+    # Domain separation for the stored code hash. The digest is the only form
+    # kept on disk, so a database read does not reveal a live code.
+    pairing_hash_pepper: str = "ranti-pairing"
+
     # Voice-note transcription. Groq's Whisper endpoint is on the free tier and
     # uses the same key as the Groq chat provider, so it is configured by
     # default from GROQ_API_KEY and can be pointed elsewhere.
@@ -222,6 +229,10 @@ class Settings:
             telegram_webhook_secret=_get(source, "TELEGRAM_WEBHOOK_SECRET"),
             public_base_url=_get(source, "PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
             memwal_timeout_seconds=_get_float(source, "MEMWAL_TIMEOUT_SECONDS", 90.0),
+            pairing_code_ttl_seconds=_get_float(
+                source, "RANTI_PAIRING_CODE_TTL_SECONDS", 600.0
+            ),
+            pairing_hash_pepper=_get(source, "RANTI_PAIRING_PEPPER", "ranti-pairing"),
             keepalive_enabled=_get(source, "RANTI_KEEPALIVE", "1").lower()
             not in ("0", "false", "no", "off"),
             bot_name=_get(source, "BOT_NAME", "Cheta"),

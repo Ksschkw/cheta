@@ -33,6 +33,7 @@ from core.tools.tool_registry import ToolRegistry
 from core.tools.web_tools import build_web_tools
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.pairing_crud import PairingCrud
 from crud.reminder_crud import ReminderCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
@@ -194,6 +195,7 @@ def build_container(settings: Settings | None = None) -> Container:
     turns = TurnCrud(database)
     contradictions = ContradictionCrud(database)
     reminders = ReminderCrud(database)
+    pairings = PairingCrud(database)
 
     memory_gateway = build_memory_gateway(resolved)
     llm_gateway = build_llm_gateway(resolved)
@@ -222,6 +224,7 @@ def build_container(settings: Settings | None = None) -> Container:
         # The agent loop runs inside handle_turn, so every surface reaches it.
         tools=tools,
         transcription_gateway=transcription_gateway,
+        pairing=pairings,
     )
     memory_admin_service = MemoryAdminService(
         users=users,

@@ -109,6 +109,20 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         sent_at TEXT
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS pairing_codes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        surface TEXT NOT NULL,
+        surface_user_id TEXT NOT NULL,
+        code_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        redeemed_at TEXT,
+        redeemed_by_user_id TEXT,
+        invalidated_at TEXT
+    )
+    """,
 )
 
 INDEX_STATEMENTS: tuple[str, ...] = (
@@ -116,6 +130,8 @@ INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_turns_user ON turns (user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS idx_contradictions_user ON contradictions (user_id, status)",
     "CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders (status, due_at)",
+    "CREATE INDEX IF NOT EXISTS idx_pairing_codes_hash ON pairing_codes (code_hash)",
+    "CREATE INDEX IF NOT EXISTS idx_pairing_codes_user ON pairing_codes (user_id, redeemed_at)",
 )
 
 
@@ -147,6 +163,7 @@ class Database:
     #: rows and recreating the table would destroy them.
     ADDITIVE_COLUMNS: tuple[tuple[str, str], ...] = (
         ("users", "memory_handle TEXT"),
+        ("users", "linked_at TEXT"),
     )
 
     def migrate(self) -> None:

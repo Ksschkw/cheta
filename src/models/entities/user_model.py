@@ -30,6 +30,10 @@ class UserModel:
     # is used, which is exactly what every existing user has today, so nothing
     # stored before this existed is orphaned.
     memory_handle: str | None = None
+    # When this identity last joined its shared space. /sessions shows it, and
+    # it falls back to created_at for identities that joined before the column
+    # existed.
+    linked_at: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:

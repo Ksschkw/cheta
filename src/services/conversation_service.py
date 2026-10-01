@@ -12,7 +12,7 @@ import json
 import logging
 import re
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from core.attachment_parser import (
     ADVERTISED_EXTENSIONS,
@@ -34,6 +34,7 @@ from core.protocols import (
 from core.tools.tool_registry import ToolContext, ToolRegistryProtocol
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.pairing_crud import PairingCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from models.entities.memory_index_model import (
@@ -65,6 +66,12 @@ from models.entities.memory_repair_model import (
     RepairAction,
     plan_repairs,
 )
+from models.entities.pairing_code_model import (
+    generate_pairing_code,
+    looks_like_pairing_code,
+    normalize_pairing_code,
+    pairing_code_hash,
+)
 from models.entities.turn_model import TurnModel
 from schemas.attachment_schema import AttachmentSchema
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
@@ -77,7 +84,22 @@ from schemas.turn_schema import (
 
 logger = logging.getLogger("ranti.service.conversation")
 
-COMMANDS = ("/start", "/help", "/memories", "/forget", "/correct", "/link", "/unlink")
+COMMANDS = (
+    "/start",
+    "/help",
+    "/memories",
+    "/forget",
+    "/correct",
+    "/link",
+    "/unlink",
+    "/pair",
+    "/sessions",
+    "/unpair",
+    # Bare "pair <code>" redeems a code on the new client, so the command has no
+    # slash. It is recognised only when the argument really looks like a code,
+    # which handle_turn checks before treating it as a command.
+    "pair",
+)
 
 # Inline keyboard callback data. Kept as short as Telegram allows because the
 # whole payload is round-tripped on every tap.
@@ -198,7 +220,8 @@ ONBOARDING_TEXT = (
     "yourself; /memories shows everything I have stored and /forget retires one "
     "note. The same memory follows you across my four surfaces (Telegram, the "
     "web widget, the Chrome extension and the command line), and pairing a new "
-    "client to the same handle brings your memory with it. What I cannot do, "
+    "client to the same handle brings your memory with it: /pair on a client you "
+    "already use gives you a code to enter on the new one. What I cannot do, "
     "plainly: I cannot log into your accounts, I cannot read private pages you "
     "are not viewing, and I cannot understand images or video. Ask what I can do "
     "any time and I will tell you."
@@ -267,6 +290,7 @@ class ConversationService:
         attachment_parser: AttachmentParserProtocol | None = None,
         tools: ToolRegistryProtocol | None = None,
         transcription_gateway: TranscriptionGatewayProtocol | None = None,
+        pairing: PairingCrud | None = None,
     ) -> None:
         self._users = users
         self._memories = memories
@@ -286,6 +310,9 @@ class ConversationService:
         # agent loop through handle_turn, so all four get the same tools.
         self._tools = tools
         self._transcription_gateway = transcription_gateway
+        # Pairing codes are issued and redeemed through this store. It is
+        # optional so a harness that never exercises pairing still builds.
+        self._pairing = pairing
         # Per-user snapshot bookkeeping, used to keep the encoded sequence
         # monotonic for the lifetime of this process.
         self._snapshot_sequences: dict[str, int] = {}
@@ -619,7 +646,7 @@ class ConversationService:
         # widget or the CLI sent it to the model instead.
         parts = text.strip().split()
         command = parts[0].lower() if parts else ""
-        if command in COMMANDS:
+        if command in COMMANDS and self._is_runnable_command(command, " ".join(parts[1:])):
             user = self._users.get_or_create(surface, surface_user_id, display_name)
             return TurnSchema(
                 turn_id="",
@@ -745,6 +772,19 @@ class ConversationService:
         )
 
     @staticmethod
+    def _is_runnable_command(command: str, argument: str) -> bool:
+        """Whether a first token really starts a command.
+
+        Every slash command always does. The bare ``pair`` command is the one
+        exception: it is a redemption only when the argument is a plausible
+        code, so "pair of shoes" stays an ordinary message instead of becoming
+        a failed redemption.
+        """
+        if command == "pair":
+            return looks_like_pairing_code(argument)
+        return True
+
+    @staticmethod
     def _tool_failure_note(failures: list[str]) -> str | None:
         """Say what a failed tool could not do, and what to try next.
 
@@ -849,7 +889,7 @@ class ConversationService:
         command = parts[0].lower() if parts else ""
         argument = " ".join(parts[1:])
         lowered = stripped.lower()
-        if command in COMMANDS:
+        if command in COMMANDS and self._is_runnable_command(command, argument):
             reply = await self.answer_command(
                 command, surface, surface_user_id, display_name, argument
             )
@@ -916,6 +956,12 @@ class ConversationService:
             return await self._link_shared_handle(surface, surface_user_id, display_name, argument)
         if command == "/unlink":
             return self._unlink_shared_handle(surface, surface_user_id, display_name)
+        if command in ("/pair", "pair"):
+            return await self._pair_command(surface, surface_user_id, display_name, argument)
+        if command == "/sessions":
+            return self._sessions_reply(surface, surface_user_id, display_name)
+        if command == "/unpair":
+            return self._unpair_reply(surface, surface_user_id, display_name, argument)
         if command == "/correct":
             return await self._correct_reply(user, argument)
         return self.command_reply(command, surface, surface_user_id, display_name, argument)
@@ -957,6 +1003,39 @@ class ConversationService:
                 "/link with the same handle reads these memories."
             )
 
+        copied, attempted, degraded = await self._copy_notes_into_handle(
+            user, handle, after
+        )
+        if degraded:
+            return (
+                f"You are now on the shared space '{handle}', but Walrus Memory "
+                f"was unreachable so I copied nothing yet ({copied} copied). Your "
+                "notes are safe where they were. Send /link "
+                f"{handle} again to copy the rest."
+            )
+
+        truncated = (
+            " That is the per-call limit, so send the same command again for more."
+            if attempted == self.HANDLE_MIGRATION_LIMIT
+            else ""
+        )
+        return (
+            f"You are now on the shared space '{handle}'. Anyone using /link {handle} "
+            f"on any client reads the same memories. I copied {copied} note(s) from "
+            "this client's own space into it. Nothing was removed from the old space, "
+            "because Walrus Memory cannot move or erase a blob." + truncated
+        )
+
+    async def _copy_notes_into_handle(
+        self, user, handle: str, after: str
+    ) -> tuple[int, int, bool]:
+        """Copy this identity's local notes into a shared namespace.
+
+        The one migration path, shared by /link and by pairing, so the two can
+        never drift. Returns ``(copied, attempted, degraded)``. The source
+        namespace is left alone: the relayer is append-only and cannot move or
+        erase a blob, so this copies.
+        """
         pending = [
             record
             for record in self._memories.list_for_user(user.id, None, 200)
@@ -969,15 +1048,12 @@ class ConversationService:
                 written = await self._memory.remember(
                     record.text,
                     after,
-                    idempotency_key=self._idempotency_key(user.id, f"link-{handle}-{record.text}"),
+                    idempotency_key=self._idempotency_key(
+                        user.id, f"link-{handle}-{record.text}"
+                    ),
                 )
             except DependencyUnavailableError:
-                return (
-                    f"You are now on the shared space '{handle}', but Walrus Memory "
-                    f"was unreachable so I copied nothing yet ({copied} copied). Your "
-                    "notes are safe where they were. Send /link "
-                    f"{handle} again to copy the rest."
-                )
+                return copied, len(pending), True
             self._memories.create(
                 user_id=user.id,
                 blob_id=written.blob_id,
@@ -988,30 +1064,331 @@ class ConversationService:
                 occurred_at=record.occurred_at,
             )
             copied += 1
-
-        truncated = (
-            " That is the per-call limit, so send the same command again for more."
-            if len(pending) == self.HANDLE_MIGRATION_LIMIT
-            else ""
-        )
-        return (
-            f"You are now on the shared space '{handle}'. Anyone using /link {handle} "
-            f"on any client reads the same memories. I copied {copied} note(s) from "
-            "this client's own space into it. Nothing was removed from the old space, "
-            "because Walrus Memory cannot move or erase a blob." + truncated
-        )
+        return copied, len(pending), False
 
     def _unlink_shared_handle(
         self, surface: str, surface_user_id: str, display_name: str
     ) -> str:
         user = self._users.get_or_create(surface, surface_user_id, display_name)
+        return self._leave_shared_space(user)
+
+    def _leave_shared_space(self, user) -> str:
+        """Return this identity to its own per-surface namespace.
+
+        The shared space itself is never touched: it is only a name that other
+        clients resolve to, and its memories stay on Walrus.
+        """
         if user.memory_handle is None:
             return "You are already on this client's own memory space."
+        handle = user.memory_handle
         self._users.set_memory_handle(user.id, None)
         return (
-            "You are back on this client's own memory space. The shared space is "
-            "untouched and still there if you link again with /link "
-            f"{user.memory_handle}."
+            f"Done. This client is back on its own memory space. The shared space "
+            f"'{handle}' is untouched and still there for the clients that kept it; "
+            f"/link {handle} would join it again."
+        )
+
+    # ------------------------------------------------------------- pairing
+
+    async def _pair_command(
+        self, surface: str, surface_user_id: str, display_name: str, argument: str
+    ) -> str:
+        """Issue a code on a client in use, or redeem one on a new client."""
+        if self._pairing is None:
+            return "Pairing is not available on this deployment."
+        if argument.strip():
+            return await self._redeem_pairing_code(
+                surface, surface_user_id, display_name, argument
+            )
+        return await self._issue_pairing_code(surface, surface_user_id, display_name)
+
+    async def _issue_pairing_code(
+        self, surface: str, surface_user_id: str, display_name: str
+    ) -> str:
+        """Mint a one-time code bound to this identity's memory space.
+
+        If this client is not on a shared space yet, one is minted here and this
+        client's notes are copied onto it through the same path /link uses, so
+        the code always attaches the next client to a real space.
+        """
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        setup_note = ""
+        if user.memory_handle is None:
+            handle = f"pair-{secrets.token_hex(6)}"
+            updated = self._users.set_memory_handle(user.id, handle)
+            if updated is None:
+                return "I could not find that identity, so nothing changed."
+            copied, _, degraded = await self._copy_notes_into_handle(
+                updated, handle, self._settings.memory_namespace(updated.memory_key)
+            )
+            user = updated
+            if degraded:
+                setup_note = (
+                    " Walrus Memory was unreachable while I moved your notes onto the "
+                    f"shared space, so I copied {copied} of them. The rest stay in this "
+                    f"client's own space and /link {handle} copies them later."
+                )
+
+        now = datetime.now(UTC)
+        now_iso = now.isoformat(timespec="seconds")
+        replaced = ""
+        live = [
+            code
+            for code in self._pairing.list_live_for_user(user.id)
+            if not code.is_expired(now_iso)
+        ]
+        if live:
+            # Replace rather than refuse: the code was already shown once and
+            # cannot be shown again, so making the person wait it out would be
+            # useless. The superseded row is marked, never deleted, so the old
+            # code is answered with "replaced" rather than "unknown".
+            self._pairing.invalidate_live_for_user(user.id, now_iso)
+            replaced = (
+                "\n\nThe code I gave you before has stopped working. This one "
+                "replaces it."
+            )
+
+        code = generate_pairing_code()
+        expires_at = (
+            now + timedelta(seconds=self._settings.pairing_code_ttl_seconds)
+        ).isoformat(timespec="seconds")
+        self._pairing.create(
+            user.id,
+            user.surface,
+            user.surface_user_id,
+            pairing_code_hash(self._settings.pairing_hash_pepper, code),
+            now_iso,
+            expires_at,
+        )
+        phrase = self._pairing_expiry_phrase(self._settings.pairing_code_ttl_seconds)
+        return (
+            f"Your pairing code is {code}\n\n"
+            f"Enter this on the other client: /pair {code}\n\n"
+            f"It works once and expires in {phrase}. It only adds that client to "
+            "your memory space; nothing else changes."
+            + setup_note
+            + replaced
+        )
+
+    async def _redeem_pairing_code(
+        self, surface: str, surface_user_id: str, display_name: str, argument: str
+    ) -> str:
+        """Attach this client to the issuing identity's memory space.
+
+        Every refusal names the exact problem, because "that did not work" tells
+        a person retyping a code by hand nothing about what to fix.
+        """
+        normalized = normalize_pairing_code(argument)
+        if not normalized:
+            return "Enter the pairing code from the other client, like /pair ABCD2345."
+        row = self._pairing.get_by_code_hash(
+            pairing_code_hash(self._settings.pairing_hash_pepper, normalized)
+        )
+        if row is None:
+            return (
+                "That code is unknown. Check it and try again, or ask the other "
+                "client to run /pair for a fresh code."
+            )
+        now = datetime.now(UTC)
+        now_iso = now.isoformat(timespec="seconds")
+        if row.invalidated:
+            return (
+                "That code was replaced by a newer one. Ask the other client to run "
+                "/pair again."
+            )
+        if row.is_expired(now_iso) and not row.redeemed:
+            return (
+                "That code has expired. Ask the other client to run /pair and give "
+                "you a fresh code."
+            )
+        originator = self._users.get_by_id(row.user_id)
+        handle = originator.memory_handle if originator is not None else None
+        if originator is None or handle is None:
+            return (
+                "That code is no longer tied to a shared space, so it cannot add you "
+                "to one. Ask the other client to run /pair again."
+            )
+
+        redeemer = self._users.get_or_create(surface, surface_user_id, display_name)
+        # The conditional update is the only verdict: two callers that both read
+        # an unused row still produce exactly one winner.
+        claimed = self._pairing.redeem(row.id, redeemer.id, now_iso)
+        if not claimed:
+            return (
+                "That code was already used. Each code works once; ask the other "
+                "client for a new one."
+            )
+
+        try:
+            updated = self._users.set_memory_handle(redeemer.id, handle)
+        except ValueError as error:
+            return f"That code is valid, but its shared space was refused. {error}"
+        if updated is None:
+            return "I could not find this identity, so nothing changed."
+
+        copied, _, degraded = await self._copy_notes_into_handle(
+            updated, handle, self._settings.memory_namespace(updated.memory_key)
+        )
+        # Best effort, after the binding is already durable, so a delivery
+        # problem can never undo a successful redemption.
+        await self._notify_originator(originator, surface, display_name)
+
+        lines = [
+            f"You are now paired with {originator.display_name}'s memory space. "
+            "Everything either client remembers is shared from now on.",
+        ]
+        if degraded:
+            lines.append(
+                f"Walrus Memory was unreachable while copying, so I copied {copied} "
+                f"note(s). Send /link {handle} on this client to copy the rest."
+            )
+        else:
+            lines.append(
+                f"I copied {copied} note(s) from this client's own space into it. "
+                "Nothing was removed from the old space, because Walrus Memory "
+                "cannot move or erase a blob."
+            )
+        return " ".join(lines)
+
+    async def _notify_originator(
+        self, originator, surface: str, display_name: str
+    ) -> None:
+        """Tell the issuing client that a new surface joined its space.
+
+        Only the Telegram surface has a push channel, so an origin on another
+        surface has nowhere to receive this and is skipped. A failure here is
+        logged and swallowed: the redemption already succeeded.
+        """
+        if self._reply_channel is None or originator.surface != "telegram":
+            return
+        try:
+            await self._reply_channel.send_message(
+                originator.surface_user_id,
+                "A new client joined your memory space: "
+                f"{surface} ({display_name}). If this was not you, run /sessions "
+                "there and /unpair to remove it.",
+            )
+        except Exception:  # noqa: BLE001 - a notice must never fail a redemption
+            logger.warning(
+                "pairing notification could not be delivered",
+                extra={"event": "pairing_notify_failed", "surface": surface},
+            )
+
+    @staticmethod
+    def _pairing_expiry_phrase(seconds: float) -> str:
+        """The expiry in plain words, never a raw number of seconds."""
+        minutes = int(seconds // 60)
+        if minutes <= 0:
+            return "less than a minute"
+        if minutes == 1:
+            return "1 minute"
+        return f"{minutes} minutes"
+
+    def _shared_clients(self, user) -> list:
+        """Every identity in this user's space, ordered for /sessions numbering."""
+        if user.memory_handle is None:
+            return [user]
+        members = self._users.list_by_memory_handle(user.memory_handle)
+        if not any(member.id == user.id for member in members):
+            members.append(user)
+        return sorted(
+            members,
+            key=lambda member: (
+                member.linked_at or member.created_at,
+                member.surface,
+                member.surface_user_id,
+            ),
+        )
+
+    @staticmethod
+    def _parse_time(value: str) -> datetime | None:
+        try:
+            moment = datetime.fromisoformat(value)
+        except (TypeError, ValueError):
+            return None
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=UTC)
+        return moment
+
+    @classmethod
+    def _readable_time(cls, value: str) -> str:
+        moment = cls._parse_time(value)
+        if moment is None:
+            return value
+        return moment.strftime("%Y-%m-%d %H:%M UTC")
+
+    def _sessions_reply(
+        self, surface: str, surface_user_id: str, display_name: str
+    ) -> str:
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        members = self._shared_clients(user)
+        scope = (
+            f"shared space '{user.memory_handle}'"
+            if user.memory_handle
+            else "this client's own memory space"
+        )
+        lines = [f"Clients on {scope} ({len(members)}):"]
+        for index, member in enumerate(members, start=1):
+            linked = self._readable_time(member.linked_at or member.created_at)
+            marker = (
+                " [this client]"
+                if (member.surface, member.surface_user_id)
+                == (surface, surface_user_id)
+                else ""
+            )
+            lines.append(
+                f"{index}. {member.surface} - {member.display_name} - linked "
+                f"{linked}{marker}"
+            )
+        lines.append("")
+        if len(members) == 1:
+            lines.append(
+                "Run /pair here, then enter the code on another client to add it."
+            )
+        else:
+            lines.append(
+                "Run /unpair to leave this space on this client, or /unpair <number> "
+                "to remove another client from it."
+            )
+        return "\n".join(lines)
+
+    def _unpair_reply(
+        self, surface: str, surface_user_id: str, display_name: str, argument: str
+    ) -> str:
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        argument = argument.strip()
+        if not argument:
+            return self._leave_shared_space(user)
+        if user.memory_handle is None:
+            return (
+                "This client is not in a shared space, so it has no other client to "
+                "unpair. Run /sessions to see who shares your memory."
+            )
+        try:
+            index = int(argument)
+        except ValueError:
+            return (
+                "Tell me which client to unpair by its number from /sessions, like "
+                "/unpair 2."
+            )
+        members = self._shared_clients(user)
+        if index < 1 or index > len(members):
+            return (
+                f"There is no client {index} in this shared space. Run /sessions to "
+                "see the list."
+            )
+        target = members[index - 1]
+        if target.id == user.id:
+            return self._leave_shared_space(user)
+        if target.memory_handle != user.memory_handle:
+            return (
+                "That client is not in this shared space, so I did not change anything."
+            )
+        self._users.set_memory_handle(target.id, None)
+        return (
+            f"Done. {target.surface} ({target.display_name}) is back on its own "
+            f"memory space, and this client keeps the shared space "
+            f"'{user.memory_handle}'."
         )
 
     def command_reply(
@@ -1029,6 +1406,21 @@ class ConversationService:
         """
         if command == "/help":
             return self._help_reply()
+
+        if command in ("/pair", "pair"):
+            # Issuing needs the async migration path, so this is a plain hint for
+            # a direct synchronous caller.
+            return (
+                "To pair a client, send /pair on the client you already use. It "
+                "answers with a one-time code to enter on the new client as "
+                "/pair <code>."
+            )
+
+        if command == "/sessions":
+            return self._sessions_reply(surface, surface_user_id, display_name)
+
+        if command == "/unpair":
+            return self._unpair_reply(surface, surface_user_id, display_name, argument)
 
         if command == "/correct":
             return (
@@ -1126,6 +1518,10 @@ class ConversationService:
             "/correct <number> <text>  replace a note with your own wording",
             "/link <handle>    put several clients on one shared memory space",
             "/unlink           go back to this client's own memory space",
+            "/pair             get a one-time code to add another client",
+            "pair <code>       enter that code on the new client to join the space",
+            "/sessions         list the clients sharing your memory space",
+            "/unpair [number]  leave the shared space, or remove a listed client",
             "",
             "Things I can do for you:",
         ]

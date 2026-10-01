@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from core.config import Settings
@@ -84,6 +85,16 @@ def create_app(container: Container | None = None, settings: Settings | None = N
 
     if WEB_ROOT.is_dir():
         app.mount("/app", StaticFiles(directory=WEB_ROOT, html=True), name="app")
+
+        # The landing page is the front door: entering the host name in a browser
+        # must show it rather than a JSON 404. Declared after the API routes are
+        # registered so it can never shadow them, and it only matches the root.
+        @app.get("/", include_in_schema=False)
+        async def landing() -> FileResponse:
+            candidate = WEB_ROOT / "portal.html"
+            if not candidate.is_file():
+                candidate = WEB_ROOT / "index.html"
+            return FileResponse(candidate)
 
     return app
 
