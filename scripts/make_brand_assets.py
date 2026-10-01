@@ -25,12 +25,12 @@ from PIL import Image, ImageDraw, ImageFont
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ASSETS = REPO_ROOT / "assets"
 
-BACKGROUND = (11, 18, 32)
-SURFACE = (18, 28, 48)
+BACKGROUND = (10, 10, 10)
+SURFACE = (20, 20, 20)
 ACCENT = (53, 208, 186)
-ACCENT_DIM = (30, 110, 104)
-TEXT = (238, 244, 252)
-MUTED = (138, 156, 178)
+ACCENT_DIM = (46, 92, 86)
+TEXT = (237, 237, 237)
+MUTED = (138, 138, 138)
 
 FONT_CANDIDATES = (
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -68,16 +68,11 @@ def make_icon(path: Path, size: int = 512) -> None:
             fill=ACCENT + (230,),
         )
 
-    # The monogram.
-    font = load_font(int(size * 0.42))
-    text = "C"
-    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-    draw.text(
-        (centre - (right - left) / 2 - left, centre - (bottom - top) / 2 - top),
-        text,
-        font=font,
-        fill=TEXT,
-    )
+    # The monogram. anchor="mm" centres on the glyph's own metrics rather than
+    # on a bounding box computed from the origin, which is why the first version
+    # sat visibly high and left of centre.
+    font = load_font(int(size * 0.40))
+    draw.text((centre, centre), "C", font=font, fill=TEXT, anchor="mm")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, "PNG")
