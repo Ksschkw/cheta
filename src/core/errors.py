@@ -57,6 +57,16 @@ class AttachmentError(RantiError):
     code = "attachment_error"
 
 
+class LegacyFormatError(AttachmentError):
+    """A document is in an old binary Microsoft format with no local reader.
+
+    The message names the format and the one to save as, because the failure to
+    avoid is claiming to read a file we cannot actually open.
+    """
+
+    code = "legacy_format"
+
+
 class BlockedUrlError(RantiError):
     """An outbound URL was refused before any connection was made.
 
