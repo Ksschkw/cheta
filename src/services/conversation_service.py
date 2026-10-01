@@ -133,6 +133,11 @@ Rules:
   stable preferences and ongoing work; 0.4 for context that may change soon;
   0.2 for trivia.
 - Never invent anything. If the turn contains no durable fact, return [].
+- Record facts only about the person you are talking to. Never record anything
+  about yourself: not your name, your role, your capabilities, your limitations,
+  nor the fact that a conversation happened. A real memory list contained "The
+  assistant identifies as a memory-first assistant", which is not a fact about
+  the person and is noise in their memory.
 """
 
 ADJUDICATION_PROMPT = """You compare one remembered fact with one new candidate fact.

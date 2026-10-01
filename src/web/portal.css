@@ -1,0 +1,406 @@
+/* Cheta portal: monochrome, one accent, system fonts, no external assets. ASCII only. */
+
+:root {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --line: #262626;
+  --text: #ededed;
+  --muted: #8a8a8a;
+  --accent: #35d0ba;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    "Liberation Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 72px 32px 0 32px;
+}
+
+a {
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+
+a:hover,
+a:focus {
+  color: var(--accent);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------- masthead */
+
+.masthead {
+  padding: 24px 0 0 0;
+}
+
+.wordmark {
+  margin: 0;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+.tagline {
+  margin: 24px 0 0 0;
+  font-size: clamp(1.5rem, 3.4vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+}
+
+.tagline-line {
+  display: block;
+}
+
+.accent-underline {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.16em;
+}
+
+.intro {
+  margin-top: 44px;
+  max-width: 62ch;
+}
+
+.lede {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* -------------------------------------------------------------- sections */
+
+.section {
+  margin-top: 96px;
+}
+
+.label {
+  margin: 0 0 28px 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- cards */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 34px 32px 32px 32px;
+}
+
+.card-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.card-action {
+  margin: auto 0 0 0;
+  padding-top: 10px;
+}
+
+.card-action a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+/* ------------------------------------------------------------ code block */
+
+.code {
+  margin: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.copy {
+  appearance: none;
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  padding: 10px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.copy:hover,
+.copy:focus {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #0a0a0a;
+  border: 1px solid var(--accent);
+  padding: 14px 28px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn:hover,
+.btn:focus {
+  background: transparent;
+  color: var(--accent);
+}
+
+.alt-note {
+  margin: 0 0 10px 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.fineprint {
+  margin: 14px 0 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------- claims */
+
+.claims {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.claim {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 32px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.claim-key {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.claim-text {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.footer {
+  margin-top: 120px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.footer-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 40px 32px 56px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px 40px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 32px;
+}
+
+.footer-links a {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.footer-links a:hover,
+.footer-links a:focus {
+  color: var(--accent);
+}
+
+.footer-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+/* ---------------------------------------------------------- help page */
+
+.help-body {
+  max-width: 68ch;
+}
+
+.help-body h2 {
+  margin: 64px 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.help-body h2:first-child {
+  margin-top: 56px;
+}
+
+.help-body p {
+  margin: 0 0 14px 0;
+  color: var(--muted);
+}
+
+.help-body ol {
+  margin: 0 0 14px 0;
+  padding-left: 22px;
+  color: var(--muted);
+}
+
+.help-body li {
+  margin-bottom: 8px;
+}
+
+.help-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.88em;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.warn-line {
+  border-left: 1px solid var(--muted);
+  padding-left: 16px;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width: 760px) {
+  .wrap {
+    padding: 48px 20px 0 20px;
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .card {
+    padding: 28px 22px;
+  }
+
+  .section {
+    margin-top: 72px;
+  }
+
+  .claim {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .footer {
+    margin-top: 88px;
+  }
+
+  .footer-inner {
+    padding: 32px 20px 48px 20px;
+    flex-direction: column;
+  }
+}

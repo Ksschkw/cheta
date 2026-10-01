@@ -1037,3 +1037,14 @@ async def test_recovery_does_not_duplicate_when_the_index_is_already_there() -> 
     await harness.service.answer_command("/memories", "telegram", "42", "Ada")
 
     assert harness.memories.count_for_user(first.user_id, None) == before
+
+
+def test_the_extraction_prompt_forbids_facts_about_the_assistant() -> None:
+    """A real memory list contained "The assistant identifies as a memory-first
+    assistant", which is noise about the bot, not a fact about the person."""
+    from services.conversation_service import EXTRACTION_PROMPT
+
+    lowered = EXTRACTION_PROMPT.lower()
+    assert "never record anything" in lowered
+    assert "about yourself" in lowered
+    assert "assistant identifies as a memory-first assistant" in lowered

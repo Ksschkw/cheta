@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Cheta is a memory-first assistant on four surfaces that share one memory space per person.">
+    <title>Cheta - memory-first assistant</title>
+    <link rel="stylesheet" href="portal.css">
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <p class="wordmark">CHETA</p>
+        <h1 class="tagline">
+          <span class="tagline-line">every chatbot remembers</span>
+          <span class="tagline-line">this one <span class="accent-underline">decides</span> what to forget</span>
+        </h1>
+      </header>
+
+      <section class="intro">
+        <p class="lede">
+          Cheta is a memory-first assistant available on four surfaces that share one
+          memory space per person. It collapses repeated facts, retires things you
+          changed your mind about, and tells you when two things you said conflict.
+        </p>
+      </section>
+
+      <section class="section" aria-labelledby="surfaces-label">
+        <h2 class="label" id="surfaces-label">Four surfaces, one memory</h2>
+
+        <div class="grid">
+          <article class="card">
+            <p class="card-label">Surface 01</p>
+            <h3 class="card-title">Telegram</h3>
+            <p class="card-desc">
+              Message the bot in Telegram and its memory follows you back to every other
+              surface.
+            </p>
+            <p class="card-action">
+              <a href="https://t.me/Kosi_test_walrus1_bot" rel="noopener">Open the bot</a>
+            </p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Surface 02</p>
+            <h3 class="card-title">Web widget</h3>
+            <p class="card-desc">
+              Chat in the browser with a live memory count and a per-turn memory switch.
+            </p>
+            <p class="card-action">
+              <a href="./index.html">Open the widget</a>
+            </p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Surface 03</p>
+            <h3 class="card-title">Command line</h3>
+            <p class="card-desc">
+              Install the project and run the terminal client against the same memory.
+            </p>
+            <pre class="code" id="cli-command"><code>python -m pip install -e .
+PYTHONPATH=src python -m cli</code></pre>
+            <button class="copy" type="button" id="copy-cli">Copy</button>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Surface 04</p>
+            <h3 class="card-title">Browser extension</h3>
+            <p class="card-desc">
+              A side panel that shows the exact memories recalled for every reply.
+            </p>
+            <div id="extension-cta">
+              <a class="btn" href="./extension-help.html">Install instructions</a>
+            </div>
+            <p class="fineprint">
+              The extension is not published to any store yet, so this button opens
+              unpacked install instructions rather than a store listing.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="different-label">
+        <h2 class="label" id="different-label">What makes it different</h2>
+
+        <ul class="claims">
+          <li class="claim">
+            <span class="claim-key">Visible</span>
+            <span class="claim-text">Memory is readable and correctable in chat: /memories lists it, /forget retires it.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Portable</span>
+            <span class="claim-text">A redeployed instance recovers the index from Walrus instead of forgetting everyone.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Contradictions</span>
+            <span class="claim-text">Conflicting facts are surfaced to you instead of being silently stored.</span>
+          </li>
+          <li class="claim">
+            <span class="claim-key">Counterfactual</span>
+            <span class="claim-text">Any answer can be re-run with memory off, so you can see that it changed.</span>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <nav class="footer-links" aria-label="Project links">
+          <a href="https://github.com/Ksschkw/ranti" rel="noopener">GitHub repository</a>
+          <a href="https://ranti-gkn7.onrender.com" rel="noopener">Live API</a>
+        </nav>
+        <p class="footer-note">Built on Walrus Memory</p>
+      </div>
+    </footer>
+
+    <script src="portal.js"></script>
+  </body>
+</html>
