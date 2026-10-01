@@ -72,14 +72,62 @@ class LlmGatewayProtocol(Protocol):
 class TelegramGatewayProtocol(Protocol):
     """The Telegram Bot API, wrapped in an outbound boundary."""
 
-    async def send_message(self, chat_id: str, text: str) -> None: ...
+    async def send_message(
+        self, chat_id: str, text: str, reply_markup: dict[str, object] | None = None
+    ) -> None: ...
+
+    async def send_document(
+        self,
+        chat_id: str,
+        filename: str,
+        content: bytes,
+        caption: str | None = None,
+    ) -> None: ...
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str | None = None
+    ) -> None: ...
+
+    async def get_file_path(self, file_id: str) -> str: ...
+
+    async def download_file(self, file_path: str) -> bytes: ...
 
     async def set_webhook(self, url: str, secret_token: str) -> None: ...
+
+
+class AttachmentGatewayProtocol(Protocol):
+    """Downloads an inbound file. Split out so a service never imports Telegram."""
+
+    async def get_file_path(self, file_id: str) -> str: ...
+
+    async def download_file(self, file_path: str) -> bytes: ...
+
+
+class AttachmentParserProtocol(Protocol):
+    """Turns one supported document's bytes into plain text, locally."""
+
+    def classify(self, file_name: str, mime_type: str) -> str | None: ...
+
+    def extract(self, kind: str, file_name: str, content: bytes) -> str: ...
 
 
 class ReplyChannelProtocol(Protocol):
     """A push transport the conversation can deliver its own answer on."""
 
-    async def send_message(self, recipient_id: str, text: str) -> None: ...
+    async def send_message(
+        self, recipient_id: str, text: str, reply_markup: dict[str, object] | None = None
+    ) -> None: ...
+
+    async def send_document(
+        self,
+        recipient_id: str,
+        filename: str,
+        content: bytes,
+        caption: str | None = None,
+    ) -> None: ...
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str | None = None
+    ) -> None: ...
 
     async def send_typing(self, recipient_id: str) -> None: ...

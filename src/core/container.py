@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import Request
 
+from core.attachment_parser import AttachmentParser
 from core.config import Settings
 from core.database import Database
 from core.gateways.llm_gateway import (
@@ -153,6 +154,10 @@ def build_container(settings: Settings | None = None) -> Container:
         # replies. It is wired here rather than inside the service so the
         # service keeps depending on a protocol, not on Telegram.
         reply_channel=telegram_gateway,
+        # Same gateway, narrower protocol: the service may download a file but
+        # still cannot reach into the Telegram API for anything else.
+        attachment_gateway=telegram_gateway,
+        attachment_parser=AttachmentParser(),
     )
     memory_admin_service = MemoryAdminService(
         users=users,

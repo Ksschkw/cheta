@@ -21,6 +21,7 @@ from models.entities.memory_model import (
     STATUS_CONTRADICTED,
     STATUS_SUPERSEDED,
 )
+from models.entities.memory_passport_model import build_passport
 from schemas.memory_schema import MemoryStatsSchema, MemoryViewSchema
 
 
@@ -181,35 +182,14 @@ class MemoryAdminService:
     def export_passport(self, user_id: str) -> dict[str, object]:
         """A portable bundle of everything known about one user.
 
-        The index is data, not application state: it travels with the memories,
-        which is why a wiped install can rebuild from this file alone.
+        The format itself lives in the entity so the Telegram export button can
+        reuse it without one service importing another.
         """
         user = self._users.get_by_id(user_id)
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
         records = self._memories.list_for_user(user_id, None, 1000)
-        return {
-            "format": "ranti.memory-passport.v1",
-            "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "user": {
-                "display_name": user.display_name,
-                "surface": user.surface,
-                "surface_user_id": user.surface_user_id,
-            },
-            "namespace": self._settings.memory_namespace(user.memory_key),
-            "memories": [
-                {
-                    "blob_id": record.blob_id,
-                    "text": record.text,
-                    "status": record.status,
-                    "importance": record.importance,
-                    "origin_surface": record.origin_surface,
-                    "superseded_by": record.superseded_by,
-                    "occurred_at": record.occurred_at,
-                }
-                for record in records
-            ],
-        }
+        return build_passport(user, records, self._settings.memory_namespace(user.memory_key))
 
     async def import_passport(self, payload: dict[str, object]) -> dict[str, object]:
         """Bring a memory space to a different surface identity.

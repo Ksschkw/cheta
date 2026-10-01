@@ -46,6 +46,9 @@ class TurnSchema(BaseModel):
     memory_note: str | None = None
     provider: str | None = None
     first_turn: bool = False
+    # Set when the message was a command rather than a conversation turn, so a
+    # caller can tell the difference and no turn row is implied.
+    command: str | None = None
 
 
 class CounterfactualSchema(BaseModel):

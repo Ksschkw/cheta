@@ -45,3 +45,13 @@ class DependencyTimeoutError(DependencyUnavailableError):
 
 class CircuitOpenError(DependencyUnavailableError):
     code = "circuit_open"
+
+
+class AttachmentError(RantiError):
+    """An inbound attachment could not be read as the format it claimed to be.
+
+    This is a content problem, not an outage, so it is answered with a specific
+    message rather than the generic "try again" used for a dead dependency.
+    """
+
+    code = "attachment_error"

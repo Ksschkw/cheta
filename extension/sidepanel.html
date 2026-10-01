@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ranti memory side panel</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app" class="app">
+      <header class="app-head">
+        <div class="head-row">
+          <h1>Ranti</h1>
+          <button
+            id="toggle-memory-panel"
+            class="ghost"
+            type="button"
+            aria-expanded="false"
+            aria-controls="memory-panel"
+          >
+            Memories
+          </button>
+        </div>
+        <p class="lede">
+          One memory space shared across a Telegram bot, a CLI, this browser
+          extension, and a web widget.
+        </p>
+        <p id="conn-status" class="conn" aria-live="polite">[OK] Ready. Loading settings.</p>
+        <div id="degraded-banner" class="notice notice-warn hidden"></div>
+
+        <details id="settings" class="settings">
+          <summary>Settings</summary>
+          <div class="field">
+            <label for="base-url">API base URL</label>
+            <input
+              id="base-url"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="https://ranti-gkn7.onrender.com"
+            >
+          </div>
+          <div class="field">
+            <label for="display-name">Display name</label>
+            <input
+              id="display-name"
+              type="text"
+              maxlength="128"
+              autocomplete="off"
+              placeholder="e.g. Alex"
+            >
+          </div>
+          <div class="field">
+            <label for="surface-user-id">Surface user id (generated once, kept in this browser)</label>
+            <input id="surface-user-id" type="text" readonly>
+          </div>
+          <div class="row">
+            <button id="save-settings" class="primary" type="button">Save settings</button>
+            <button id="reset-base-url" class="ghost" type="button">Reset to default</button>
+          </div>
+          <p id="settings-status" class="muted" aria-live="polite"></p>
+        </details>
+      </header>
+
+      <section id="memory-panel" class="panel memory-panel hidden" aria-label="Stored memories">
+        <div class="panel-head">
+          <h2>Stored memories</h2>
+          <button id="refresh-memories" class="ghost" type="button">Refresh</button>
+        </div>
+        <label class="check" for="mem-include-inactive">
+          <input id="mem-include-inactive" type="checkbox">
+          <span>Include inactive (superseded, contradicted)</span>
+        </label>
+        <p id="memory-status" class="muted" aria-live="polite">
+          Refresh to load what is stored for this identity.
+        </p>
+        <div id="memory-list" class="memory-list"></div>
+      </section>
+
+      <main id="transcript" class="transcript" aria-live="polite">
+        <div id="empty-hint" class="muted">
+          Say something durable, for example a preference, a constraint, or a fact
+          about your work. Each reply shows the exact memories that were recalled
+          for it. Type /help for commands.
+        </div>
+      </main>
+
+      <form id="composer" class="composer">
+        <label class="sr-only" for="chat-input">Message</label>
+        <textarea
+          id="chat-input"
+          rows="2"
+          maxlength="8000"
+          placeholder="Say something worth remembering ..."
+        ></textarea>
+        <div class="composer-row">
+          <label class="switch" for="memory-toggle">
+            <input id="memory-toggle" type="checkbox" checked>
+            <span>Use memory</span>
+          </label>
+          <button id="send-button" class="primary" type="submit">Send</button>
+        </div>
+        <div class="composer-note">
+          <span id="memory-toggle-state" class="tag tag-ok">Memory ON</span>
+          <span class="muted">Enter sends, Shift+Enter adds a line.</span>
+        </div>
+      </form>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

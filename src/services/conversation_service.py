@@ -14,9 +14,16 @@ import re
 import secrets
 from datetime import UTC, datetime
 
+from core.attachment_parser import MAX_ATTACHMENT_BYTES, MAX_EXTRACTED_CHARS
 from core.config import Settings
-from core.errors import DependencyUnavailableError, NotFoundError
-from core.protocols import LlmGatewayProtocol, MemoryGatewayProtocol, ReplyChannelProtocol
+from core.errors import AttachmentError, DependencyUnavailableError, NotFoundError
+from core.protocols import (
+    AttachmentGatewayProtocol,
+    AttachmentParserProtocol,
+    LlmGatewayProtocol,
+    MemoryGatewayProtocol,
+    ReplyChannelProtocol,
+)
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.turn_crud import TurnCrud
@@ -28,6 +35,7 @@ from models.entities.memory_index_model import (
     select_snapshot_records,
 )
 from models.entities.memory_model import STATUS_ACTIVE, STATUS_CONTRADICTED, STATUS_SUPERSEDED
+from models.entities.memory_passport_model import build_passport
 from models.entities.memory_rank_model import (
     ConsolidationThresholds,
     RankedMemory,
@@ -35,6 +43,7 @@ from models.entities.memory_rank_model import (
     classify_candidate,
     select_context,
 )
+from schemas.attachment_schema import AttachmentSchema
 from schemas.llm_schema import ChatMessageSchema
 from schemas.turn_schema import (
     CounterfactualSchema,
@@ -46,6 +55,47 @@ from schemas.turn_schema import (
 logger = logging.getLogger("ranti.service.conversation")
 
 COMMANDS = ("/start", "/help", "/memories", "/forget")
+
+# Inline keyboard callback data. Kept as short as Telegram allows because the
+# whole payload is round-tripped on every tap.
+CALLBACK_LIST = "mem:list"
+CALLBACK_EXPORT = "mem:export"
+CALLBACK_FORGET = "mem:forget"
+CALLBACK_FORGET_PREFIX = "mem:forget:"
+FORGET_MENU_LIMIT = 10
+
+# Media Telegram can deliver that this project cannot read. The label is used
+# verbatim in the refusal so the person is told exactly what failed.
+UNSUPPORTED_MEDIA_LABELS = {
+    "photo": "images or photos",
+    "sticker": "stickers",
+    "animation": "animations",
+    "voice": "voice messages",
+    "audio": "audio files",
+    "video": "videos",
+    "video_note": "video notes",
+    "contact": "contacts",
+    "location": "locations",
+    "venue": "locations",
+    "poll": "polls",
+    "dice": "dice",
+}
+
+READABLE_FORMATS = "PDF, plain text, markdown, CSV and DOCX"
+
+
+def main_menu_markup() -> dict[str, object]:
+    """The keyboard attached to /start and /help, and nowhere else."""
+    return {
+        "inline_keyboard": [
+            [{"text": "What I know about you", "callback_data": CALLBACK_LIST}],
+            [
+                {"text": "Export my memory", "callback_data": CALLBACK_EXPORT},
+                {"text": "Forget one", "callback_data": CALLBACK_FORGET},
+            ],
+        ]
+    }
+
 
 # Natural requests for the memory listing. Semantic recall cannot serve these:
 # "what do you know about me" has no embedding similarity to "prefers dark mode",
@@ -103,6 +153,8 @@ class ConversationService:
         weights: RankingWeights | None = None,
         thresholds: ConsolidationThresholds | None = None,
         reply_channel: ReplyChannelProtocol | None = None,
+        attachment_gateway: AttachmentGatewayProtocol | None = None,
+        attachment_parser: AttachmentParserProtocol | None = None,
     ) -> None:
         self._users = users
         self._memories = memories
@@ -114,6 +166,10 @@ class ConversationService:
         self._weights = weights or RankingWeights()
         self._thresholds = thresholds or ConsolidationThresholds()
         self._reply_channel = reply_channel
+        # Downloads and parsing stay behind protocols so this service never
+        # names Telegram or a document library.
+        self._attachment_gateway = attachment_gateway
+        self._attachment_parser = attachment_parser
         # Per-user snapshot bookkeeping, used to keep the encoded sequence
         # monotonic for the lifetime of this process.
         self._snapshot_sequences: dict[str, int] = {}
@@ -247,13 +303,15 @@ class ConversationService:
                     "no markdown, no asterisks, no headings. "
                     f"The person you are talking to is called {display_name}. Address them by "
                     "that name. Only use a different name if they explicitly ask you to. "
-                    "WHAT YOU CANNOT DO: you cannot read or open attachments, files, images, "
-                    "documents, spreadsheets, presentations or links, and you cannot access, "
-                    "connect to or act on any external account such as email or Google. Never "
-                    "claim otherwise, not even to be helpful. If asked, say plainly that you "
-                    "cannot, and do not promise to try. Guessing here is worse than admitting "
-                    "the limit, because being caught overstating is how you lose someone's "
-                    "trust completely. "
+                    "WHAT YOU CAN AND CANNOT READ: you can read a document someone uploads "
+                    f"when it is a {READABLE_FORMATS} file up to 20 MB; the extracted text "
+                    "is placed in this conversation and you answer from it. You cannot read "
+                    "or open images, audio, video, archives, spreadsheets, presentations or "
+                    "links, and you cannot access, connect to or act on any external account "
+                    "such as email or Google. Never claim otherwise, not even to be helpful. "
+                    "If asked, say plainly what you cannot do, and do not promise to try. "
+                    "Guessing here is worse than admitting the limit, because being caught "
+                    "overstating is how you lose someone's trust completely. "
                     "WHAT YOU ARE: one assistant with three surfaces that share a single memory "
                     "space, a Telegram bot, a terminal client and a browser widget. If asked "
                     "what you are, say that. Never describe yourself as just a language model "
@@ -272,7 +330,35 @@ class ConversationService:
         text: str,
         memory_enabled: bool = True,
         context_budget: int = 6,
+        recall_query: str | None = None,
     ) -> TurnSchema:
+        # Commands answer identically on every surface. Before this, they were
+        # handled only on the Telegram push path, so typing /help into the web
+        # widget or the CLI sent it to the model instead.
+        parts = text.strip().split()
+        command = parts[0].lower() if parts else ""
+        if command in COMMANDS:
+            user = self._users.get_or_create(surface, surface_user_id, display_name)
+            return TurnSchema(
+                turn_id="",
+                user_id=user.id,
+                memory_namespace=self._settings.memory_namespace(user.memory_key),
+                reply=self.command_reply(
+                    command,
+                    surface,
+                    surface_user_id,
+                    display_name,
+                    parts[1] if len(parts) > 1 else "",
+                ),
+                recalled=[],
+                stored_facts=[],
+                skipped_duplicates=0,
+                contradiction_count=0,
+                memory_degraded=False,
+                provider="command",
+                command=command,
+            )
+
         if self._llm is None:
             raise DependencyUnavailableError("llm", "no language model provider is configured")
 
@@ -284,8 +370,11 @@ class ConversationService:
         note: str | None = None
         stored_count = 0
         if memory_enabled:
+            # A long document makes a poor embedding query, so a caller that
+            # knows the real question (for example the attachment caption) can
+            # supply it separately.
             recalled, degraded, note, stored_count = await self._assemble_context(
-                user.id, namespace, text, context_budget
+                user.id, namespace, recall_query or text, context_budget
             )
 
         completion = await self._llm.complete(
@@ -353,7 +442,12 @@ class ConversationService:
                 command, surface, surface_user_id, display_name, argument
             )
             if self._reply_channel is not None:
-                await self._reply_channel.send_message(recipient_id, reply)
+                # Buttons belong to the menu commands only. An ordinary answer
+                # must not carry a keyboard the person did not ask for.
+                markup = main_menu_markup() if command in ("/start", "/help") else None
+                await self._reply_channel.send_message(
+                    recipient_id, reply, reply_markup=markup
+                )
             return None
         if any(phrase in lowered for phrase in MEMORY_QUERY_PHRASES):
             reply = self.command_reply("/memories", surface, surface_user_id, display_name)
@@ -463,6 +557,237 @@ class ConversationService:
             f"Done. I will not bring up \"{target.text}\" again. It stays on Walrus "
             "until its storage expires, because Walrus Memory cannot erase a blob."
         )
+
+    def _sorted_memories(self, user_id: str) -> list:
+        return sorted(
+            self._memories.list_for_user(user_id, None, 200),
+            key=lambda record: record.importance,
+            reverse=True,
+        )
+
+    def _forget_menu_markup(self, records: list) -> dict[str, object]:
+        rows: list[list[dict[str, str]]] = []
+        for index, record in enumerate(records[:FORGET_MENU_LIMIT], start=1):
+            label = " ".join(record.text.split())
+            if len(label) > 60:
+                label = label[:59] + "."
+            rows.append(
+                [
+                    {
+                        "text": f"{index}. {label}",
+                        "callback_data": f"{CALLBACK_FORGET_PREFIX}{index}",
+                    }
+                ]
+            )
+        return {"inline_keyboard": rows}
+
+    async def handle_callback_query(
+        self,
+        surface: str,
+        surface_user_id: str,
+        display_name: str,
+        recipient_id: str,
+        callback_query_id: str,
+        callback_data: str,
+    ) -> None:
+        """Answer one inline-button tap.
+
+        A callback query is not a message and never becomes a conversation turn:
+        it edits nothing, calls no model for the listing, and stores no text.
+        The answerCallbackQuery call always happens first, so the button stops
+        spinning even when the requested action cannot complete.
+        """
+        if self._reply_channel is None:
+            return
+        await self._reply_channel.answer_callback_query(callback_query_id)
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+
+        if callback_data == CALLBACK_LIST:
+            listing = self.command_reply(
+                "/memories", surface, surface_user_id, display_name
+            )
+            await self._reply_channel.send_message(recipient_id, listing)
+            return
+
+        if callback_data == CALLBACK_EXPORT:
+            await self._send_passport_document(user.id, recipient_id, surface_user_id)
+            return
+
+        if callback_data == CALLBACK_FORGET:
+            records = self._sorted_memories(user.id)
+            if not records:
+                await self._reply_channel.send_message(
+                    recipient_id,
+                    "I have nothing stored about you yet, so there is nothing to forget.",
+                )
+                return
+            await self._reply_channel.send_message(
+                recipient_id,
+                "Which note should I forget? Tap one and I will stop bringing it up.",
+                reply_markup=self._forget_menu_markup(records),
+            )
+            return
+
+        if callback_data == "mem:forget:never":
+            argument = callback_data[len(CALLBACK_FORGET_PREFIX) :]
+            await self._reply_channel.send_message(
+                recipient_id, self._forget_reply(user.id, argument)
+            )
+            return
+
+        await self._reply_channel.send_message(
+            recipient_id,
+            "That button is no longer available. Send /memories to see what I have.",
+        )
+
+    async def _send_passport_document(
+        self, user_id: str, recipient_id: str, surface_user_id: str
+    ) -> None:
+        """Send the portable passport as a real Telegram document."""
+        if self._reply_channel is None:
+            return
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            return
+        records = self._memories.list_for_user(user_id, None, 1000)
+        passport = build_passport(
+            user, records, self._settings.memory_namespace(user.memory_key)
+        )
+        content = json.dumps(passport, indent=2).encode("utf-8")
+        filename = f"ranti-passport-{surface_user_id}.json"
+        await self._reply_channel.send_document(
+            recipient_id,
+            filename,
+            content,
+            caption=(
+                f"Your memory passport: {len(records)} notes in one portable JSON file. "
+                "Import it on another surface to carry this memory space with you."
+            ),
+        )
+
+    # -------------------------------------------------------------- attachments
+
+    def _unsupported_media_reply(self, media_kind: str) -> str:
+        label = UNSUPPORTED_MEDIA_LABELS.get(media_kind, "that kind of message")
+        return (
+            f"I cannot read {label}. I read documents only: {READABLE_FORMATS}, "
+            "up to 20 MB each. Send one of those and I will read it and answer "
+            "from it."
+        )
+
+    def _unsupported_file_reply(self, file_name: str) -> str:
+        name = file_name.strip() or "that file"
+        return (
+            f"I cannot read {name}. I read documents only: {READABLE_FORMATS}, "
+            "up to 20 MB each. Images, audio, video, spreadsheets, presentations "
+            "and archives are not supported, and I will not pretend otherwise."
+        )
+
+    def _too_large_reply(self, size_bytes: int) -> str:
+        megabytes = size_bytes / (1024 * 1024)
+        return (
+            f"That file is {megabytes:.1f} MB. I can only read files up to 20 MB, "
+            "so I did not download it. Nothing from it was read or stored."
+        )
+
+    async def handle_surface_attachment(
+        self,
+        surface: str,
+        surface_user_id: str,
+        display_name: str,
+        recipient_id: str,
+        attachment: AttachmentSchema,
+    ) -> TurnSchema | None:
+        """Read one inbound document and answer about it.
+
+        The refusal paths come first and are deliberately explicit: naming what
+        cannot be read is the whole point, because the failure this replaces was
+        a bot that claimed PDF and PowerPoint support it did not have.
+        """
+        if self._reply_channel is None:
+            return None
+
+        if attachment.media_kind != "document":
+            await self._reply_channel.send_message(
+                recipient_id, self._unsupported_media_reply(attachment.media_kind)
+            )
+            return None
+
+        if self._attachment_parser is None:
+            await self._reply_channel.send_message(
+                recipient_id,
+                "I cannot read documents on this deployment right now. Nothing "
+                "was downloaded and nothing was stored.",
+            )
+            return None
+
+        kind = self._attachment_parser.classify(attachment.file_name, attachment.mime_type)
+        if kind is None:
+            await self._reply_channel.send_message(
+                recipient_id, self._unsupported_file_reply(attachment.file_name)
+            )
+            return None
+
+        # Telegram's own download ceiling. Refusing here means a 100 MB file is
+        # never fetched at all.
+        if attachment.file_size is not None and attachment.file_size > MAX_ATTACHMENT_BYTES:
+            await self._reply_channel.send_message(
+                recipient_id, self._too_large_reply(attachment.file_size)
+            )
+            return None
+
+        if self._attachment_gateway is None:
+            await self._reply_channel.send_message(
+                recipient_id,
+                "I cannot download files on this deployment right now. Nothing "
+                "was read and nothing was stored.",
+            )
+            return None
+
+        file_path = await self._attachment_gateway.get_file_path(attachment.file_id)
+        content = await self._attachment_gateway.download_file(file_path)
+        if len(content) > MAX_ATTACHMENT_BYTES:
+            await self._reply_channel.send_message(
+                recipient_id, self._too_large_reply(len(content))
+            )
+            return None
+
+        name = attachment.file_name.strip() or "the document"
+        try:
+            extracted = self._attachment_parser.extract(kind, name, content)
+        except AttachmentError as error:
+            logger.warning("attachment parse failed for %s: %s", name, error.message)
+            await self._reply_channel.send_message(
+                recipient_id,
+                f"I downloaded {name} but could not read it as a {kind} file. "
+                f"{error.message}. Nothing from it was stored.",
+            )
+            return None
+
+        document_text = extracted[:MAX_EXTRACTED_CHARS]
+        if not document_text.strip():
+            await self._reply_channel.send_message(
+                recipient_id,
+                f"I read {name} but found no text in it. If it is a scanned page, "
+                "the words are an image and I cannot read images.",
+            )
+            return None
+
+        caption = attachment.caption.strip()
+        turn_text = f"[Document: {name}]\n{document_text}"
+        if caption:
+            turn_text = f"{caption}\n\n{turn_text}"
+
+        await self._reply_channel.send_typing(recipient_id)
+        result = await self.handle_turn(
+            surface,
+            surface_user_id,
+            display_name,
+            turn_text,
+            recall_query=caption or name,
+        )
+        await self._reply_channel.send_message(recipient_id, self._render_reply(result))
+        return result
 
     async def notify_unavailable(self, recipient_id: str) -> None:
         """Tell a push-transport user that this turn could not be served."""

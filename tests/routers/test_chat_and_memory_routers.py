@@ -8,6 +8,7 @@ from collections.abc import Sequence
 import pytest
 from fastapi.testclient import TestClient
 
+from core.attachment_parser import AttachmentParser
 from core.config import Settings
 from core.container import Container, build_memory_gateway
 from core.database import Database
@@ -30,6 +31,9 @@ class FakeLlm:
         self.facts = list(facts)
         self.verdict = verdict
         self.reply_calls = 0
+        # The user content of every reply call, so a test can prove what the
+        # model actually saw (for example the text extracted from a PDF).
+        self.user_messages: list[str] = []
 
     async def complete(
         self,
@@ -45,6 +49,8 @@ class FakeLlm:
             text = self.verdict
         else:
             self.reply_calls += 1
+            if len(messages) > 1:
+                self.user_messages.append(messages[1].content)
             text = "I remember." if "<<<" in system else "I have no memory of you."
         return CompletionSchema(text=text, provider="fake", model="fake-1")
 
@@ -53,9 +59,30 @@ class RecordingReplyChannel:
     def __init__(self) -> None:
         self.sent: list[tuple[str, str]] = []
         self.typing: list[str] = []
+        # Parallel to `sent`: the inline keyboard (or None) for each message.
+        self.markups: list[dict[str, object] | None] = []
+        self.documents: list[tuple[str, str, bytes]] = []
+        self.callback_answers: list[tuple[str, str | None]] = []
 
-    async def send_message(self, recipient_id: str, text: str) -> None:
+    async def send_message(
+        self, recipient_id: str, text: str, reply_markup: dict[str, object] | None = None
+    ) -> None:
         self.sent.append((recipient_id, text))
+        self.markups.append(reply_markup)
+
+    async def send_document(
+        self,
+        recipient_id: str,
+        filename: str,
+        content: bytes,
+        caption: str | None = None,
+    ) -> None:
+        self.documents.append((recipient_id, filename, content))
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str | None = None
+    ) -> None:
+        self.callback_answers.append((callback_query_id, text))
 
     async def send_typing(self, recipient_id: str) -> None:
         """Kept separate from `sent`, which holds delivered messages."""
@@ -68,6 +95,8 @@ def build_test_container(
     reply_channel: RecordingReplyChannel | None = None,
     with_llm: bool = True,
     webhook_secret: str = "",
+    attachment_gateway: object | None = None,
+    attachment_parser: object | None = None,
 ) -> tuple[Container, FakeLlm | None, RecordingReplyChannel]:
     settings = Settings(
         database_path=":memory:",
@@ -94,6 +123,8 @@ def build_test_container(
         llm_gateway=llm,
         settings=settings,
         reply_channel=channel,
+        attachment_gateway=attachment_gateway,  # type: ignore[arg-type]
+        attachment_parser=attachment_parser or AttachmentParser(),  # type: ignore[arg-type]
     )
     admin = MemoryAdminService(
         users=users,
@@ -268,3 +299,31 @@ def test_import_rejects_a_passport_without_an_identity(client: TestClient) -> No
 
     assert response.status_code == 422
     assert response.json()["error"] == "validation_error"
+
+
+def test_a_command_works_over_http_the_same_as_on_telegram(client: TestClient) -> None:
+    """Commands were Telegram-only: /help over HTTP was sent to the model.
+
+    A browser extension found this by checking the deployed OpenAPI and finding
+    no command route. Every surface must behave the same.
+    """
+    response = client.post(
+        "/chat/turn",
+        json={
+            "surface": "web",
+            "surface_user_id": "widget-cmd",
+            "display_name": "Ada",
+            "text": "/help",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["command"] == "/help"
+    assert body["provider"] == "command"
+    assert body["turn_id"] == ""
+    assert "/memories" in body["reply"]
+
+    # And nothing was stored as a conversation turn.
+    stats = client.get(f"/memories/{body['user_id']}/stats").json()
+    assert stats["turns"] == 0
