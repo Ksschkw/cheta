@@ -35,18 +35,23 @@ TELEGRAM_API = "https://api.telegram.org"
 SHORT_DESCRIPTION = "Every chatbot remembers. This one decides what to forget."
 
 DESCRIPTION = (
-    "I am Cheta. I keep a private memory space per person, shared across Telegram, "
-    "a CLI, a browser widget and a Chrome extension. What makes me different is what "
-    "I do with it: I collapse repeated facts, retire the ones you have changed your "
-    "mind about, and tell you when two things you told me conflict, instead of "
-    "piling them all up. You can see everything I know with /memories, and remove "
-    "anything with /forget."
+    "I am Cheta. I keep a private memory per person, shared across Telegram, a CLI, "
+    "a browser widget and a Chrome extension. I collapse repeated facts, retire what "
+    "you changed your mind about, and flag conflicts. I read PDF, DOCX, PPTX, XLSX, "
+    "XML, JSON, CSV and any text or code file, and I transcribe voice notes. I search "
+    "the web, crawl pages, check Wikipedia and weather, do exact arithmetic, set "
+    "reminders and make calendar files. /memories shows all; /forget removes; /pair "
+    "links a client."
 )
 
 COMMANDS = (
     ("start", "Start here: what I am and what I do"),
     ("memories", "Show everything I have stored about you"),
-    ("help", "How to use me"),
+    ("forget", "Remove a note by its number"),
+    ("pair", "Link another client to this memory space"),
+    ("sessions", "List the clients sharing this memory space"),
+    ("unpair", "Return this client to its own space"),
+    ("help", "The full list of commands and capabilities"),
 )
 
 
