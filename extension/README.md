@@ -11,8 +11,89 @@ lists what is stored for the current identity, and a per-turn control that
 replays the same question with memory switched off so the difference is visible
 side by side.
 
+It is also an agent on the open tab. **Use this page** reads the visible text of
+the tab that is active when the extension is invoked, shows the tab title and
+hostname, and then offers three named actions instead of a generic chat box:
+**Summarise this page**, **Save the useful facts to my memory**, and **Explain
+this to me like I am new to it**. Each action sends the page text to
+`POST /chat/turn` on the `extension` surface with the same persisted
+`surface_user_id` the chat uses.
+
 There are no emojis, no web fonts, no external scripts, and no build step. The
 extension is plain HTML, CSS, and JavaScript and loads unpacked as-is.
+
+## Working on the active tab
+
+### Reading on demand, not a content script on every site
+
+The extension requests `activeTab` and `scripting`, not host permissions for the
+purpose of reading pages. When the person clicks **Use this page**, the panel:
+
+1. Looks up the tab that is active in the current window.
+2. Injects `readPageInTab` into that one tab with
+   `chrome.scripting.executeScript({ target: { tabId } })`.
+3. Takes the returned object's string fields and discards everything else.
+
+There is deliberately no `content_scripts` entry and no permanent script on all
+sites. The read happens only on a click, only in the tab the person was looking
+at, and only while the `activeTab` grant is in force. A permanent content script
+would run in every page in every tab at page load, which is far more access than
+this feature needs. Because `activeTab` is granted by the user gesture that
+opens the panel from the toolbar button, no additional host permission is needed
+to read.
+
+The broad `host_permissions` in the manifest are not for reading pages. They
+exist for `fetch` to the user-configurable API base URL from the panel, which is
+a cross-origin request and would otherwise be blocked by CORS.
+
+### Page text is untrusted data
+
+The page is treated as data, never as instructions:
+
+- The read uses `innerText` and `textContent` only. The panel never reads or
+  parses `innerHTML`, never builds a `script` element, and never evaluates page
+  content.
+- Everything returned from the tab is shown and sent as plain text. DOM nodes
+  are built with `textContent`, so markup, URLs, or script text found on a page
+  cannot become part of the panel's own DOM or behaviour.
+- The message sent to `POST /chat/turn` wraps the page text in explicit markers:
+  a `[PAGE CONTENT - untrusted data]` header that says the block is data and not
+  instructions, `--- BEGIN PAGE CONTENT ---` / `--- END PAGE CONTENT ---` around
+  the text, and the action instruction placed after the closing marker so it
+  cannot be mistaken for page content.
+
+### Bounds and truncation
+
+The transport caps the whole turn text at 8000 characters
+(`src/schemas/turn_schema.py`, `TurnRequestSchema.text`), so page text is bounded
+at 6000 characters to leave room for the untrusted-data framing and the action.
+The injected read also hard-caps what it collects at 20000 characters. When the
+page is longer, the panel says on screen that only the first 6000 characters are
+sent, and the message itself carries a line saying it was truncated. Nothing is
+trimmed silently.
+
+The transcript keeps only the short action label, such as
+`Summarise this page: <title> (<host>)`, not the page body, so page text is not
+written into `chrome.storage.local` by the transcript.
+
+### When a tab cannot be read
+
+The panel names the specific reason rather than failing silently:
+
+- `chrome://`, `edge://`, `about:`, and `devtools:` pages: browsers do not expose
+  these to extensions.
+- Other extension pages: extensions cannot read each other.
+- Local `file:` pages: the person must enable "Allow access to file URLs" for
+  Cheta on the extensions page.
+- `view-source:` tabs.
+- PDF viewers: Chrome does not expose the words of a PDF as page text.
+- A tab whose URL the browser withholds (special schemes such as `chrome://`):
+  the panel attempts the injection and shows the browser's own refusal, plus a
+  note naming `chrome://` and other browser pages as the likely reason. A
+  toolbar-button invocation on that tab is also required for the read.
+- An injection that the browser refuses: the browser's own message is shown.
+- A page with no visible text: the panel says the page may be empty, still
+  loading, or drawn on a canvas.
 
 ## Design
 
@@ -75,7 +156,10 @@ All requests go to the configured base URL.
 - `POST /chat/turn` with
   `{surface: "extension", surface_user_id, display_name, text, memory_enabled}`.
   `surface` is always `extension`. The response supplies the reply and the
-  recalled memories. The panel renders the recalled memory text only.
+  recalled memories. The panel renders the recalled memory text only. A page
+  action uses the same request: `text` is the untrusted-data block described
+  above, and the transcript shows a short label such as
+  `Summarise this page: <title> (<host>)` instead of the page body.
 - `POST /chat/counterfactual/{turn_id}` for the per-turn
   "Show it without memory" control. The response supplies `with_memory`,
   `without_memory`, and `summary`.
@@ -86,6 +170,25 @@ All requests go to the configured base URL.
 
 These are the same request and response shapes the web widget and the CLI use,
 defined in `src/schemas/turn_schema.py` and `src/schemas/memory_schema.py`.
+
+## Permissions
+
+The manifest declares only what the panel uses.
+
+- `sidePanel` - opens `sidepanel.html` as the browser side panel.
+- `storage` - `chrome.storage.local` keeps the generated `surface_user_id`, the
+  display name, the memory toggle, the base URL, and the transcript.
+- `activeTab` - the temporary grant from the toolbar-button gesture that lets
+  the panel read the URL, title, and text of the tab the person invoked the
+  extension on. Used by `chrome.tabs.query` and the injection in
+  `sidepanel.js` (`activeTab`, `unreadableReason`, `injectPageRead`).
+- `scripting` - `chrome.scripting.executeScript` runs `readPageInTab` once, on
+  demand, in that tab. Used only in `injectPageRead`.
+- `host_permissions` (`https://*/*`, `http://*/*`) - needed so `fetch` from the
+  panel can reach the user-configurable API base URL without CORS. Not used to
+  read pages.
+
+There is no `tabs` permission and no `content_scripts` entry.
 
 ## Commands
 
@@ -119,3 +222,13 @@ CLI, and the web widget:
 Identity is per surface. The extension keeps its own generated
 `surface_user_id` and display name locally, so it is a distinct first-class
 surface that shares memory with the others rather than a copy of the widget.
+
+## Verification status
+
+Checked without a browser: every file is ASCII only, `node --check` passes on
+every script, `manifest.json` parses, every DOM id referenced by `sidepanel.js`
+exists in `sidepanel.html`, and each declared permission is used as listed
+above. The Chrome-specific paths - the `activeTab` grant, the script injection
+into a live tab, the exact browser wording for a refused tab, and the rendering
+of the page bar - can only be confirmed by loading the extension in Chrome and
+clicking through, so they are unverified here.

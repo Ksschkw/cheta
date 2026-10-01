@@ -61,6 +61,33 @@
         </details>
       </header>
 
+      <section id="page-context" class="page-context" aria-label="The page in the active tab">
+        <div class="page-row">
+          <button id="use-page" class="btn btn-quiet" type="button">Use this page</button>
+          <span id="page-status" class="hint page-status" aria-live="polite"></span>
+        </div>
+        <div id="page-info" class="page-info hidden">
+          <div id="page-title" class="page-title"></div>
+          <div id="page-host" class="page-host"></div>
+        </div>
+        <div
+          id="page-actions"
+          class="page-actions hidden"
+          role="group"
+          aria-label="What to do with this page"
+        >
+          <button id="page-action-summarise" class="btn btn-quiet page-action" type="button">
+            Summarise this page
+          </button>
+          <button id="page-action-save" class="btn btn-quiet page-action" type="button">
+            Save the useful facts to my memory
+          </button>
+          <button id="page-action-explain" class="btn btn-quiet page-action" type="button">
+            Explain this to me like I am new to it
+          </button>
+        </div>
+      </section>
+
       <section id="memory-panel" class="memory-panel hidden" aria-label="Stored memories">
         <div class="panel-head">
           <h2>Stored memories</h2>

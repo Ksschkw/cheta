@@ -3,85 +3,61 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ranti chat - memory-first assistant</title>
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Cheta is a memory-first assistant.">
+    <title>Cheta</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
-    <div id="chat-app" class="wrap chat-wrap">
-      <header class="page-head">
-        <div class="brand-row">
-          <h1>Ranti chat</h1>
-          <a class="nav-link" href="dashboard.html">Evidence dashboard</a>
+  <body class="chat-body">
+    <div id="chat-app" class="chat-app">
+      <header class="chat-head">
+        <p class="wordmark">CHETA</p>
+        <div class="head-actions">
+          <details class="settings">
+            <summary class="settings-toggle">Settings</summary>
+            <div class="settings-panel">
+              <label class="field-label" for="display-name">Display name</label>
+              <input
+                id="display-name"
+                type="text"
+                maxlength="128"
+                autocomplete="off"
+                placeholder="Optional"
+              >
+              <p class="field-note">Saved in this browser and sent with each message.</p>
+            </div>
+          </details>
+          <a class="head-link" href="dashboard.html">Memory</a>
         </div>
-        <p class="lede">
-          Ranti is a memory-first chat assistant. Facts you share are extracted, stored
-          in Walrus Memory, and recalled on later turns so replies can build on what
-          Ranti already knows about you.
-        </p>
-        <div id="degraded-banner" class="notice notice-warn hidden"></div>
       </header>
 
-      <section class="panel controls" aria-label="Identity and memory settings">
-        <div class="field">
-          <label for="display-name">Display name (saved in this browser)</label>
-          <input
-            id="display-name"
-            type="text"
-            maxlength="128"
-            autocomplete="off"
-            placeholder="e.g. Alex"
-          >
-        </div>
-        <input id="surface-user-id" type="hidden" value="">
+      <div id="degraded-banner" class="banner hidden" role="status"></div>
 
-        <label class="switch" for="memory-toggle">
-          <input id="memory-toggle" type="checkbox" checked>
-          <span>Use memory on this turn</span>
-        </label>
-        <div>
-          <span id="memory-toggle-state" class="tag tag-ok">ON: replies may use remembered facts</span>
-        </div>
-
-        <div class="count-box" aria-live="polite">
-          <span id="memory-count" class="count-number">0</span>
-          <span class="count-label">active memories</span>
-          <span id="memory-count-detail" class="count-detail">Loading ...</span>
-        </div>
-
-        <div class="command-hint">
-          <span>Commands, answered directly with no model call:</span>
-          <button id="cmd-memories" type="button" class="ghost">/memories</button>
-          <button id="cmd-help" type="button" class="ghost">/help</button>
-        </div>
-      </section>
-
-      <section id="transcript" class="transcript" aria-live="polite">
-        <div class="muted">
-          Say something durable, for example a preference, a constraint, or a fact about
-          your work. Each reply shows the exact memories that were recalled for it.
-        </div>
-      </section>
+      <main
+        id="transcript"
+        class="transcript"
+        aria-live="polite"
+        aria-label="Conversation with Cheta"
+      ></main>
 
       <form id="composer" class="composer">
-        <label class="field" for="chat-input">
-          <span>Message</span>
-        </label>
+        <label class="sr-only" for="chat-input">Message</label>
         <textarea
           id="chat-input"
-          rows="2"
+          rows="1"
           maxlength="8000"
-          placeholder="Say something worth remembering ..."
+          placeholder="Message Cheta"
         ></textarea>
         <div class="composer-row">
-          <span class="muted">Enter sends, Shift+Enter adds a line</span>
-          <button id="send-button" class="primary" type="submit">Send</button>
+          <label class="mini-switch" for="memory-toggle">
+            <input id="memory-toggle" type="checkbox" checked>
+            <span class="mini-track" aria-hidden="true"><span class="mini-thumb"></span></span>
+            <span class="mini-label">Memory</span>
+          </label>
+          <span class="composer-hint">Enter sends, Shift+Enter adds a line</span>
+          <button id="send-button" class="send" type="submit">Send</button>
         </div>
       </form>
-
-      <p class="footer-note">
-        Surface: web. A stable surface id is generated once and kept in this browser
-        so the same identity is reused. Memory lives in Walrus Memory.
-      </p>
     </div>
 
     <script src="app.js"></script>
