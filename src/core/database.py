@@ -17,6 +17,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         surface_user_id TEXT NOT NULL,
         display_name TEXT NOT NULL,
         created_at TEXT NOT NULL,
+        memory_handle TEXT,
         UNIQUE (surface, surface_user_id)
     )
     """,
@@ -127,11 +128,24 @@ class Database:
             self._connection = connection
         return self._connection
 
+    #: Columns added after the first release. Applied one at a time and ignored
+    #: when already present, because an existing database already holds real
+    #: rows and recreating the table would destroy them.
+    ADDITIVE_COLUMNS: tuple[tuple[str, str], ...] = (
+        ("users", "memory_handle TEXT"),
+    )
+
     def migrate(self) -> None:
         with self._lock:
             connection = self._ensure_open()
             for statement in SCHEMA_STATEMENTS:
                 connection.execute(statement)
+            for table, column in self.ADDITIVE_COLUMNS:
+                try:
+                    connection.execute(f"ALTER TABLE {table} ADD COLUMN {column}")
+                except sqlite3.OperationalError:
+                    # Already present. Idempotent by design.
+                    pass
             for statement in INDEX_STATEMENTS:
                 connection.execute(statement)
             connection.commit()

@@ -65,3 +65,27 @@ def test_delete_is_reported_once(crud: UserCrud) -> None:
     assert crud.delete(created.id) is True
     assert crud.delete(created.id) is False
     assert crud.get_by_id(created.id) is None
+
+
+def test_the_additive_migration_is_idempotent(crud: UserCrud) -> None:
+    """Existing databases hold real rows, so the column must add safely twice."""
+    from core.database import Database
+
+    database = Database(":memory:")
+    database.migrate()
+    database.migrate()
+
+    users = UserCrud(database)
+    created = users.create("telegram", "1", "Ada")
+
+    assert created.memory_handle is None
+    assert users.set_memory_handle(created.id, "ada-shared").memory_handle == "ada-shared"
+    assert users.set_memory_handle(created.id, None).memory_handle is None
+
+
+def test_set_memory_handle_rejects_an_invalid_handle(crud: UserCrud) -> None:
+    created = crud.create("telegram", "2", "Ada")
+
+    with pytest.raises(ValueError):
+        crud.set_memory_handle(created.id, "Not Valid")
+    assert crud.get_by_id(created.id).memory_handle is None  # type: ignore[union-attr]

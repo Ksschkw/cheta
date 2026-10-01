@@ -55,7 +55,7 @@ from schemas.turn_schema import (
 
 logger = logging.getLogger("ranti.service.conversation")
 
-COMMANDS = ("/start", "/help", "/memories", "/forget")
+COMMANDS = ("/start", "/help", "/memories", "/forget", "/link", "/unlink")
 
 # Inline keyboard callback data. Kept as short as Telegram allows because the
 # whole payload is round-tripped on every tap.
@@ -430,7 +430,7 @@ class ConversationService:
                 turn_id="",
                 user_id=user.id,
                 memory_namespace=self._settings.memory_namespace(user.memory_key),
-                reply=self.command_reply(
+                reply=await self.answer_command(
                     command,
                     surface,
                     surface_user_id,
@@ -551,7 +551,7 @@ class ConversationService:
         argument = parts[1] if len(parts) > 1 else ""
         lowered = stripped.lower()
         if command in COMMANDS:
-            reply = self.command_reply(
+            reply = await self.answer_command(
                 command, surface, surface_user_id, display_name, argument
             )
             if self._reply_channel is not None:
@@ -577,6 +577,114 @@ class ConversationService:
         if self._reply_channel is not None:
             await self._reply_channel.send_message(recipient_id, self._render_reply(result))
         return result
+
+    async def answer_command(
+        self,
+        command: str,
+        surface: str,
+        surface_user_id: str,
+        display_name: str,
+        argument: str = "",
+    ) -> str:
+        """Commands that need the network are async; the rest delegate to the
+        synchronous renderer. Keeps one entry point for every surface."""
+        if command == "/link":
+            return await self._link_shared_handle(surface, surface_user_id, display_name, argument)
+        if command == "/unlink":
+            return self._unlink_shared_handle(surface, surface_user_id, display_name)
+        return self.command_reply(command, surface, surface_user_id, display_name, argument)
+
+    HANDLE_MIGRATION_LIMIT = 50
+
+    async def _link_shared_handle(
+        self, surface: str, surface_user_id: str, display_name: str, argument: str
+    ) -> str:
+        """Bind this identity to a shared handle and copy known notes into it.
+
+        Walrus Memory cannot list memories, so the only enumerable source is the
+        local index. The source namespace is deliberately left alone: the relayer
+        is append only and cannot move or erase a blob, so this copies rather
+        than migrates and says so.
+        """
+        handle = argument.strip().lower()
+        if not handle:
+            return (
+                "Tell me a handle to share, like /link ada. Use the same handle on "
+                "every client and they will all read the same memories."
+            )
+
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        before = self._settings.memory_namespace(user.memory_key)
+        try:
+            updated = self._users.set_memory_handle(user.id, handle)
+        except ValueError as error:
+            return f"That handle will not work. {error}"
+        if updated is None:
+            return "I could not find that identity, so nothing changed."
+
+        after = self._settings.memory_namespace(updated.memory_key)
+        if before == after:
+            return (
+                f"You are already on the shared space '{handle}'. Anyone using "
+                "/link with the same handle reads these memories."
+            )
+
+        pending = [
+            record
+            for record in self._memories.list_for_user(user.id, None, 200)
+            if record.namespace != after
+        ][: self.HANDLE_MIGRATION_LIMIT]
+
+        copied = 0
+        for record in pending:
+            try:
+                written = await self._memory.remember(
+                    record.text,
+                    after,
+                    idempotency_key=self._idempotency_key(user.id, f"link-{handle}-{record.text}"),
+                )
+            except DependencyUnavailableError:
+                return (
+                    f"You are now on the shared space '{handle}', but Walrus Memory "
+                    f"was unreachable so I copied nothing yet ({copied} copied). Your "
+                    "notes are safe where they were. Send /link "
+                    f"{handle} again to copy the rest."
+                )
+            self._memories.create(
+                user_id=user.id,
+                blob_id=written.blob_id,
+                namespace=after,
+                text=record.text,
+                importance=record.importance,
+                origin_surface=record.origin_surface,
+                occurred_at=record.occurred_at,
+            )
+            copied += 1
+
+        truncated = (
+            " That is the per-call limit, so send the same command again for more."
+            if len(pending) == self.HANDLE_MIGRATION_LIMIT
+            else ""
+        )
+        return (
+            f"You are now on the shared space '{handle}'. Anyone using /link {handle} "
+            f"on any client reads the same memories. I copied {copied} note(s) from "
+            "this client's own space into it. Nothing was removed from the old space, "
+            "because Walrus Memory cannot move or erase a blob." + truncated
+        )
+
+    def _unlink_shared_handle(
+        self, surface: str, surface_user_id: str, display_name: str
+    ) -> str:
+        user = self._users.get_or_create(surface, surface_user_id, display_name)
+        if user.memory_handle is None:
+            return "You are already on this client's own memory space."
+        self._users.set_memory_handle(user.id, None)
+        return (
+            "You are back on this client's own memory space. The shared space is "
+            "untouched and still there if you link again with /link "
+            f"{user.memory_handle}."
+        )
 
     def command_reply(
         self,
@@ -635,7 +743,13 @@ class ConversationService:
                 "yourself and I will remember them for next time."
             )
 
-        lines = [f"Here is what I have stored about you ({len(records)} notes):", ""]
+        scope = (
+            f" (shared space: {user.memory_handle})" if user.memory_handle else ""
+        )
+        lines = [
+            f"Here is what I have stored about you ({len(records)} notes){scope}:",
+            "",
+        ]
         for index, record in enumerate(records[:10], start=1):
             marker = "" if record.status == "active" else f" [{record.status}]"
             lines.append(f"{index}. {record.text}{marker}")

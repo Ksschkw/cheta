@@ -897,3 +897,109 @@ async def test_commands_gain_neither_a_resume_nor_a_contradiction_line() -> None
     assert result.resume_note is None
     assert result.contradiction_note is None
     assert "Last time you mentioned" not in result.reply
+
+
+async def test_a_fact_stored_on_one_surface_is_recalled_on_another() -> None:
+    """The point of the whole feature: one person, one memory space, four clients.
+
+    Before the shared handle, namespace was "{surface}-{surface_user_id}", so the
+    same person on Telegram and the CLI had two isolated spaces. Verified against
+    the relayer: web and cli with the same surface_user_id got different
+    namespaces.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    await harness.say("I am allergic to peanuts", surface="telegram")
+
+    linked = await harness.service.answer_command(
+        "/link", "telegram", "42", "Ada", "ada-shared"
+    )
+    assert "shared space 'ada-shared'" in linked
+
+    await harness.service.answer_command("/link", "cli", "kossi", "Ada", "ada-shared")
+
+    telegram_user = harness.users.get_by_identity("telegram", "42")
+    cli_user = harness.users.get_by_identity("cli", "kossi")
+    assert telegram_user is not None and cli_user is not None
+    assert telegram_user.memory_key == cli_user.memory_key == "shared-ada-shared"
+
+    result = await harness.service.handle_turn("cli", "kossi", "Ada", "peanuts")
+
+    assert any("peanuts" in memory.text for memory in result.recalled), (
+        "a memory written on Telegram must be recalled on the CLI once linked"
+    )
+
+
+async def test_without_a_handle_nothing_about_namespaces_changes() -> None:
+    """Every existing memory keeps the namespace it already has."""
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    result = await harness.say("I like tea", surface="telegram")
+
+    user = harness.users.get_by_id(result.user_id)
+    assert user is not None
+    assert user.memory_handle is None
+    assert user.memory_key == "telegram-42"
+    assert result.memory_namespace == "ranti.user.telegram-42"
+
+
+async def test_linking_copies_notes_and_leaves_the_old_space_alone() -> None:
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    first = await harness.say("I am allergic to peanuts")
+
+    reply = await harness.service.answer_command("/link", "telegram", "42", "Ada", "ada-shared")
+
+    assert "copied 1 note" in reply
+    assert "Nothing was removed" in reply
+    # The original record still exists in its original namespace.
+    originals = [
+        record
+        for record in harness.memories.list_for_user(first.user_id, None, 100)
+        if record.namespace == "ranti.user.telegram-42"
+    ]
+    assert len(originals) == 1
+
+
+async def test_unlinking_returns_to_the_surface_space() -> None:
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    await harness.say("I like tea")
+    await harness.service.answer_command("/link", "telegram", "42", "Ada", "ada-shared")
+
+    reply = await harness.service.answer_command("/unlink", "telegram", "42", "Ada")
+
+    assert "own memory space" in reply
+    user = harness.users.get_by_identity("telegram", "42")
+    assert user is not None and user.memory_handle is None
+    assert user.memory_key == "telegram-42"
+
+
+async def test_a_bad_handle_is_refused_with_a_reason() -> None:
+    harness = Harness([])
+
+    for bad in ("has space", "ab", "x" * 65, "bad/nul"):
+        reply = await harness.service.answer_command(
+            "/link", "telegram", "42", "Ada", bad
+        )
+        assert "will not work" in reply, bad
+
+    user = harness.users.get_by_identity("telegram", "42")
+    assert user is not None and user.memory_handle is None
+
+
+async def test_a_handle_is_normalised_to_lowercase() -> None:
+    """Case is normalised rather than rejected, so /link Ada and /link ada agree."""
+    harness = Harness([])
+
+    reply = await harness.service.answer_command("/link", "telegram", "42", "Ada", "  ADA  ")
+
+    assert "shared space 'ada'" in reply
+    user = harness.users.get_by_identity("telegram", "42")
+    assert user is not None and user.memory_handle == "ada"
+
+
+async def test_the_listing_shows_which_shared_space_you_are_in() -> None:
+    harness = Harness([{"text": "Ada likes tea", "importance": 0.7}])
+    await harness.say("I like tea")
+    await harness.service.answer_command("/link", "telegram", "42", "Ada", "ada-shared")
+
+    listing = await harness.service.answer_command("/memories", "telegram", "42", "Ada")
+
+    assert "shared space: ada-shared" in listing

@@ -20,6 +20,9 @@ def _row_to_model(row) -> UserModel:
         surface_user_id=row["surface_user_id"],
         display_name=row["display_name"],
         created_at=row["created_at"],
+        memory_handle=(
+            row["memory_handle"] if "memory_handle" in row.keys() else None
+        ),
     )
 
 
@@ -76,6 +79,27 @@ class UserCrud:
         if existing.display_name != display_name:
             return self.update(existing.id, display_name) or existing
         return existing
+
+    def set_memory_handle(self, user_id: str, handle: str | None) -> UserModel | None:
+        """Bind or clear the shared handle. Validation lives in the entity."""
+        from models.entities.user_model import UserModel as _UserModel
+
+        current = self.get_by_id(user_id)
+        if current is None:
+            return None
+        # Reuse the entity invariant rather than duplicating the rules here.
+        _UserModel(
+            id=current.id,
+            surface=current.surface,
+            surface_user_id=current.surface_user_id,
+            display_name=current.display_name,
+            created_at=current.created_at,
+            memory_handle=handle,
+        )
+        changed = self._database.execute(
+            "UPDATE users SET memory_handle = ? WHERE id = ?", (handle, user_id)
+        )
+        return self.get_by_id(user_id) if changed else None
 
     def update(self, user_id: str, display_name: str) -> UserModel | None:
         if not display_name.strip():
