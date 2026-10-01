@@ -459,3 +459,52 @@ async def test_a_turn_that_stored_a_fact_does_not_nudge() -> None:
 
     assert "Tell me a few things about yourself" not in text
     assert "memory:" in text
+
+
+async def test_the_prompt_never_denies_memory_when_notes_are_stored() -> None:
+    """The worst bug found in real use.
+
+    A real user with 19 stored memories was told "I don't have any stored
+    memories about you yet", because recall returning nothing for one message was
+    reported to the model as nothing being stored at all.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    first = await harness.say("I am allergic to peanuts")
+
+    recalled, _, _, stored = await harness.service._assemble_context(
+        first.user_id, first.memory_namespace, "trumpets and bicycles", 6
+    )
+
+    assert recalled == [], "this test needs a message nothing matches"
+    assert stored == 1, "the note count must reflect what is actually stored"
+
+    system = harness.service._build_prompt("Ada", "trumpets and bicycles", recalled, stored)[
+        0
+    ].content
+
+    assert "nothing stored about this person yet" not in system
+    assert "Do not say that you have no memory of them" in system
+    assert "1 notes stored" in system
+
+
+async def test_the_prompt_says_nothing_is_stored_only_when_that_is_true() -> None:
+    harness = Harness([])
+    recalled, _, _, stored = await harness.service._assemble_context(
+        (await harness.say("hello there")).user_id,
+        "ranti.user.test",
+        "hello there",
+        6,
+    )
+
+    assert stored == 0
+    system = harness.service._build_prompt("Ada", "hello there", recalled, stored)[0].content
+
+    assert "nothing stored about this person yet" in system
+
+
+async def test_the_prompt_forbids_markdown_because_clients_showed_asterisks() -> None:
+    harness = Harness([])
+    system = harness.service._build_prompt("Ada", "hi", [], 0)[0].content
+
+    assert "no markdown" in system
+    assert "no asterisks" in system
