@@ -89,6 +89,19 @@ class TurnCrud:
         )
         return [_row_to_model(row) for row in rows]
 
+    def get_latest_for_user(self, user_id: str) -> TurnModel | None:
+        """The most recent turn, or None when this identity has never spoken.
+
+        ``created_at`` is second-resolution, so ``rowid`` breaks ties: without it
+        two turns written in the same second have no defined order and the
+        returning-session check could read the wrong one.
+        """
+        row = self._database.fetch_one(
+            "SELECT * FROM turns WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (user_id,),
+        )
+        return _row_to_model(row) if row else None
+
     def count_for_user(self, user_id: str) -> int:
         row = self._database.fetch_one(
             "SELECT COUNT(*) AS total FROM turns WHERE user_id = ?", (user_id,)

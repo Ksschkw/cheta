@@ -46,6 +46,11 @@ class TurnSchema(BaseModel):
     memory_note: str | None = None
     provider: str | None = None
     first_turn: bool = False
+    # Service-authored lines already appended to ``reply``. Kept as separate
+    # fields so a transport can style them without re-parsing the reply, and so
+    # the exact text the person saw is testable on its own.
+    resume_note: str | None = None
+    contradiction_note: str | None = None
     # Set when the message was a command rather than a conversation turn, so a
     # caller can tell the difference and no turn row is implied.
     command: str | None = None

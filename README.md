@@ -121,6 +121,12 @@ Required environment variables:
   ([src/core/gateways/offline_llm_gateway.py](src/core/gateways/offline_llm_gateway.py)),
   which is loud about being a fallback and is good enough to demonstrate the
   consolidation behaviour but is not a real model.
+- `RANTI_RESUME_AFTER_HOURS` (default `6`) - how long a known user must have
+  been away before the first reply of a returning session opens by naming one or
+  two facts that are actually stored. The line is service-authored, comes only
+  from stored records, is appended to the model's own reply, and is suppressed
+  entirely when Walrus Memory is degraded. Below the threshold, a fast
+  back-and-forth is treated as one conversation and is not re-greeted.
 
 Run the API:
 

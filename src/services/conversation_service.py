@@ -43,6 +43,7 @@ from models.entities.memory_rank_model import (
     classify_candidate,
     select_context,
 )
+from models.entities.turn_model import TurnModel
 from schemas.attachment_schema import AttachmentSchema
 from schemas.llm_schema import ChatMessageSchema
 from schemas.turn_schema import (
@@ -114,6 +115,9 @@ MEMORY_QUERY_PHRASES = (
 )
 RECALL_CANDIDATE_LIMIT = 40
 FACT_BATCH_LIMIT = 6
+# A returning-session greeting names at most this many stored facts. One or two
+# keeps it a greeting rather than a memory dump.
+RESUME_FACT_LIMIT = 2
 _JSON_BLOCK = re.compile(r"\[.*\]", re.DOTALL)
 
 EXTRACTION_PROMPT = """You extract durable facts about one person from a conversation turn.
@@ -628,7 +632,7 @@ class ConversationService:
             )
             return
 
-        if callback_data == "mem:forget:never":
+        if callback_data.startswith(CALLBACK_FORGET_PREFIX):
             argument = callback_data[len(CALLBACK_FORGET_PREFIX) :]
             await self._reply_channel.send_message(
                 recipient_id, self._forget_reply(user.id, argument)
@@ -774,9 +778,12 @@ class ConversationService:
             return None
 
         caption = attachment.caption.strip()
-        turn_text = f"[Document: {name}]\n{document_text}"
+        # The marker leads so a caption that happens to look like a command
+        # cannot turn a document turn into a command.
         if caption:
-            turn_text = f"{caption}\n\n{turn_text}"
+            turn_text = f"[Document: {name}]\nCaption: {caption}\n\n{document_text}"
+        else:
+            turn_text = f"[Document: {name}]\n{document_text}"
 
         await self._reply_channel.send_typing(recipient_id)
         result = await self.handle_turn(

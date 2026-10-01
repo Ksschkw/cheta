@@ -114,6 +114,12 @@ class Settings:
     # unless someone explicitly wants it for a demo.
     memory_receipts: bool = False
 
+    # A returning session is one whose most recent stored turn is older than
+    # this. Below it, a rapid back-and-forth is one conversation and must not be
+    # re-greeted on every message. Zero or negative disables the wait, so any
+    # earlier turn counts as a returning session.
+    resume_after_hours: float = 6.0
+
     memwal_timeout_seconds: float = 90.0
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
@@ -207,5 +213,6 @@ class Settings:
             bot_name=_get(source, "BOT_NAME", "Cheta"),
             memory_receipts=_get(source, "RANTI_MEMORY_RECEIPTS", "0").lower()
             in ("1", "true", "yes", "on"),
+            resume_after_hours=_get_float(source, "RANTI_RESUME_AFTER_HOURS", 6.0),
             llm_providers=tuple(candidate for candidate in candidates if candidate.configured),
         )
