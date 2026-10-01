@@ -74,6 +74,25 @@ class TelegramGateway:
                     "telegram", outcome.error or "could not deliver message"
                 )
 
+    async def send_typing(self, recipient_id: str) -> None:
+        """Show a typing indicator. Cosmetic, so a failure is logged, not raised.
+
+        Turns take several seconds because extraction and adjudication are model
+        calls, and real users read the silence as a frozen bot.
+        """
+
+        async def operation() -> dict[str, Any]:
+            return await self._post(
+                "sendChatAction", {"chat_id": recipient_id, "action": "typing"}
+            )
+
+        try:
+            await self._boundary.call(
+                operation, failure_fallback("telegram", "typing_failed"), idempotent=True
+            )
+        except Exception as error:  # noqa: BLE001 - never break a turn for this
+            logger.debug("typing indicator failed: %s", type(error).__name__)
+
     async def set_webhook(self, url: str, secret_token: str) -> None:
         async def operation() -> dict[str, Any]:
             return await self._post(

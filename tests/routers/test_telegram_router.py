@@ -113,3 +113,22 @@ def test_a_failing_turn_apologises_instead_of_silently_dropping_the_message() ->
     _, text = channel.sent[0]
     assert "briefly unavailable" in text
     assert "Nothing you said was lost" in text
+
+
+def test_a_typing_indicator_is_shown_before_the_reply() -> None:
+    """Turns take seconds, and real users read the silence as a frozen bot."""
+    client, channel = make_client(secret="s3cret")
+
+    client.post("/webhooks/telegram/s3cret", json=update(555, "hello there"))
+
+    assert channel.typing == ["555"]
+    assert len(channel.sent) == 1
+
+
+def test_a_command_skips_the_typing_indicator_because_it_is_instant() -> None:
+    client, channel = make_client(secret="s3cret")
+
+    client.post("/webhooks/telegram/s3cret", json=update(555, "/start"))
+
+    assert channel.typing == []
+    assert len(channel.sent) == 1

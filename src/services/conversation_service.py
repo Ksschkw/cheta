@@ -320,6 +320,9 @@ class ConversationService:
                 await self._reply_channel.send_message(recipient_id, reply)
             return None
 
+        if self._reply_channel is not None:
+            await self._reply_channel.send_typing(recipient_id)
+
         result = await self.handle_turn(
             surface, surface_user_id, display_name, text, memory_enabled, context_budget
         )

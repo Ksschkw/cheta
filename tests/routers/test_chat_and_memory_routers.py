@@ -52,9 +52,14 @@ class FakeLlm:
 class RecordingReplyChannel:
     def __init__(self) -> None:
         self.sent: list[tuple[str, str]] = []
+        self.typing: list[str] = []
 
     async def send_message(self, recipient_id: str, text: str) -> None:
         self.sent.append((recipient_id, text))
+
+    async def send_typing(self, recipient_id: str) -> None:
+        """Kept separate from `sent`, which holds delivered messages."""
+        self.typing.append(recipient_id)
 
 
 def build_test_container(
