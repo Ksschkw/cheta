@@ -18,6 +18,12 @@
           <span class="hero-tagline-line">delete the app. keep the memory.</span>
           <span class="hero-tagline-line">your assistant's memory lives on <span class="accent-underline">Walrus</span>, not in our database</span>
         </p>
+        <p class="hero-cta">
+          <button class="try-btn try-btn-hero" type="button" id="try-open-hero" aria-haspopup="dialog" aria-controls="try-modal">
+            Try Cheta now
+          </button>
+          <span class="hero-cta-note">Four surfaces. One memory space per person.</span>
+        </p>
       </div>
     </section>
 
@@ -40,6 +46,9 @@
           <a href="#surfaces">Surfaces</a>
           <a href="#pairing">Pairing</a>
           <a href="#honesty">Honesty</a>
+          <button class="try-btn try-btn-nav" type="button" id="try-open-nav" aria-haspopup="dialog" aria-controls="try-modal">
+            Try Cheta now
+          </button>
         </nav>
       </section>
 
@@ -345,6 +354,94 @@ PYTHONPATH=src python -m cli</code></pre>
         <p class="footer-note">Built on Walrus Memory</p>
       </div>
     </footer>
+
+    <div class="modal" id="try-modal" hidden>
+      <div class="modal-scrim" data-modal-dismiss="1"></div>
+      <div
+        class="modal-panel"
+        id="try-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="try-modal-title"
+        tabindex="-1"
+      >
+        <div class="modal-head">
+          <p class="modal-kicker">Try it out</p>
+          <h2 class="modal-title" id="try-modal-title">
+            Four surfaces, one memory space per person.
+          </h2>
+          <button class="modal-close" type="button" id="try-modal-close" aria-label="Close">
+            Close
+          </button>
+        </div>
+
+        <p class="modal-lede">
+          Start on whichever surface you already have open. Every one of them
+          writes to the same memory space, so the notes follow you.
+        </p>
+
+        <ul class="surfaces">
+          <li class="surface">
+            <div class="surface-head">
+              <h3 class="surface-name">
+                Telegram <span class="surface-tag">Quickest path</span>
+              </h3>
+              <a class="surface-action" href="https://t.me/Kosi_test_walrus1_bot" rel="noopener">Open the bot</a>
+            </div>
+            <p class="surface-desc">
+              The only surface that works instantly with nothing installed: open
+              the bot and send <code>/start</code>.
+            </p>
+          </li>
+
+          <li class="surface">
+            <div class="surface-head">
+              <h3 class="surface-name">Web widget</h3>
+              <a class="surface-action" href="/app/index.html">Open the chat page</a>
+            </div>
+            <p class="surface-desc">
+              The chat page in the browser at <code>/app/index.html</code>. No
+              install, no account, no extension.
+            </p>
+          </li>
+
+          <li class="surface">
+            <div class="surface-head">
+              <h3 class="surface-name">Command line</h3>
+              <button class="copy surface-copy" type="button" id="copy-modal-cli">Copy</button>
+            </div>
+            <p class="surface-desc">
+              Install the package, then run the terminal client against the API.
+            </p>
+            <pre class="code modal-code" id="modal-cli-command"><code>python -m pip install -e .
+PYTHONPATH=src python -m cli</code></pre>
+          </li>
+
+          <li class="surface">
+            <div class="surface-head">
+              <h3 class="surface-name">Browser extension</h3>
+              <a class="surface-action" href="/app/extension-help.html">Install instructions</a>
+            </div>
+            <p class="surface-desc">
+              A side panel for Chrome, Edge and Firefox. It is not in any browser
+              store, so it has to be loaded unpacked, and the instructions show
+              exactly how.
+            </p>
+          </li>
+        </ul>
+
+        <p class="modal-note">
+          Pairing: run <code>/pair</code> on a client you already use, then enter
+          the code on the new client. Both then share the same memories, and the
+          client you started from is told when a new one joins.
+        </p>
+
+        <p class="modal-limit">
+          I cannot log into your accounts, I cannot read private pages you are not
+          viewing, and I cannot understand images or video.
+        </p>
+      </div>
+    </div>
 
     <script src="/app/vendor/three.min.js"></script>
     <script src="/app/intro.js"></script>

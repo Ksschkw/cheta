@@ -91,8 +91,13 @@
   }
 
   function setupCopy() {
-    var button = document.getElementById("copy-cli");
-    var block = document.getElementById("cli-command");
+    bindCopy("copy-cli", "cli-command");
+    bindCopy("copy-modal-cli", "modal-cli-command");
+  }
+
+  function bindCopy(buttonId, blockId) {
+    var button = document.getElementById(buttonId);
+    var block = document.getElementById(blockId);
     if (!button || !block) {
       return;
     }
@@ -123,10 +128,131 @@
     });
   }
 
+  /* ------------------------------------------------------------- try modal
+     A single modal opened from the hero and the index nav. It is a plain
+     dialog: focus moves in, Escape and the scrim close it, Tab is trapped
+     inside, and focus returns to whichever button opened it. */
+
+  var FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), ' +
+    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  var lastTrigger = null;
+
+  function focusableIn(panel) {
+    var nodes = panel.querySelectorAll(FOCUSABLE);
+    var out = [];
+    for (var i = 0; i < nodes.length; i += 1) {
+      if (nodes[i].offsetParent !== null || nodes[i] === document.activeElement) {
+        out.push(nodes[i]);
+      }
+    }
+    return out;
+  }
+
+  function openModal(trigger) {
+    var modal = document.getElementById("try-modal");
+    var panel = document.getElementById("try-modal-panel");
+    if (!modal || !panel) {
+      return;
+    }
+
+    lastTrigger = trigger || null;
+    modal.hidden = false;
+    modal.classList.add("is-open");
+    document.body.classList.add("modal-open");
+
+    var target = focusableIn(panel)[0] || panel;
+    target.focus();
+  }
+
+  function closeModal() {
+    var modal = document.getElementById("try-modal");
+    if (!modal || modal.hidden) {
+      return;
+    }
+
+    modal.classList.remove("is-open");
+    modal.hidden = true;
+    document.body.classList.remove("modal-open");
+
+    if (lastTrigger && typeof lastTrigger.focus === "function") {
+      lastTrigger.focus();
+    }
+    lastTrigger = null;
+  }
+
+  function setupModal() {
+    var modal = document.getElementById("try-modal");
+    var panel = document.getElementById("try-modal-panel");
+    var close = document.getElementById("try-modal-close");
+    if (!modal || !panel) {
+      return;
+    }
+
+    var openers = document.querySelectorAll(".try-btn");
+    for (var i = 0; i < openers.length; i += 1) {
+      openers[i].addEventListener("click", function (event) {
+        openModal(event.currentTarget);
+      });
+    }
+
+    if (close) {
+      close.addEventListener("click", closeModal);
+    }
+
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal || event.target.getAttribute("data-modal-dismiss")) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (modal.hidden) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      var nodes = focusableIn(panel);
+      if (nodes.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      var active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (active === last || !panel.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
   function start() {
     startHero();
     renderExtensionCta();
     setupCopy();
+    setupModal();
   }
 
   if (document.readyState === "loading") {

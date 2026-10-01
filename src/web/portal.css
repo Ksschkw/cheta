@@ -597,3 +597,338 @@ code {
     flex-direction: column;
   }
 }
+
+/* ------------------------------------------------ primary try-it-out button
+   The single accent-filled control on the page. Every other action stays
+   monochrome and only takes the accent for a focus ring or a link hover. */
+
+.hero-cta {
+  margin: 46px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.hero-cta-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.try-btn {
+  appearance: none;
+  display: inline-block;
+  background: var(--accent);
+  color: #0a0a0a;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.try-btn:hover,
+.try-btn:focus {
+  background: transparent;
+  color: var(--accent);
+}
+
+.try-btn-hero {
+  padding: 26px 64px;
+  font-size: clamp(1rem, 1.7vw, 1.35rem);
+}
+
+.try-btn-nav {
+  padding: 11px 18px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+}
+
+.try-btn:focus-visible,
+.modal a:focus-visible,
+.modal button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ modal */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 4, 4, 0.84);
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 700px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 36px 38px 34px 38px;
+}
+
+.modal.is-open .modal-panel {
+  animation: modal-panel-in 180ms ease-out both;
+}
+
+.modal.is-open .modal-scrim {
+  animation: modal-scrim-in 180ms ease-out both;
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes modal-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-head {
+  position: relative;
+  padding-right: 72px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 22px;
+}
+
+.modal-kicker {
+  margin: 0 0 12px 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  padding: 9px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.modal-lede {
+  margin: 22px 0 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.surfaces {
+  list-style: none;
+  margin: 8px 0 0 0;
+  padding: 0;
+}
+
+.surface {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.surface-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.surface-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.surface-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  vertical-align: middle;
+}
+
+.surface-action {
+  display: inline-block;
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 10px 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  border-radius: 2px;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.surface-action:hover,
+.surface-action:focus {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.surface-copy {
+  padding: 10px 16px;
+}
+
+.surface-desc {
+  margin: 10px 0 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.surface-desc code {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+}
+
+.modal-code {
+  margin-top: 14px;
+  background: var(--bg);
+}
+
+.modal-note {
+  margin: 22px 0 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.modal-note code,
+.modal-limit code {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+}
+
+.modal-limit {
+  margin: 18px 0 0 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--muted);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 560px) {
+  .hero-cta {
+    margin-top: 38px;
+  }
+
+  .try-btn-hero {
+    padding: 20px 30px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .modal {
+    padding: 16px 12px;
+  }
+
+  .modal-panel {
+    max-height: calc(100vh - 32px);
+    padding: 26px 20px 24px 20px;
+  }
+
+  .modal-head {
+    padding-right: 0;
+    padding-bottom: 18px;
+  }
+
+  .modal-close {
+    position: static;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .surface-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .surface-action,
+  .surface-copy {
+    width: 100%;
+    text-align: center;
+  }
+
+  .modal-code {
+    font-size: 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal.is-open .modal-panel,
+  .modal.is-open .modal-scrim {
+    animation: none !important;
+  }
+}
