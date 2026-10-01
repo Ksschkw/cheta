@@ -32,7 +32,7 @@ from core.config import load_environment  # noqa: E402
 
 TELEGRAM_API = "https://api.telegram.org"
 
-SHORT_DESCRIPTION = "Explain yourself once."
+SHORT_DESCRIPTION = "Delete the app. Your memory stays on Walrus."
 
 DESCRIPTION = (
     "I am Cheta. I keep a private memory per person, shared across Telegram, a CLI, "

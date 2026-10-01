@@ -15,6 +15,8 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+from models.entities.memory_phrasing_model import to_second_person
+
 STOP_TOKENS = frozenset(
     {
         "the",
@@ -127,11 +129,27 @@ def normalise_text(text: str) -> str:
     return " ".join(text.split()).strip().casefold()
 
 
-def exact_fact_match(left: str, right: str) -> bool:
-    """True when two records say the identical thing, ignoring case and spacing."""
+def canonical_fact_text(text: str, display_names: Sequence[str] = ()) -> str:
+    """The form comparison runs on: same claim, subject resolved.
+
+    A fact may be stored with "The user", with the person's own name, or already
+    in the second person. Those are the same claim, so the leading subject is
+    rewritten to "you" and only then are two records compared. Without this,
+    "Kosisochukwu is a software engineering student" and "The user is a software
+    engineering student at FUTO" look like unrelated statements.
+    """
+    return normalise_text(to_second_person(text, display_names))
+
+
+def exact_fact_match(
+    left: str, right: str, display_names: Sequence[str] = ()
+) -> bool:
+    """True when two records say the identical thing, subject resolved."""
     if not left.strip() or not right.strip():
         return False
-    return normalise_text(left) == normalise_text(right)
+    return canonical_fact_text(left, display_names) == canonical_fact_text(
+        right, display_names
+    )
 
 
 def similarity(left: str, right: str) -> float:
@@ -185,16 +203,18 @@ def _all_tokens(text: str) -> frozenset[str]:
     return frozenset(token for token in tokens if token)
 
 
-def contains_fact(inner: str, outer: str) -> bool:
+def contains_fact(inner: str, outer: str, display_names: Sequence[str] = ()) -> bool:
     """True when one fact is a restatement of the other with extra words.
 
     "The user is a software engineering student" is contained by the same
     sentence plus "at FUTO": every token of the shorter one appears in the
-    longer one. A single shared token is not enough to call two statements the
-    same, so at least two must be shared.
+    longer one. The comparison runs on the subject-resolved form, so a record
+    that names the person and one that says "The user" are still recognised as
+    the same claim with extra detail. A single shared token is not enough to
+    call two statements the same, so at least two must be shared.
     """
-    inner_tokens = _all_tokens(inner)
-    outer_tokens = _all_tokens(outer)
+    inner_tokens = _all_tokens(canonical_fact_text(inner, display_names))
+    outer_tokens = _all_tokens(canonical_fact_text(outer, display_names))
     if not inner_tokens or not outer_tokens:
         return False
     shared = inner_tokens & outer_tokens
@@ -203,19 +223,23 @@ def contains_fact(inner: str, outer: str) -> bool:
     return inner_tokens <= outer_tokens or outer_tokens <= inner_tokens
 
 
-def contradicts(left: str, right: str) -> bool:
+def contradicts(left: str, right: str, display_names: Sequence[str] = ()) -> bool:
     """A deterministic contradiction signal that does not need the model.
 
     Two statements conflict when they share an attribute but disagree on
     negation ("owns an Itel Power Go phone" against "does not own a phone", or
-    "portable power station, not a phone"). The model still adjudicates the
+    "portable power station, not a phone"). The comparison runs on the
+    subject-resolved form, so "The user owns a phone" and "Kosisochukwu does not
+    own a phone" are still seen as a conflict. The model still adjudicates the
     harder cases; this only removes the ones that are plainly self-conflicting
     from the append-only store.
     """
-    if _negated(left) == _negated(right):
+    left_canonical = canonical_fact_text(left, display_names)
+    right_canonical = canonical_fact_text(right, display_names)
+    if _negated(left_canonical) == _negated(right_canonical):
         return False
-    left_tokens = _comparison_tokens(left)
-    right_tokens = _comparison_tokens(right)
+    left_tokens = _comparison_tokens(left_canonical)
+    right_tokens = _comparison_tokens(right_canonical)
     if not left_tokens or not right_tokens:
         return False
     shared = left_tokens & right_tokens
@@ -223,8 +247,8 @@ def contradicts(left: str, right: str) -> bool:
         return False
     if len(shared) >= 2 and len(shared) / min(len(left_tokens), len(right_tokens)) >= 0.5:
         return True
-    left_order = _comparison_tokens_in_order(left)
-    right_order = _comparison_tokens_in_order(right)
+    left_order = _comparison_tokens_in_order(left_canonical)
+    right_order = _comparison_tokens_in_order(right_canonical)
     return bool(left_order and right_order and left_order[0] == right_order[0])
 
 
@@ -233,6 +257,7 @@ def classify_candidate(
     neighbours: Sequence[RankedMemory],
     thresholds: ConsolidationThresholds,
     similarity_fn: Callable[[str, str], float] = similarity,
+    display_names: Sequence[str] = (),
 ) -> tuple[str, RankedMemory | None]:
     """Return (verdict, best_neighbour).
 
@@ -245,9 +270,10 @@ def classify_candidate(
 
     # An exact text match is a duplicate, full stop. This does not consult any
     # distance or similarity score, so an embedder that misses the pair cannot
-    # let two identical strings become active.
+    # let two identical strings become active. The match is on the
+    # subject-resolved form, so "The user is ..." and "NAME is ..." still match.
     for neighbour in active:
-        if exact_fact_match(candidate_text, neighbour.text):
+        if exact_fact_match(candidate_text, neighbour.text, display_names):
             return "duplicate", neighbour
 
     best: RankedMemory | None = None
@@ -268,9 +294,9 @@ def classify_candidate(
         return "duplicate", best
     # Contradiction is checked before containment: a restatement that adds a
     # negation is a conflict, not a longer version of the same fact.
-    if contradicts(candidate_text, best.text):
+    if contradicts(candidate_text, best.text, display_names):
         return "contradicts", best
-    if contains_fact(candidate_text, best.text):
+    if contains_fact(candidate_text, best.text, display_names):
         return "duplicate", best
     if best.distance <= thresholds.related_distance:
         return "related", best

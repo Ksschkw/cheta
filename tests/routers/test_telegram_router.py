@@ -306,7 +306,7 @@ def test_the_list_callback_answers_and_sends_the_listing_without_the_model() -> 
 
     assert response.json() == {"ok": True, "handled": True, "callback": True}
     assert channel.callback_answers == [("cb-1", None)]
-    assert "Ada is allergic to peanuts" in channel.sent[-1][1]
+    assert "You are allergic to peanuts" in channel.sent[-1][1]
     assert llm.reply_calls == reply_calls_before
 
 
@@ -319,7 +319,8 @@ def test_the_forget_callback_shows_one_numbered_button_per_note() -> None:
     markup = channel.markups[-1]
     assert markup is not None
     buttons = [button for row in markup["inline_keyboard"] for button in row]
-    assert buttons[0]["callback_data"] == "mem:forget:1"
+    assert buttons[0]["text"].startswith("1. ")
+    assert buttons[0]["callback_data"].startswith("mem:forget:")
     assert "peanuts" in buttons[0]["text"]
 
 

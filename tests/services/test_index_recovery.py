@@ -149,7 +149,7 @@ async def test_a_wiped_index_is_rebuilt_from_the_snapshot_and_recalls_again() ->
         result.user_id, "peanuts", budget=5
     )
     assert degraded is False
-    assert [memory.text for memory in recalled] == ["Ada is allergic to peanuts"]
+    assert [memory.text for memory in recalled] == ["You are allergic to peanuts"]
 
 
 async def test_rebuilding_twice_reports_the_second_pass_as_already_present() -> None:
@@ -215,3 +215,51 @@ async def test_the_snapshot_is_written_only_after_the_pending_writes_settle() ->
     assert len(settled) == 1
     assert not settled[0].blob_id.startswith("pending:")
     assert [record.blob_id for record in records] == [settled[0].blob_id]
+
+
+async def test_repair_runs_for_records_restored_by_index_recovery() -> None:
+    """A recovered record is a fresh active row, so the listing must still repair it."""
+    harness = Harness([])
+    user = harness.users.get_or_create("telegram", "42", "Kosisochukwu")
+    namespace = harness.settings.memory_namespace(user.memory_key)
+    harness.memories.create(
+        user_id=user.id,
+        blob_id="blob-name",
+        namespace=namespace,
+        text="Kosisochukwu is a software engineering student.",
+        importance=0.7,
+        origin_surface="telegram",
+        occurred_at="2026-01-01T00:00:00+00:00",
+    )
+    harness.memories.create(
+        user_id=user.id,
+        blob_id="blob-detail",
+        namespace=namespace,
+        text=(
+            "The user is a software engineering student at the Federal University "
+            "of Technology Owerri (FUTO)."
+        ),
+        importance=0.7,
+        origin_surface="telegram",
+        occurred_at="2026-01-02T00:00:00+00:00",
+    )
+    await harness.service._write_index_snapshot(user.id)
+
+    # Simulate the redeploy: the process starts with an empty local index.
+    for record in harness.memories.list_for_user(user.id, None, 1000):
+        harness.memories.delete_by_blob_id(record.blob_id)
+    assert harness.memories.list_for_user(user.id) == []
+
+    recovered = await harness.service.recover_index_if_empty(user)
+    assert recovered == 2
+    assert harness.memories.count_for_user(user.id, "active") == 2
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Kosisochukwu")
+
+    assert "duplicate retired" in listing
+    state = {
+        record.blob_id: record.status
+        for record in harness.memories.list_for_user(user.id, None, 100)
+    }
+    assert state["blob-name"] == "superseded"
+    assert state["blob-detail"] == "active"

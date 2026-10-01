@@ -23,7 +23,11 @@ from models.entities.memory_model import (
     STATUS_SUPERSEDED,
 )
 from models.entities.memory_passport_model import build_passport
-from models.entities.memory_phrasing_model import is_person_fact, person_facing
+from models.entities.memory_phrasing_model import (
+    is_person_fact,
+    record_facing,
+    subject_names,
+)
 from models.entities.memory_repair_model import (
     KIND_CONTRADICTION,
     KIND_DUPLICATE,
@@ -52,16 +56,20 @@ class MemoryAdminService:
         self._memory = memory_gateway
         self._settings = settings
 
-    def _view(self, memory) -> MemoryViewSchema:
+    def _view(self, memory, display_names: tuple[str, ...]) -> MemoryViewSchema:
         return MemoryViewSchema(
             blob_id=memory.blob_id,
-            text=person_facing(memory.text) or memory.text,
+            text=record_facing(memory, display_names),
             status=memory.status,
             importance=memory.importance,
             origin_surface=memory.origin_surface,
             superseded_by=memory.superseded_by,
             occurred_at=memory.occurred_at,
         )
+
+    def _names_for(self, user) -> tuple[str, ...]:
+        """The name forms every surface uses to resolve a record's subject."""
+        return subject_names(user.display_name)
 
     def list_memories(self, user_id: str, include_inactive: bool = False) -> list[MemoryViewSchema]:
         user = self._users.get_by_id(user_id)
@@ -76,8 +84,9 @@ class MemoryAdminService:
             records = [record for record in records if record.status == STATUS_ACTIVE]
         # A record about the assistant is not part of what is known about the
         # person, and every record is rendered as it is said to them.
+        display_names = self._names_for(user)
         return [
-            self._view(record)
+            self._view(record, display_names)
             for record in records
             if is_person_fact(record.text)
         ]
@@ -89,8 +98,11 @@ class MemoryAdminService:
         what was collapsed. Append-only Walrus storage is untouched; only the
         local index that drives recall and the listing changes.
         """
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError(f"user {user_id} does not exist")
         records = self._memories.list_for_user(user_id, None, 1000)
-        actions = plan_repairs(records)
+        actions = plan_repairs(records, self._names_for(user))
         for action in actions:
             if action.kind == KIND_DUPLICATE:
                 self._memories.mark_status(
@@ -125,7 +137,7 @@ class MemoryAdminService:
             "id": record.id,
             "blob_id": record.blob_id,
             "status": STATUS_SUPERSEDED,
-            "text": person_facing(record.text) or record.text,
+            "text": record_facing(record, self._names_for(user)),
         }
 
     async def correct_memory(
@@ -162,7 +174,7 @@ class MemoryAdminService:
         self._memories.mark_status(record.id, STATUS_SUPERSEDED, written.blob_id)
         return {
             "retired_id": record.id,
-            "retired_text": person_facing(record.text) or record.text,
+            "retired_text": record_facing(record, self._names_for(user)),
             "id": created.id,
             "blob_id": written.blob_id,
             "text": corrected,
@@ -264,6 +276,7 @@ class MemoryAdminService:
         user = self._users.get_by_id(user_id)
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
+        display_names = self._names_for(user)
         views: list[dict[str, str]] = []
         for contradiction in self._contradictions.list_open_for_user(user_id):
             left = self._memories.get_by_blob_id(contradiction.left_blob_id)
@@ -273,8 +286,8 @@ class MemoryAdminService:
                     "id": contradiction.id,
                     "reason": contradiction.reason,
                     "created_at": contradiction.created_at,
-                    "left": person_facing(left.text) or left.text if left else contradiction.left_blob_id,
-                    "right": person_facing(right.text) or right.text if right else contradiction.right_blob_id,
+                    "left": record_facing(left, display_names) if left else contradiction.left_blob_id,
+                    "right": record_facing(right, display_names) if right else contradiction.right_blob_id,
                 }
             )
         return views

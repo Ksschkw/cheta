@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 from cli import main
 from main import create_app
+from models.entities.memory_phrasing_model import record_facing, subject_names
 from tests.routers.test_chat_and_memory_routers import build_test_container
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -50,7 +51,7 @@ async def test_the_telegram_listing_is_paginated_with_per_note_actions() -> None
     recipient, text = channel.sent[-1]
     assert recipient == "555"
     assert "Your memory" in text
-    assert "Ada is allergic to peanuts" in text
+    assert "You are allergic to peanuts" in text
     markup = channel.markups[-1]
     assert markup is not None
     buttons = [button for row in markup["inline_keyboard"] for button in row]
@@ -250,6 +251,146 @@ def test_the_web_listing_renders_cards_with_the_same_actions() -> None:
     assert ACTION_CORRECT in app_js
     assert "Previous" in app_js
     assert "Next" in app_js
+
+
+async def test_the_forget_menu_label_matches_the_listing_line_for_the_same_record() -> None:
+    container, _, _ = build_test_container(
+        [{"text": "Ada hates long meetings", "importance": 0.9}]
+    )
+    user_id = await store_one(container, "I hate long meetings")
+    service = container.conversation_service
+    user = service._users.get_by_id(user_id)
+    assert user is not None
+    names = subject_names(user.display_name)
+
+    listing = service.command_reply("/memories", "telegram", "555", "Ada")
+    listing_line = next(line for line in listing.splitlines() if line.startswith("1. "))
+
+    records, _ = service._listing_records(user_id, names)
+    markup = service._forget_menu_markup(records, names)
+    menu_label = markup["inline_keyboard"][0][0]["text"]
+
+    assert menu_label == listing_line
+
+
+async def test_every_forget_menu_position_resolves_to_the_record_its_label_shows() -> None:
+    container, _, _ = build_test_container([])
+    service = container.conversation_service
+    await service.handle_turn("telegram", "555", "Ada", "hello")
+    user = service._users.get_by_identity("telegram", "555")
+    assert user is not None
+    namespace = service._settings.memory_namespace(user.memory_key)
+    for index in range(10):
+        service._memories.create(
+            user_id=user.id,
+            blob_id=f"blob-{index}",
+            namespace=namespace,
+            text=f"Preference number {index}",
+            importance=0.5,
+            origin_surface="telegram",
+            occurred_at=f"2026-10-{index + 1:02d}T00:00:00Z",
+        )
+
+    names = subject_names(user.display_name)
+    records = service._forget_records(user.id)
+    markup = service._forget_menu_markup(records, names)
+    buttons = [button for row in markup["inline_keyboard"] for button in row]
+    assert len(buttons) == 10
+
+    shown: dict[int, str] = {}
+    for position, button in enumerate(buttons, start=1):
+        label = button["text"]
+        assert label.startswith(f"{position}. ")
+        shown[position] = label
+        # The number printed in the label resolves in the same ordered list.
+        positional, resolved_position = service._record_for_token(records, str(position))
+        assert resolved_position == position
+        assert shown[position] == f"{position}. {record_facing(positional, names)}"
+
+    # A rebuild reorders the index. Each button's stable payload must still
+    # resolve to the record the label showed, whatever the new position is.
+    for record in list(records):
+        service._memories.delete_by_blob_id(record.blob_id)
+    for record in reversed(list(records)):
+        service._memories.create(
+            user_id=user.id,
+            blob_id=record.blob_id,
+            namespace=record.namespace,
+            text=record.text,
+            importance=record.importance,
+            origin_surface=record.origin_surface,
+            occurred_at=record.occurred_at,
+        )
+    rebuilt = service._forget_records(user.id)
+    assert [record.blob_id for record in rebuilt] != [record.blob_id for record in records]
+
+    for position, button in enumerate(buttons, start=1):
+        token = button["callback_data"][len("mem:forget:") :]
+        target, _ = service._record_for_token(rebuilt, token)
+        assert target is not None
+        assert f"{position}. {record_facing(target, names)}" == shown[position]
+
+
+async def test_the_listing_and_the_forget_menu_agree_after_index_recovery() -> None:
+    container, _, channel = build_test_container(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}]
+    )
+    user_id = await store_one(container)
+    service = container.conversation_service
+    await service.await_pending_writes()
+    user = service._users.get_by_id(user_id)
+    assert user is not None
+
+    def wipe() -> None:
+        for record in service._memories.list_for_user(user_id, None, 1000):
+            service._memories.delete_by_blob_id(record.blob_id)
+
+    # A listing recovers the index from the snapshot and shows the note.
+    wipe()
+    await service.handle_callback_query(
+        "telegram", "555", "Ada", "555", "cb-list", "mem:list"
+    )
+    listing = channel.sent[-1][1]
+    listing_lines = [line for line in listing.splitlines() if line.startswith("1. ")]
+    assert listing_lines, "the listing must find the note recovered from the snapshot"
+
+    # A different instance handles the forget tap with an empty local index.
+    wipe()
+    await service.handle_callback_query(
+        "telegram", "555", "Ada", "555", "cb-forget", "mem:forget"
+    )
+    menu = channel.markups[-1]
+    assert menu is not None, "the forget menu must recover the same notes"
+    labels = [
+        button["text"]
+        for row in menu["inline_keyboard"]
+        for button in row
+    ]
+    assert [
+        line.split(". ", 1)[1] for line in listing_lines
+    ] == [label.split(". ", 1)[1] for label in labels]
+
+
+async def test_the_forget_menu_is_never_shown_with_a_nothing_stored_message() -> None:
+    container, _, channel = build_test_container(
+        [{"text": "Ada is allergic to peanuts", "importance": 1.0}]
+    )
+    user_id = await store_one(container)
+    service = container.conversation_service
+    await service.await_pending_writes()
+    for record in service._memories.list_for_user(user_id, None, 1000):
+        service._memories.delete_by_blob_id(record.blob_id)
+
+    channel.sent.clear()
+    channel.markups.clear()
+    await service.handle_callback_query(
+        "telegram", "555", "Ada", "555", "cb-forget", "mem:forget"
+    )
+
+    assert channel.markups[-1] is not None, "a menu of notes must have been shown"
+    assert not any(
+        "there is nothing to forget" in text for _, text in channel.sent
+    ), "a menu of notes and a nothing-stored message must never coexist"
 
 
 @pytest.fixture

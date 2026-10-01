@@ -336,7 +336,7 @@ async def test_superseded_memories_are_dropped_from_the_context_window() -> None
     _, recalled, _, _ = await harness.service.recall_context(first.user_id, "engineer", budget=5)
 
     texts = [memory.text for memory in recalled]
-    assert "Ada works as a platform engineer" in texts
+    assert "You work as a platform engineer" in texts
     assert "Ada works as a backend engineer" not in texts
 
 
@@ -350,7 +350,7 @@ async def test_recall_marks_degradation_instead_of_claiming_empty_memory() -> No
 
     assert namespace.endswith("telegram-42")
     assert degraded is False
-    assert [memory.text for memory in recalled] == ["Ada lives in Lagos"]
+    assert [memory.text for memory in recalled] == ["You live in Lagos"]
 
 
 async def test_counterfactual_replay_shows_what_memory_changed() -> None:
@@ -579,7 +579,7 @@ async def test_the_memories_command_lists_stored_notes_without_calling_the_model
 
     text = harness.service.command_reply("/memories", "telegram", "42", "Ada")
 
-    assert "Ada is allergic to peanuts" in text
+    assert "You are allergic to peanuts" in text
     assert "1 notes" in text
     assert harness.llm.reply_calls == calls_before
 
@@ -624,7 +624,7 @@ async def test_a_returning_user_is_greeted_with_what_is_remembered() -> None:
 
     assert "Welcome back" in text
     assert "I remember 1 things about you" in text
-    assert "Ada is allergic to peanuts" in text
+    assert "You are allergic to peanuts" in text
 
 
 async def test_start_does_not_create_a_user_who_has_never_spoken() -> None:
@@ -654,7 +654,7 @@ async def test_asking_what_the_bot_knows_answers_from_the_store_not_recall() -> 
     assert result is None, "a memory question is answered directly, not as a turn"
     assert harness.llm.reply_calls == calls_before, "and it must not call the model"
     listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
-    assert "Ada is allergic to peanuts" in listing
+    assert "You are allergic to peanuts" in listing
 
 
 async def test_an_ordinary_question_is_still_a_normal_turn() -> None:
@@ -705,7 +705,7 @@ async def test_the_listing_shows_a_retired_note_marked_not_hidden() -> None:
     harness.service.command_reply("/forget", "telegram", "42", "Ada", "1")
     listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
 
-    assert "Ada likes tea" in listing
+    assert "You like tea" in listing
     assert "[superseded]" in listing
 
 
@@ -748,7 +748,7 @@ async def test_a_returning_user_past_the_gap_is_greeted_with_a_stored_fact() -> 
     assert result.resume_note is not None
     assert "Welcome back" in result.reply
     assert "Last time you mentioned" in result.reply
-    assert "Ada is allergic to peanuts" in result.reply
+    assert "you are allergic to peanuts" in result.reply
     # The greeting is appended to the model's answer, never a substitute.
     assert result.reply.endswith(f"\n\n{result.resume_note}")
     assert result.reply != result.resume_note
@@ -843,8 +843,8 @@ async def test_a_contradiction_turn_tells_the_user_and_names_both_statements() -
     second = await harness.say_settled("I had a great steak on Friday")
 
     assert second.contradiction_note is not None
-    assert "Ada does not eat meat" in second.reply
-    assert "Ada eats steak every Friday" in second.reply
+    assert "You do not eat meat" in second.reply
+    assert "You eat steak every Friday" in second.reply
     assert "Which one is right" in second.reply
     assert second.reply.endswith(f"\n\n{second.contradiction_note}")
     assert second.reply != second.contradiction_note

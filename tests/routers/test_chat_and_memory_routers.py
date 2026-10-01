@@ -204,7 +204,7 @@ def test_the_next_turn_recalls_what_the_first_one_taught(client: TestClient) -> 
     body = turn(client, "I am allergic to peanuts")
 
     assert body["reply"] == "I remember."
-    assert [memory["text"] for memory in body["recalled"]] == ["Ada is allergic to peanuts"]
+    assert [memory["text"] for memory in body["recalled"]] == ["You are allergic to peanuts"]
     assert body["recalled"][0]["salience"] > 0
     assert body["recalled"][0]["origin_surface"] == "web"
     assert body["skipped_duplicates"] == 1

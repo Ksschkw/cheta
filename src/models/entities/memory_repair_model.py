@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from models.entities.memory_model import STATUS_ACTIVE
 from models.entities.memory_phrasing_model import is_person_fact
 from models.entities.memory_rank_model import (
+    canonical_fact_text,
     contains_fact,
     contradicts,
-    normalise_text,
 )
 
 KIND_DUPLICATE = "duplicate"
@@ -56,13 +56,18 @@ def _keeper_key(record) -> tuple[float, int, str]:
     )
 
 
-def plan_repairs(records: Sequence) -> list[RepairAction]:
+def plan_repairs(records: Sequence, display_names: Sequence[str] = ()) -> list[RepairAction]:
     """Return the retirements that collapse obvious bad state.
 
     Exact duplicates keep one record and retire the rest. A contradiction
     retires the older statement. A record that is about the assistant or the
     conversation rather than the person is retired outright. Anything that does
     not match a known pattern is left alone.
+
+    ``display_names`` are the name forms that can be the leading subject of a
+    stored fact. Comparing the subject-resolved form means a record written with
+    the person's name and one written with "The user" are still recognised as
+    the same claim.
     """
     active = [record for record in records if record.status == STATUS_ACTIVE]
     active.sort(key=_order_key)
@@ -89,7 +94,7 @@ def plan_repairs(records: Sequence) -> list[RepairAction]:
 
     grouped: dict[str, list] = {}
     for record in remaining:
-        grouped.setdefault(normalise_text(record.text), []).append(record)
+        grouped.setdefault(canonical_fact_text(record.text, display_names), []).append(record)
 
     deduplicated = []
     for group in grouped.values():
@@ -121,7 +126,7 @@ def plan_repairs(records: Sequence) -> list[RepairAction]:
         for later in deduplicated[index + 1 :]:
             if later.id in retired:
                 continue
-            if contradicts(record.text, later.text):
+            if contradicts(record.text, later.text, display_names):
                 # The older statement is the one retired; the newer, later
                 # statement is the one that stands. A conflict is checked before
                 # containment so a negated restatement is not called a duplicate.
@@ -139,7 +144,7 @@ def plan_repairs(records: Sequence) -> list[RepairAction]:
                 )
                 retired.add(record.id)
                 break
-            if contains_fact(record.text, later.text):
+            if contains_fact(record.text, later.text, display_names):
                 # A restatement with extra words. Keep the more specific (or
                 # more important) wording and retire the other.
                 keeper, loser = (
