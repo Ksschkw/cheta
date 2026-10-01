@@ -230,3 +230,46 @@ def test_adjudication_ignores_memories_that_are_already_superseded() -> None:
 
     assert verdict == "new"
     assert best is None
+
+
+def test_an_exact_text_match_is_a_duplicate_whatever_the_distance_says() -> None:
+    """The guard must not depend on the embedder or a similarity score."""
+    thresholds = ConsolidationThresholds()
+    neighbour = memory("N1", "The user is interested in purchasing a MacBook.", 0.90)
+
+    verdict, best = classify_candidate(
+        "The user is interested in purchasing a MacBook.", [neighbour], thresholds
+    )
+
+    assert verdict == "duplicate"
+    assert best is not None and best.blob_id == "N1"
+
+
+def test_a_contained_restatement_is_a_duplicate_not_just_related() -> None:
+    """The measured #6/#7 pair: Jaccard 0.375, mock distance 0.50."""
+    thresholds = ConsolidationThresholds()
+    shorter = memory("N1", "The user is a software engineering student.", 0.50)
+
+    verdict, _ = classify_candidate(
+        "The user is a software engineering student at the Federal University of "
+        "Technology Owerri (FUTO).",
+        [shorter],
+        thresholds,
+    )
+
+    assert verdict == "duplicate"
+
+
+def test_a_shared_attribute_with_opposite_polarity_contradicts_without_a_model() -> None:
+    """The measured #10/#12 pair: distance 0.4286 and a negated restatement."""
+    thresholds = ConsolidationThresholds()
+    phone = memory("N1", "The user currently owns an Itel Power Go phone.", 0.4286)
+
+    verdict, best = classify_candidate(
+        "The user owns an Itel Power Go, which is a portable power station, not a phone.",
+        [phone],
+        thresholds,
+    )
+
+    assert verdict == "contradicts"
+    assert best is not None and best.blob_id == "N1"

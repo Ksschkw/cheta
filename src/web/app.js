@@ -566,7 +566,8 @@
   function initDashboard() {
     var state = {
       users: [],
-      selectedId: ""
+      selectedId: "",
+      memoryPage: 1
     };
 
     var evidenceBody = $("evidence-body");
@@ -749,9 +750,71 @@
         return;
       }
 
-      shown.forEach(function (memory) {
+      var pageSize = 5;
+      var totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
+      if (state.memoryPage > totalPages) {
+        state.memoryPage = totalPages;
+      }
+      if (state.memoryPage < 1) {
+        state.memoryPage = 1;
+      }
+      var start = (state.memoryPage - 1) * pageSize;
+      var pageItems = shown.slice(start, start + pageSize);
+
+      pageItems.forEach(function (memory) {
         var status = memory.status || "unknown";
         var blobId = memory.blob_id ? String(memory.blob_id) : "";
+        var actions = el("div", { class: "memory-actions" });
+        if (status === "active") {
+          var forgetButton = el(
+            "button",
+            { type: "button", class: "btn btn-quiet" },
+            "Forget this one"
+          );
+          forgetButton.addEventListener("click", function () {
+            api(
+              "/memories/" +
+                encodeURIComponent(state.selectedId) +
+                "/" +
+                encodeURIComponent(blobId) +
+                "/forget",
+              { method: "POST" }
+            )
+              .then(function () {
+                loadMemories();
+              })
+              .catch(function () {
+                setText(memoryStatus, plainError());
+              });
+          });
+          var correctButton = el(
+            "button",
+            { type: "button", class: "btn btn-quiet" },
+            "Correct this one"
+          );
+          correctButton.addEventListener("click", function () {
+            var replacement = window.prompt("Correct this one", memory.text || "");
+            if (replacement === null) {
+              return;
+            }
+            api(
+              "/memories/" +
+                encodeURIComponent(state.selectedId) +
+                "/" +
+                encodeURIComponent(blobId) +
+                "/correct",
+              { method: "POST", body: { text: replacement } }
+            )
+              .then(function () {
+                loadMemories();
+              })
+              .catch(function () {
+                setText(memoryStatus, plainError());
+              });
+          });
+          actions.appendChild(forgetButton);
+          actions.appendChild(correctButton);
+        }
         memoryList.appendChild(
           el("div", { class: "memory-card status-" + safeFilename(status) }, [
             el("div", { class: "memory-text" }, memory.text || "(empty memory text)"),
@@ -776,10 +839,37 @@
                     "superseded_by " + truncate(String(memory.superseded_by), 24)
                   )
                 )
-              : null
+              : null,
+            actions
           ])
         );
       });
+
+      var navigation = el("div", { class: "memory-actions" });
+      if (state.memoryPage > 1) {
+        var previous = el("button", { type: "button", class: "btn btn-quiet" }, "Previous");
+        previous.addEventListener("click", function () {
+          state.memoryPage -= 1;
+          renderMemories(all);
+        });
+        navigation.appendChild(previous);
+      }
+      navigation.appendChild(
+        el(
+          "span",
+          { class: "footer-note" },
+          "Page " + state.memoryPage + " of " + totalPages
+        )
+      );
+      if (state.memoryPage < totalPages) {
+        var next = el("button", { type: "button", class: "btn btn-quiet" }, "Next");
+        next.addEventListener("click", function () {
+          state.memoryPage += 1;
+          renderMemories(all);
+        });
+        navigation.appendChild(next);
+      }
+      memoryList.appendChild(navigation);
     }
 
     function loadMemories() {
@@ -892,6 +982,7 @@
 
     function selectUser(userId) {
       state.selectedId = userId;
+      state.memoryPage = 1;
       if (userSelect.value !== userId) {
         userSelect.value = userId;
       }

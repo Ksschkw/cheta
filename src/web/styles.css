@@ -1227,3 +1227,11 @@ tbody tr {
     max-width: 820px;
   }
 }
+
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}

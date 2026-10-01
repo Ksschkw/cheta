@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from core.config import Settings
@@ -22,7 +23,16 @@ from models.entities.memory_model import (
     STATUS_SUPERSEDED,
 )
 from models.entities.memory_passport_model import build_passport
+from models.entities.memory_phrasing_model import is_person_fact, person_facing
+from models.entities.memory_repair_model import (
+    KIND_CONTRADICTION,
+    KIND_DUPLICATE,
+    RepairAction,
+    plan_repairs,
+)
 from schemas.memory_schema import MemoryStatsSchema, MemoryViewSchema
+
+logger = logging.getLogger("ranti.service.memory_admin")
 
 
 class MemoryAdminService:
@@ -45,7 +55,7 @@ class MemoryAdminService:
     def _view(self, memory) -> MemoryViewSchema:
         return MemoryViewSchema(
             blob_id=memory.blob_id,
-            text=memory.text,
+            text=person_facing(memory.text) or memory.text,
             status=memory.status,
             importance=memory.importance,
             origin_surface=memory.origin_surface,
@@ -57,10 +67,106 @@ class MemoryAdminService:
         user = self._users.get_by_id(user_id)
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
+        # The listing is where bad state is noticed, so it is where it is
+        # collapsed: exact duplicates, self-contradictions and facts about the
+        # assistant are retired in the local index before the cards render.
+        self.repair_memories(user_id)
         records = self._memories.list_for_user(user_id, None, 500)
         if not include_inactive:
             records = [record for record in records if record.status == STATUS_ACTIVE]
-        return [self._view(record) for record in records]
+        # A record about the assistant is not part of what is known about the
+        # person, and every record is rendered as it is said to them.
+        return [
+            self._view(record)
+            for record in records
+            if is_person_fact(record.text)
+        ]
+
+    def repair_memories(self, user_id: str) -> list[RepairAction]:
+        """Collapse exact duplicates and self-contradictions for one person.
+
+        Returns the actions actually applied, so a caller can report exactly
+        what was collapsed. Append-only Walrus storage is untouched; only the
+        local index that drives recall and the listing changes.
+        """
+        records = self._memories.list_for_user(user_id, None, 1000)
+        actions = plan_repairs(records)
+        for action in actions:
+            if action.kind == KIND_DUPLICATE:
+                self._memories.mark_status(
+                    action.retired_id, STATUS_SUPERSEDED, action.kept_blob_id or "duplicate"
+                )
+            elif action.kind == KIND_CONTRADICTION:
+                self._memories.mark_status(action.retired_id, STATUS_CONTRADICTED, None)
+            else:
+                self._memories.mark_status(action.retired_id, STATUS_SUPERSEDED, "not-about-you")
+            logger.info(
+                "memory listing repair retired an active record",
+                extra={
+                    "event": "memory_repair",
+                    "kind": action.kind,
+                    "retired_blob_id": action.retired_blob_id,
+                    "kept_blob_id": action.kept_blob_id,
+                    "reason": action.reason,
+                },
+            )
+        return actions
+
+    def retire_memory(self, user_id: str, blob_id: str) -> dict[str, object]:
+        """Retire one note from this person's listing, by its blob id."""
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError(f"user {user_id} does not exist")
+        record = self._memories.get_by_blob_id(blob_id)
+        if record is None or record.user_id != user_id:
+            raise NotFoundError(f"memory {blob_id} does not exist for this user")
+        self._memories.mark_status(record.id, STATUS_SUPERSEDED, "user-retracted")
+        return {
+            "id": record.id,
+            "blob_id": record.blob_id,
+            "status": STATUS_SUPERSEDED,
+            "text": person_facing(record.text) or record.text,
+        }
+
+    async def correct_memory(
+        self, user_id: str, blob_id: str, text: str
+    ) -> dict[str, object]:
+        """Replace one note with the person's own wording, append-only.
+
+        The corrected text is written to Walrus Memory and a new active record
+        is indexed; the old record is retired and points at the new blob.
+        """
+        user = self._users.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError(f"user {user_id} does not exist")
+        record = self._memories.get_by_blob_id(blob_id)
+        if record is None or record.user_id != user_id:
+            raise NotFoundError(f"memory {blob_id} does not exist for this user")
+        corrected = " ".join(text.split())
+        if not corrected:
+            raise ValidationError("a correction must not be blank")
+        if not is_person_fact(corrected):
+            raise ValidationError("a correction must be a fact about the person")
+
+        namespace = self._settings.memory_namespace(user.memory_key)
+        written = await self._memory.remember(corrected, namespace)
+        created = self._memories.create(
+            user_id=user_id,
+            blob_id=written.blob_id,
+            namespace=namespace,
+            text=corrected,
+            importance=record.importance,
+            origin_surface=user.surface,
+            occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        )
+        self._memories.mark_status(record.id, STATUS_SUPERSEDED, written.blob_id)
+        return {
+            "retired_id": record.id,
+            "retired_text": person_facing(record.text) or record.text,
+            "id": created.id,
+            "blob_id": written.blob_id,
+            "text": corrected,
+        }
 
     async def stats(self, user_id: str) -> MemoryStatsSchema:
         user = self._users.get_by_id(user_id)
@@ -167,8 +273,8 @@ class MemoryAdminService:
                     "id": contradiction.id,
                     "reason": contradiction.reason,
                     "created_at": contradiction.created_at,
-                    "left": left.text if left else contradiction.left_blob_id,
-                    "right": right.text if right else contradiction.right_blob_id,
+                    "left": person_facing(left.text) or left.text if left else contradiction.left_blob_id,
+                    "right": person_facing(right.text) or right.text if right else contradiction.right_blob_id,
                 }
             )
         return views

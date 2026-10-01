@@ -37,14 +37,27 @@ from models.entities.memory_index_model import (
     select_snapshot_records,
 )
 from models.entities.memory_index_model import INDEX_QUERY, decode_snapshot
-from models.entities.memory_model import STATUS_ACTIVE, STATUS_CONTRADICTED, STATUS_SUPERSEDED
+from models.entities.memory_model import (
+    STATUS_ACTIVE,
+    STATUS_CONTRADICTED,
+    STATUS_SUPERSEDED,
+)
 from models.entities.memory_passport_model import build_passport
+from models.entities.memory_phrasing_model import is_person_fact, person_facing
 from models.entities.memory_rank_model import (
     ConsolidationThresholds,
     RankedMemory,
     RankingWeights,
     classify_candidate,
+    exact_fact_match,
     select_context,
+)
+from models.entities.memory_repair_model import (
+    KIND_CONTRADICTION,
+    KIND_DUPLICATE,
+    KIND_NOT_ABOUT_PERSON,
+    RepairAction,
+    plan_repairs,
 )
 from models.entities.turn_model import TurnModel
 from schemas.attachment_schema import AttachmentSchema
@@ -58,7 +71,7 @@ from schemas.turn_schema import (
 
 logger = logging.getLogger("ranti.service.conversation")
 
-COMMANDS = ("/start", "/help", "/memories", "/forget", "/link", "/unlink")
+COMMANDS = ("/start", "/help", "/memories", "/forget", "/correct", "/link", "/unlink")
 
 # Inline keyboard callback data. Kept as short as Telegram allows because the
 # whole payload is round-tripped on every tap.
@@ -66,7 +79,16 @@ CALLBACK_LIST = "mem:list"
 CALLBACK_EXPORT = "mem:export"
 CALLBACK_FORGET = "mem:forget"
 CALLBACK_FORGET_PREFIX = "mem:forget:"
+CALLBACK_PAGE_PREFIX = "mem:page:"
+CALLBACK_CORRECT_PREFIX = "mem:correct:"
 FORGET_MENU_LIMIT = 10
+# The interactive listing shows this many notes per page. The same page size and
+# the same action wording are used by every surface.
+LISTING_PAGE_SIZE = 5
+ACTION_FORGET = "Forget this one"
+ACTION_CORRECT = "Correct this one"
+ACTION_PREVIOUS = "Previous"
+ACTION_NEXT = "Next"
 
 # Media Telegram can deliver that this project cannot read. The label is used
 # verbatim in the refusal so the person is told exactly what failed.
@@ -147,11 +169,24 @@ ONBOARDING_TEXT = (
 EXTRACTION_PROMPT = """You extract durable facts about one person from a conversation turn.
 
 Return ONLY a JSON array. No prose, no code fence. Each element:
-{"text": "<one self-contained fact in the third person>", "importance": <0.0-1.0>}
+{"text": "<one self-contained fact, said to the person in the second person>", "importance": <0.0-1.0>}
+
+The stored fact is read back to the person in a listing, in a greeting and as
+context in a later conversation, so write it as something you would say to them.
+Use "you" and "your", never "the user" or "they".
+
+Worked examples, input then output:
+- Input: "I am a software engineering student at FUTO"
+  Output: [{"text": "You are a software engineering student at FUTO", "importance": 0.9}]
+- Input: "I prefer jollof rice and beans"
+  Output: [{"text": "You prefer jollof rice and beans", "importance": 0.7}]
+- Input: "my name is Kosisochukwu"
+  Output: [{"text": "Your name is Kosisochukwu", "importance": 1.0}]
 
 Rules:
 - Keep a fact only if it would still matter in a future conversation.
-- One fact per element. Rewrite pronouns so the fact stands alone.
+- One fact per element, self-contained, in the second person ("You ..." or
+  "Your ..."). Never "The user ...".
 - importance: 1.0 for safety, health, identity or hard constraints; 0.7 for
   stable preferences and ongoing work; 0.4 for context that may change soon;
   0.2 for trivia.
@@ -160,7 +195,11 @@ Rules:
   about yourself: not your name, your role, your capabilities, your limitations,
   nor the fact that a conversation happened. A real memory list contained "The
   assistant identifies as a memory-first assistant", which is not a fact about
-  the person and is noise in their memory.
+  the person and is noise in their memory. Also skip any statement about what
+  you should be able to do, how you behaved, or what was said in this chat: "The
+  user expects the assistant to have a graphical interface" and "The user is
+  frustrated with the assistant's lack of agentic capabilities" are about the
+  product, not the person.
 """
 
 ADJUDICATION_PROMPT = """You compare one remembered fact with one new candidate fact.
@@ -274,7 +313,11 @@ class ConversationService:
             return None
         if not self._returning_after_gap(latest):
             return None
-        records = self._memories.list_for_user(user_id, STATUS_ACTIVE, 200)
+        records = [
+            record
+            for record in self._memories.list_for_user(user_id, STATUS_ACTIVE, 200)
+            if is_person_fact(record.text)
+        ]
         if not records:
             return None
         # There is no query here, so semantic distance is undefined and equal
@@ -284,7 +327,7 @@ class ConversationService:
         candidates = [
             RankedMemory(
                 blob_id=record.blob_id,
-                text=record.text,
+                text=person_facing(record.text) or record.text,
                 distance=0.0,
                 importance=record.importance,
                 age_days=self._age_days(record.occurred_at),
@@ -294,12 +337,24 @@ class ConversationService:
             for record in records
         ]
         selected = select_context(candidates, self._weights, RESUME_FACT_LIMIT)
-        texts = [memory.text for memory in selected]
+        texts = [self._mid_sentence(memory.text) for memory in selected]
         if not texts:
             return None
         if len(texts) == 1:
-            return f"Welcome back. Last time you mentioned {texts[0]}."
-        return f"Welcome back. Last time you mentioned {texts[0]} and {texts[1]}."
+            return f"Welcome back. Last time you mentioned {texts[0]}"
+        return f"Welcome back. Last time you mentioned {texts[0]} and {texts[1]}"
+
+    @staticmethod
+    def _mid_sentence(text: str) -> str:
+        """Lower the leading "You"/"Your" when a rendered fact is embedded.
+
+        An unmatched third-person record is left exactly as it was, so a stored
+        name is never lower-cased mid-sentence.
+        """
+        for prefix, replacement in (("You ", "you "), ("Your ", "your ")):
+            if text.startswith(prefix):
+                return replacement + text[len(prefix) :]
+        return text
 
     def _contradiction_note(self, pairs: list[tuple[str, str]]) -> str | None:
         """Tell the person, neutrally, that two stored notes cannot both be true.
@@ -333,18 +388,27 @@ class ConversationService:
         self, user_id: str, namespace: str, query: str, budget: int
     ) -> tuple[list[RankedMemory], bool, str | None]:
         outcome = await self._memory.recall(query, namespace, limit=RECALL_CANDIDATE_LIMIT)
-        known = {memory.blob_id: memory for memory in self._memories.list_for_user(user_id, None, 500)}
+        # Only facts about the person are counted or shown. A record about the
+        # assistant is not part of "what I know about you".
+        known = {
+            memory.blob_id: memory
+            for memory in self._memories.list_for_user(user_id, None, 500)
+            if is_person_fact(memory.text)
+        }
 
         candidates: list[RankedMemory] = []
         for hit in outcome.memories:
             record = known.get(hit.blob_id)
             if record is None:
                 # Written by another surface, or recovered before the index was
-                # rebuilt. Treat it as live rather than dropping the memory.
+                # rebuilt. Treat it as live rather than dropping the memory, but
+                # still refuse a fact that is not about the person.
+                if not is_person_fact(hit.text):
+                    continue
                 candidates.append(
                     RankedMemory(
                         blob_id=hit.blob_id,
-                        text=hit.text,
+                        text=person_facing(hit.text) or hit.text,
                         distance=hit.distance,
                         importance=0.5,
                         age_days=0.0,
@@ -354,7 +418,7 @@ class ConversationService:
             candidates.append(
                 RankedMemory(
                     blob_id=record.blob_id,
-                    text=record.text,
+                    text=person_facing(record.text) or record.text,
                     distance=hit.distance,
                     importance=record.importance,
                     age_days=self._age_days(record.occurred_at),
@@ -528,7 +592,7 @@ class ConversationService:
                     surface,
                     surface_user_id,
                     display_name,
-                    parts[1] if len(parts) > 1 else "",
+                    " ".join(parts[1:]),
                 ),
                 recalled=[],
                 stored_facts=[],
@@ -745,7 +809,7 @@ class ConversationService:
         stripped = text.strip()
         parts = stripped.split()
         command = parts[0].lower() if parts else ""
-        argument = parts[1] if len(parts) > 1 else ""
+        argument = " ".join(parts[1:])
         lowered = stripped.lower()
         if command in COMMANDS:
             reply = await self.answer_command(
@@ -814,6 +878,8 @@ class ConversationService:
             return await self._link_shared_handle(surface, surface_user_id, display_name, argument)
         if command == "/unlink":
             return self._unlink_shared_handle(surface, surface_user_id, display_name)
+        if command == "/correct":
+            return await self._correct_reply(user, argument)
         return self.command_reply(command, surface, surface_user_id, display_name, argument)
 
     HANDLE_MIGRATION_LIMIT = 50
@@ -926,20 +992,22 @@ class ConversationService:
         if command == "/help":
             return self._help_reply()
 
+        if command == "/correct":
+            return (
+                "To correct a note, send /correct followed by its number and the right "
+                "version, like /correct 2 You live in Lagos now. Send /memories to see "
+                "the numbers."
+            )
+
         if command == "/start":
             existing = self._users.get_by_identity(surface, surface_user_id)
-            remembered = (
-                sorted(
-                    self._memories.list_for_user(existing.id, None, 200),
-                    key=lambda record: record.importance,
-                    reverse=True,
-                )
-                if existing is not None
-                else []
-            )
+            remembered = self._person_records(existing.id) if existing is not None else []
             heading = (
                 f"Welcome back. I remember {len(remembered)} things about you, including: "
-                + "; ".join(record.text for record in remembered[:3])
+                + "; ".join(
+                    (person_facing(record.text) or record.text).rstrip(".")
+                    for record in remembered[:3]
+                )
                 + "."
                 if remembered
                 else f"Hi, I am {self._settings.bot_name}. I am a memory-first assistant: "
@@ -959,11 +1027,7 @@ class ConversationService:
         if command == "/forget":
             return self._forget_reply(user.id, argument)
 
-        records = sorted(
-            self._memories.list_for_user(user.id, None, 200),
-            key=lambda record: record.importance,
-            reverse=True,
-        )
+        records, repairs = self._listing_records(user.id)
         if not records:
             return (
                 "I have nothing stored about you yet, so there is nothing to show. "
@@ -985,13 +1049,14 @@ class ConversationService:
         # than hiding most of someone's memory from them.
         shown = records[: self.LISTING_LIMIT]
         for index, record in enumerate(shown, start=1):
-            marker = "" if record.status == "active" else f" [{record.status}]"
-            lines.append(f"{index}. {record.text}{marker}")
+            marker = "" if record.status == STATUS_ACTIVE else f" [{record.status}]"
+            lines.append(f"{index}. {person_facing(record.text) or record.text}{marker}")
         if len(records) > self.LISTING_LIMIT:
             lines.append(
                 f"...and {len(records) - self.LISTING_LIMIT} more. The export button "
                 "in /start sends the complete list as a file."
             )
+        lines.extend(self._repair_report_lines(repairs))
         lines.extend(["", "Tell me if any of that is wrong and I will correct it."])
         return "\n".join(lines)
 
@@ -1020,6 +1085,7 @@ class ConversationService:
             "/help             this full reference",
             "/memories         show every note I have stored about you",
             "/forget <number>  retire a note so I stop bringing it up",
+            "/correct <number> <text>  replace a note with your own wording",
             "/link <handle>    put several clients on one shared memory space",
             "/unlink           go back to this client's own memory space",
             "",
@@ -1056,32 +1122,173 @@ class ConversationService:
         this is honest about what it does: the note is marked retired and will no
         longer surface. The blob itself remains on Walrus until it expires.
         """
-        records = sorted(
-            self._memories.list_for_user(user_id, None, 200),
-            key=lambda record: record.importance,
-            reverse=True,
-        )
+        records = self._person_records(user_id)
         try:
             index = int(argument)
         except ValueError:
             return "Tell me which number to forget, like /forget 2. See /memories for the list."
 
-        if index < 1 or index > min(len(records), 10):
+        if index < 1 or index > len(records):
             return f"There is no note {index}. Send /memories to see what I have."
 
         target = records[index - 1]
         self._memories.mark_status(target.id, STATUS_SUPERSEDED, "user-retracted")
+        rendered = person_facing(target.text) or target.text
         return (
-            f"Done. I will not bring up \"{target.text}\" again. It stays on Walrus "
+            f"Done. I will not bring up \"{rendered}\" again. It stays on Walrus "
             "until its storage expires, because Walrus Memory cannot erase a blob."
+        )
+
+    async def _correct_reply(self, user, argument: str) -> str:
+        """Replace one note with the person's own corrected wording.
+
+        The correction is a new append-only write; the old record is retired and
+        points at the new one, exactly like an extracted update. Both the
+        corrected text and the retired note are shown back, so the person can
+        see what changed.
+        """
+        parts = argument.strip().split(maxsplit=1)
+        if len(parts) < 2 or not parts[1].strip():
+            return (
+                "To correct a note, send /correct followed by its number and the right "
+                "version, like /correct 2 You live in Lagos now. Send /memories to see "
+                "the numbers."
+            )
+        try:
+            index = int(parts[0])
+        except ValueError:
+            return "That is not a note number. Send /memories and use a number, like /correct 2."
+
+        records = self._person_records(user.id)
+        if index < 1 or index > len(records):
+            return f"There is no note {index}. Send /memories to see what I have."
+        target = records[index - 1]
+        corrected = " ".join(parts[1].split())
+        if not is_person_fact(corrected):
+            return (
+                "That correction is about the assistant or the conversation, not about "
+                "you, so I did not store it. Rewrite it as a fact about yourself."
+            )
+
+        namespace = self._settings.memory_namespace(user.memory_key)
+        try:
+            accepted = await self._memory.remember_accepted(
+                corrected,
+                namespace,
+                idempotency_key=self._idempotency_key(user.id, f"correct-{corrected}"),
+            )
+        except DependencyUnavailableError:
+            return (
+                "Walrus Memory was unreachable, so I did not change anything. "
+                "Your note is still as it was. Please try again."
+            )
+
+        placeholder = f"pending:{accepted.job_id}"
+        memory = self._memories.create(
+            user_id=user.id,
+            blob_id=placeholder,
+            namespace=namespace,
+            text=corrected,
+            importance=target.importance,
+            origin_surface=user.surface,
+            occurred_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        )
+        best = RankedMemory(
+            blob_id=target.blob_id,
+            text=target.text,
+            distance=0.0,
+            importance=target.importance,
+            age_days=self._age_days(target.occurred_at),
+        )
+        settle = asyncio.create_task(
+            self._settle_write(user.id, memory.id, accepted.job_id, "updates", best, corrected)
+        )
+        self._track_task(settle)
+        return (
+            f"Done. \"{person_facing(target.text) or target.text}\" is retired and "
+            f"I will use \"{corrected}\" from now on. The corrected note is being "
+            "written to Walrus Memory now."
         )
 
     def _sorted_memories(self, user_id: str) -> list:
         return sorted(
-            self._memories.list_for_user(user_id, None, 200),
+            self._memories.list_for_user(user_id, None, 500),
             key=lambda record: record.importance,
             reverse=True,
         )
+
+    def _person_records(self, user_id: str) -> list:
+        """Every stored record that is honestly about the person, newest state.
+
+        Both active and retired records are returned, because the listing shows
+        retired notes as retired rather than hiding them; records about the
+        assistant or the conversation are never part of this list. The order is
+        the one the listing and /forget both index into.
+        """
+        return [
+            record for record in self._sorted_memories(user_id) if is_person_fact(record.text)
+        ]
+
+    def _repair_active_memories(self, records: list) -> list[RepairAction]:
+        """Collapse exact duplicates and self-contradictions in the local index.
+
+        Append-only storage cannot rewrite a blob, so repair retires the
+        redundant local record. This runs when a listing runs, so existing bad
+        data is cleaned rather than only preventing new bad data.
+        """
+        actions = plan_repairs(records)
+        for action in actions:
+            if action.kind == KIND_DUPLICATE:
+                self._memories.mark_status(
+                    action.retired_id, STATUS_SUPERSEDED, action.kept_blob_id or "duplicate"
+                )
+            elif action.kind == KIND_CONTRADICTION:
+                self._memories.mark_status(action.retired_id, STATUS_CONTRADICTED, None)
+            else:
+                self._memories.mark_status(
+                    action.retired_id, STATUS_SUPERSEDED, "not-about-you"
+                )
+            logger.info(
+                "memory repair retired an active record",
+                extra={
+                    "event": "memory_repair",
+                    "kind": action.kind,
+                    "retired_blob_id": action.retired_blob_id,
+                    "kept_blob_id": action.kept_blob_id,
+                    "reason": action.reason,
+                },
+            )
+        return actions
+
+    def _listing_records(self, user_id: str) -> tuple[list, list[RepairAction]]:
+        """The person records plus whatever the listing just collapsed."""
+        records = self._memories.list_for_user(user_id, None, 1000)
+        repairs = self._repair_active_memories(records)
+        return self._person_records(user_id), repairs
+
+    @staticmethod
+    def _repair_report_lines(actions: list[RepairAction]) -> list[str]:
+        """Name exactly what the listing collapsed, in the second person."""
+        if not actions:
+            return []
+        lines = ["", f"I also cleaned up {len(actions)} problem record(s):"]
+        for action in actions:
+            retired = person_facing(action.retired_text) or action.retired_text
+            kept = (
+                person_facing(action.kept_text) or action.kept_text
+                if action.kept_text
+                else None
+            )
+            if action.kind == KIND_DUPLICATE:
+                lines.append(f"- duplicate retired: \"{retired}\" (kept \"{kept}\")")
+            elif action.kind == KIND_CONTRADICTION:
+                lines.append(
+                    f"- older conflicting note retired: \"{retired}\" (kept \"{kept}\")"
+                )
+            else:
+                # Do not quote it: the point is that it is not shown at all.
+                lines.append("- retired a note that was not about you")
+        return lines
 
     def _forget_menu_markup(self, records: list) -> dict[str, object]:
         rows: list[list[dict[str, str]]] = []
@@ -1098,6 +1305,99 @@ class ConversationService:
                 ]
             )
         return {"inline_keyboard": rows}
+
+    def _listing_markup(
+        self, first_index: int, count: int, page: int, total_pages: int
+    ) -> dict[str, object]:
+        """Per-note actions plus paging, and nothing this surface cannot do."""
+        rows: list[list[dict[str, str]]] = []
+        for offset in range(count):
+            index = first_index + offset
+            rows.append(
+                [
+                    {
+                        "text": f"{ACTION_FORGET} ({index})",
+                        "callback_data": f"{CALLBACK_FORGET_PREFIX}{index}",
+                    },
+                    {
+                        "text": f"{ACTION_CORRECT} ({index})",
+                        "callback_data": f"{CALLBACK_CORRECT_PREFIX}{index}",
+                    },
+                ]
+            )
+        if total_pages > 1:
+            navigation: list[dict[str, str]] = []
+            if page > 1:
+                navigation.append(
+                    {
+                        "text": ACTION_PREVIOUS,
+                        "callback_data": f"{CALLBACK_PAGE_PREFIX}{page - 1}",
+                    }
+                )
+            if page < total_pages:
+                navigation.append(
+                    {
+                        "text": ACTION_NEXT,
+                        "callback_data": f"{CALLBACK_PAGE_PREFIX}{page + 1}",
+                    }
+                )
+            if navigation:
+                rows.append(navigation)
+        return {"inline_keyboard": rows}
+
+    async def _send_listing_page(self, user, recipient_id: str, page: int) -> None:
+        """Send one page of the interactive memory listing as a keyboard."""
+        if self._reply_channel is None:
+            return
+        records, repairs = self._listing_records(user.id)
+        if not records:
+            await self._reply_channel.send_message(
+                recipient_id,
+                "I have nothing stored about you yet, so there is nothing to show. "
+                "Telling me something durable is how a note gets created, and /help "
+                "lists everything I can do.",
+            )
+            return
+        total_pages = max(1, (len(records) + LISTING_PAGE_SIZE - 1) // LISTING_PAGE_SIZE)
+        page = min(max(1, page), total_pages)
+        start = (page - 1) * LISTING_PAGE_SIZE
+        shown = records[start : start + LISTING_PAGE_SIZE]
+        scope = f" (shared space: {user.memory_handle})" if user.memory_handle else ""
+        lines = [
+            f"Your memory ({len(records)} notes){scope}. Page {page} of {total_pages}.",
+            "",
+        ]
+        for offset, record in enumerate(shown):
+            index = start + offset + 1
+            marker = "" if record.status == STATUS_ACTIVE else f" [{record.status}]"
+            lines.append(
+                f"{index}. {person_facing(record.text) or record.text}{marker}"
+            )
+        lines.extend(self._repair_report_lines(repairs))
+        lines.extend(
+            [
+                "",
+                "Tap Forget this one or Correct this one under a note, or use "
+                "Previous and Next to page through.",
+            ]
+        )
+        markup = self._listing_markup(start + 1, len(shown), page, total_pages)
+        await self._reply_channel.send_message(
+            recipient_id, "\n".join(lines), reply_markup=markup
+        )
+
+    def _correct_prompt(self, user_id: str, index: int) -> str:
+        records = self._person_records(user_id)
+        if index < 1 or index > len(records):
+            return f"There is no note {index}. Send /memories to see what I have."
+        target = records[index - 1]
+        rendered = person_facing(target.text) or target.text
+        return (
+            f'To correct note {index} ("{rendered}"), send:\n'
+            f"/correct {index} <the right version>\n"
+            "For example: /correct "
+            f"{index} You live in Lagos now."
+        )
 
     async def handle_callback_query(
         self,
@@ -1121,10 +1421,27 @@ class ConversationService:
         user = self._users.get_or_create(surface, surface_user_id, display_name)
 
         if callback_data == CALLBACK_LIST:
-            listing = self.command_reply(
-                "/memories", surface, surface_user_id, display_name
+            await self._send_listing_page(user, recipient_id, 1)
+            return
+
+        if callback_data.startswith(CALLBACK_PAGE_PREFIX):
+            raw_page = callback_data[len(CALLBACK_PAGE_PREFIX) :]
+            try:
+                page = int(raw_page)
+            except ValueError:
+                page = 1
+            await self._send_listing_page(user, recipient_id, page)
+            return
+
+        if callback_data.startswith(CALLBACK_CORRECT_PREFIX):
+            raw_index = callback_data[len(CALLBACK_CORRECT_PREFIX) :]
+            try:
+                index = int(raw_index)
+            except ValueError:
+                index = 0
+            await self._reply_channel.send_message(
+                recipient_id, self._correct_prompt(user.id, index)
             )
-            await self._reply_channel.send_message(recipient_id, listing)
             return
 
         if callback_data == CALLBACK_EXPORT:
@@ -1132,7 +1449,7 @@ class ConversationService:
             return
 
         if callback_data == CALLBACK_FORGET:
-            records = self._sorted_memories(user.id)
+            records = self._person_records(user.id)
             if not records:
                 await self._reply_channel.send_message(
                     recipient_id,
@@ -1545,6 +1862,45 @@ class ConversationService:
                 return verdict
         return "DIFFERENT"
 
+    @staticmethod
+    def _exact_active_match(
+        fact_text: str, active_records: list, batch_texts: list[str]
+    ) -> str | None:
+        """The active text this fact duplicates exactly, or None.
+
+        This is the deterministic guard: it never consults a distance or a
+        similarity score, so two identical strings cannot both become active
+        even when the embedder or the relayer index misses the pair.
+        """
+        for record in active_records:
+            if exact_fact_match(fact_text, record.text):
+                return record.text
+        for text in batch_texts:
+            if exact_fact_match(fact_text, text):
+                return text
+        return None
+
+    def _local_record_for_neighbour(self, user_id: str, best: RankedMemory):
+        """The local row a recall hit refers to, even across a settle race.
+
+        A recall hit carries the real Walrus blob id, while the local index row
+        may still hold its ``pending:`` placeholder until that write settles.
+        Falling back to the text keeps an update or a contradiction from being
+        silently dropped when the two ids have not met yet.
+        """
+        record = self._memories.get_by_blob_id(best.blob_id)
+        if record is not None:
+            return record
+        matches = [
+            candidate
+            for candidate in self._memories.list_for_user(user_id, STATUS_ACTIVE, 500)
+            if exact_fact_match(candidate.text, best.text)
+        ]
+        if not matches:
+            return None
+        matches.sort(key=lambda candidate: candidate.occurred_at or candidate.created_at)
+        return matches[0]
+
     async def _consolidate(
         self, user_id: str, namespace: str, surface: str, text: str, reply: str
     ) -> tuple[list[ExtractedFactView], int, int, list[tuple[str, str]], bool]:
@@ -1563,10 +1919,39 @@ class ConversationService:
         contradiction_pairs: list[tuple[str, str]] = []
         wrote_anything = False
         batch: list[asyncio.Task[None]] = []
+        # The exact-text guard reads the local index and this batch, never the
+        # embedder. A record written earlier in this same batch is only a
+        # placeholder on Walrus and cannot be recalled yet, and an embedder that
+        # misses a pair must not be able to let two identical strings become
+        # active.
+        active_records = self._memories.list_for_user(user_id, STATUS_ACTIVE, 500)
+        batch_texts: list[str] = []
 
         for fact in facts:
             fact_text = str(fact["text"])
             importance = float(fact["importance"])  # type: ignore[arg-type]
+
+            if not is_person_fact(fact_text):
+                stored.append(
+                    ExtractedFactView(
+                        text=fact_text,
+                        verdict="rejected",
+                        reason="not a durable fact about the person",
+                    )
+                )
+                continue
+
+            matched = self._exact_active_match(fact_text, active_records, batch_texts)
+            if matched is not None:
+                skipped += 1
+                stored.append(
+                    ExtractedFactView(
+                        text=fact_text,
+                        verdict="duplicate",
+                        reason=f"exact duplicate of an active record: {matched}",
+                    )
+                )
+                continue
 
             neighbours_outcome = await self._memory.recall(
                 fact_text, namespace, limit=5, max_distance=self._thresholds.related_distance + 0.05
@@ -1574,6 +1959,7 @@ class ConversationService:
             known = {
                 memory.blob_id: memory
                 for memory in self._memories.list_for_user(user_id, None, 500)
+                if is_person_fact(memory.text)
             }
             neighbours = [
                 RankedMemory(
@@ -1599,7 +1985,17 @@ class ConversationService:
 
             if verdict in ("duplicate", "same"):
                 skipped += 1
-                stored.append(ExtractedFactView(text=fact_text, verdict="duplicate"))
+                stored.append(
+                    ExtractedFactView(
+                        text=fact_text,
+                        verdict="duplicate",
+                        reason=(
+                            f"duplicate of an active record: {best.text}"
+                            if best is not None
+                            else "duplicate of an active record"
+                        ),
+                    )
+                )
                 continue
 
             # Accept the write, never wait for it. The relayer takes tens of
@@ -1647,6 +2043,7 @@ class ConversationService:
                     pending=True,
                 )
             )
+            batch_texts.append(fact_text)
 
         if wrote_anything:
             # The snapshot is written only after this batch settles, so it
@@ -1692,17 +2089,20 @@ class ConversationService:
 
         try:
             if verdict == "updates" and best is not None:
-                old = self._memories.get_by_blob_id(best.blob_id)
+                old = self._local_record_for_neighbour(user_id, best)
                 if old is not None:
                     self._memories.mark_status(old.id, STATUS_SUPERSEDED, settled.blob_id)
             elif verdict == "contradicts" and best is not None:
-                old = self._memories.get_by_blob_id(best.blob_id)
+                old = self._local_record_for_neighbour(user_id, best)
                 if old is not None:
                     self._memories.mark_status(old.id, STATUS_CONTRADICTED, None)
-                if self._contradictions.get_between(best.blob_id, settled.blob_id) is None:
+                    retired_blob_id = old.blob_id
+                else:
+                    retired_blob_id = best.blob_id
+                if self._contradictions.get_between(retired_blob_id, settled.blob_id) is None:
                     self._contradictions.create(
                         user_id=user_id,
-                        left_blob_id=best.blob_id,
+                        left_blob_id=retired_blob_id,
                         right_blob_id=settled.blob_id,
                         reason=f"new memory conflicts with an earlier one: {fact_text}",
                     )

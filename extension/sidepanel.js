@@ -107,7 +107,8 @@
     history: [],
     busy: false,
     pageBusy: false,
-    page: null
+    page: null,
+    memoryPage: 1
   };
 
   /* --------------------------------------------------------------- dom */
@@ -948,9 +949,10 @@
     return value ? "Archived" : "";
   }
 
-  /* The stored-memories panel shows memory text. Lifecycle state is only shown
-   * for records that are not active, so the filter is meaningful. No blob id,
-   * no salience, no origin surface. */
+  /* The stored-memories panel shows memory text as cards with the same actions
+   * as every other surface. Lifecycle state is only shown for records that are
+   * not active, so the filter is meaningful. No blob id, no salience, no origin
+   * surface. */
   function renderMemoryList(rows) {
     var list = $("memory-list");
     if (!list) {
@@ -968,17 +970,80 @@
       );
       return;
     }
-    rows.forEach(function (memory) {
+    var pageSize = 5;
+    var totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    if (state.memoryPage > totalPages) {
+      state.memoryPage = totalPages;
+    }
+    if (state.memoryPage < 1) {
+      state.memoryPage = 1;
+    }
+    var start = (state.memoryPage - 1) * pageSize;
+    rows.slice(start, start + pageSize).forEach(function (memory) {
       var status = memory && memory.status ? memory.status : "";
+      var blobId = memory && memory.blob_id ? String(memory.blob_id) : "";
       var card = el("div", { class: "memory-card" }, [
         el("div", { class: "memory-text" }, (memory && memory.text) || "(empty memory text)")
       ]);
-      var state = statusWord(status);
-      if (state) {
-        card.appendChild(el("div", { class: "memory-state" }, state));
+      var word = statusWord(status);
+      if (word) {
+        card.appendChild(el("div", { class: "memory-state" }, word));
+      }
+      if (status === "active") {
+        var actions = el("div", { class: "memory-actions" });
+        var forget = el("button", { type: "button", class: "btn btn-quiet" }, "Forget this one");
+        forget.addEventListener("click", function () {
+          api(
+            "/memories/" +
+              encodeURIComponent(state.userId) +
+              "/" +
+              encodeURIComponent(blobId) +
+              "/forget",
+            { method: "POST" }
+          ).then(loadMemories);
+        });
+        var correct = el("button", { type: "button", class: "btn btn-quiet" }, "Correct this one");
+        correct.addEventListener("click", function () {
+          var replacement = window.prompt("Correct this one", (memory && memory.text) || "");
+          if (replacement === null) {
+            return;
+          }
+          api(
+            "/memories/" +
+              encodeURIComponent(state.userId) +
+              "/" +
+              encodeURIComponent(blobId) +
+              "/correct",
+            { method: "POST", body: { text: replacement } }
+          ).then(loadMemories);
+        });
+        actions.appendChild(forget);
+        actions.appendChild(correct);
+        card.appendChild(actions);
       }
       list.appendChild(card);
     });
+
+    var navigation = el("div", { class: "memory-actions" }, [
+      el("span", { class: "hint" }, "Page " + state.memoryPage + " of " + totalPages)
+    ]);
+    if (state.memoryPage > 1) {
+      var previous = el("button", { type: "button", class: "btn btn-quiet" }, "Previous");
+      previous.addEventListener("click", function () {
+        state.memoryPage -= 1;
+        loadMemories();
+      });
+      navigation.insertBefore(previous, navigation.firstChild);
+    }
+    if (state.memoryPage < totalPages) {
+      var next = el("button", { type: "button", class: "btn btn-quiet" }, "Next");
+      next.addEventListener("click", function () {
+        state.memoryPage += 1;
+        loadMemories();
+      });
+      navigation.appendChild(next);
+    }
+    list.appendChild(navigation);
   }
 
   function loadMemories() {

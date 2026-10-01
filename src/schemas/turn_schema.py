@@ -27,6 +27,10 @@ class ExtractedFactView(BaseModel):
     text: str
     verdict: str
     blob_id: str | None = None
+    # Why consolidation reached its verdict, when that is worth naming (for
+    # example which active record a duplicate matched, or that a fact was not
+    # about the person at all).
+    reason: str | None = None
     # True when the relayer has only accepted the write as a job. The blob id is
     # then a local placeholder and the memory is not yet persisted, so the
     # transport must not present it as stored.

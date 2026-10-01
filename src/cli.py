@@ -346,17 +346,63 @@ def command_memories(args: argparse.Namespace, client: httpx.Client) -> int:
     if not items:
         print("[OK] no memories stored")
         return 0
+    page_size = max(1, int(args.size))
+    total_pages = max(1, (len(items) + page_size - 1) // page_size)
+    page = min(max(1, int(args.page)), total_pages)
+    start = (page - 1) * page_size
+    shown = items[start : start + page_size]
     rows = [
         [
+            str(start + index + 1),
             truncate(item.get("text", ""), TEXT_LIMIT),
             str(item.get("status", "")),
             fmt_number(item.get("importance")),
             str(item.get("origin_surface", "unknown")),
-            truncate(item.get("blob_id", ""), BLOB_LIMIT),
         ]
-        for item in items
+        for index, item in enumerate(shown)
     ]
-    print_table(["text", "status", "importance", "surface", "blob_id"], rows)
+    print_table(["#", "text", "status", "importance", "surface"], rows)
+    print("")
+    print(f"Page {page} of {total_pages} ({len(items)} notes).")
+    print("Forget this one: cli forget <number>")
+    print("Correct this one: cli correct <number> <the right version>")
+    if total_pages > 1:
+        print(f"Next page: cli memories --page {min(page + 1, total_pages)}")
+    return 0
+
+
+def _resolve_memory(client: httpx.Client, user_id: str, index: int) -> dict:
+    response = call(client, "GET", f"/memories/{user_id}")
+    items = response.json() or []
+    if index < 1 or index > len(items):
+        raise ApiError("not_found", 404, f"there is no note {index}")
+    return items[index - 1]
+
+
+def command_forget(args: argparse.Namespace, client: httpx.Client) -> int:
+    identity = ensure_identity()
+    user_id = register_user(client, identity)
+    target = _resolve_memory(client, user_id, int(args.index))
+    response = call(
+        client, "POST", f"/memories/{user_id}/{target['blob_id']}/forget"
+    )
+    data = response.json()
+    print(f"[OK] forgot: {data.get('text', '')}")
+    return 0
+
+
+def command_correct(args: argparse.Namespace, client: httpx.Client) -> int:
+    identity = ensure_identity()
+    user_id = register_user(client, identity)
+    target = _resolve_memory(client, user_id, int(args.index))
+    response = call(
+        client,
+        "POST",
+        f"/memories/{user_id}/{target['blob_id']}/correct",
+        json={"text": " ".join(args.text)},
+    )
+    data = response.json()
+    print(f"[OK] corrected to: {data.get('text', '')}")
     return 0
 
 
@@ -485,7 +531,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     memories = subparsers.add_parser("memories", help="list stored memories")
     memories.add_argument("--all", action="store_true", help="include inactive memories")
+    memories.add_argument("--page", type=int, default=1, help="page number to show")
+    memories.add_argument("--size", type=int, default=5, help="notes per page")
     memories.set_defaults(func=command_memories)
+
+    forget = subparsers.add_parser("forget", help="retire one note by its number")
+    forget.add_argument("index", type=int)
+    forget.set_defaults(func=command_forget)
+
+    correct = subparsers.add_parser("correct", help="replace one note by its number")
+    correct.add_argument("index", type=int)
+    correct.add_argument("text", nargs="+")
+    correct.set_defaults(func=command_correct)
 
     stats = subparsers.add_parser("stats", help="per-user memory counts")
     stats.set_defaults(func=command_stats)

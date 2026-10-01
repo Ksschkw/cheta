@@ -748,3 +748,11 @@ input[readonly] {
   padding: 8px 4px;
   border: 0;
 }
+
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}

@@ -24,6 +24,25 @@ def build_router() -> APIRouter:
     ) -> list[MemoryViewSchema]:
         return container.memory_admin_service.list_memories(user_id, include_inactive)
 
+    @router.post("/{user_id}/{memory_id}/forget")
+    def forget_memory(
+        user_id: str,
+        memory_id: str,
+        container: Container = Depends(get_container),
+    ) -> dict:
+        return container.memory_admin_service.retire_memory(user_id, memory_id)
+
+    @router.post("/{user_id}/{memory_id}/correct")
+    async def correct_memory(
+        user_id: str,
+        memory_id: str,
+        payload: dict,
+        container: Container = Depends(get_container),
+    ) -> dict:
+        return await container.memory_admin_service.correct_memory(
+            user_id, memory_id, str(payload.get("text", ""))
+        )
+
     @router.get("/{user_id}/stats", response_model=MemoryStatsSchema)
     async def stats(
         user_id: str, container: Container = Depends(get_container)
