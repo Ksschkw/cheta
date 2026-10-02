@@ -818,17 +818,91 @@
       }
     }
 
+    state.currentAttachment = null;
+    var attachBtn = $("attach-btn");
+    var fileInput = $("file-input");
+    var preview = $("attachment-preview");
+    var filenameSpan = $("attachment-filename");
+    var removeBtn = $("attachment-remove-btn");
+    var toolsToggle = $("tools-toggle-btn");
+    var toolsDrawer = $("tools-drawer");
+    var toolsClose = $("tools-drawer-close");
+
+    if (attachBtn && fileInput) {
+      attachBtn.addEventListener("click", function () {
+        fileInput.click();
+      });
+      fileInput.addEventListener("change", function () {
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var raw = String(e.target.result || "");
+          var idx = raw.indexOf("base64,");
+          var b64 = idx >= 0 ? raw.slice(idx + 7) : btoa(raw);
+          state.currentAttachment = {
+            filename: file.name,
+            contentBase64: b64
+          };
+          if (filenameSpan) filenameSpan.textContent = "Attached: " + file.name;
+          if (preview) preview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener("click", function () {
+        state.currentAttachment = null;
+        if (fileInput) fileInput.value = "";
+        if (preview) preview.classList.add("hidden");
+      });
+    }
+
+    if (toolsToggle && toolsDrawer) {
+      toolsToggle.addEventListener("click", function () {
+        toolsDrawer.classList.toggle("hidden");
+      });
+    }
+    if (toolsClose && toolsDrawer) {
+      toolsClose.addEventListener("click", function () {
+        toolsDrawer.classList.add("hidden");
+      });
+    }
+    document.querySelectorAll(".tool-card").forEach(function (card) {
+      var btn = card.querySelector(".tool-try-btn");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var prompt = card.getAttribute("data-prompt");
+          if (prompt && input) {
+            input.value = prompt;
+            if (toolsDrawer) toolsDrawer.classList.add("hidden");
+            input.focus();
+            autoGrow();
+          }
+        });
+      }
+    });
+
     function submitText(rawValue) {
       if (state.busy) {
         return;
       }
+      var attachment = state.currentAttachment;
       var value = String(rawValue === null || rawValue === undefined ? "" : rawValue).trim();
-      if (!value) {
+      if (!value && !attachment) {
         return;
+      }
+      if (!value && attachment) {
+        value = "Please analyze the attached document " + attachment.filename;
       }
       if (value.length > MAX_TEXT) {
         value = value.slice(0, MAX_TEXT);
       }
+
+      state.currentAttachment = null;
+      if (preview) preview.classList.add("hidden");
+      if (fileInput) fileInput.value = "";
 
       var trimmed = value.trim();
       if (trimmed.toLowerCase().startsWith("/name ")) {
@@ -845,20 +919,27 @@
       var usedMemory = toggle ? toggle.checked : true;
       storeSet(KEYS.memoryEnabled, usedMemory ? "1" : "0");
 
-      appendUser(value);
+      var displayMsg = attachment ? value + " [File: " + attachment.filename + "]" : value;
+      appendUser(displayMsg);
       input.value = "";
       input.style.height = "";
       setBusy(true);
 
+      var payload = {
+        surface: SURFACE,
+        surface_user_id: state.surfaceUserId,
+        display_name: name,
+        text: value,
+        memory_enabled: usedMemory
+      };
+      if (attachment) {
+        payload.document_name = attachment.filename;
+        payload.document_base64 = attachment.contentBase64;
+      }
+
       api("/chat/turn", {
         method: "POST",
-        body: {
-          surface: SURFACE,
-          surface_user_id: state.surfaceUserId,
-          display_name: name,
-          text: value,
-          memory_enabled: usedMemory
-        }
+        body: payload
       })
         .then(function (turn) {
           state.userId = turn.user_id;

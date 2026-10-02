@@ -258,9 +258,52 @@ def test_unwritable_identity_path_reports_failure(cli_env, tmp_path, monkeypatch
         raise AssertionError("no HTTP call expected before identity is saved")
 
     code = main(["stats"], transport=make_transport(handler))
-
     assert code == 1
     captured = capsys.readouterr()
     combined = captured.out + captured.err
     assert "identity file" in combined
     assert "Traceback" not in combined
+
+
+def test_cli_tools_command_lists_registered_capabilities(cli_env, capsys):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/chat/tools":
+            return httpx.Response(
+                200,
+                json=[
+                    {"name": "calculate", "description": "Safe arithmetic."},
+                    {"name": "weather", "description": "Weather forecast."},
+                ],
+            )
+        raise AssertionError(f"unexpected request {request.url.path}")
+
+    code = main(["tools"], transport=make_transport(handler))
+    assert code == 0
+    captured = capsys.readouterr()
+    assert "calculate" in captured.out
+    assert "weather" in captured.out
+
+
+def test_cli_file_command_uploads_and_executes_turn(cli_env, tmp_path, capsys):
+    test_file = tmp_path / "notes.txt"
+    test_file.write_text("Walrus memory test", encoding="utf-8")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/users":
+            return user_response()
+        if request.url.path == "/chat/upload":
+            return httpx.Response(
+                200,
+                json={
+                    "turn_id": "turn-doc-1",
+                    "reply": "I analyzed the document.",
+                    "tool_activity": ["document_question"],
+                },
+            )
+        raise AssertionError(f"unexpected request {request.url.path}")
+
+    code = main(["file", str(test_file), "summarize"], transport=make_transport(handler))
+    assert code == 0
+    captured = capsys.readouterr()
+    assert "I analyzed the document." in captured.out
+    assert "document_question" in captured.out

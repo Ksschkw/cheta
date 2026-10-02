@@ -15,6 +15,7 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import sys
@@ -514,6 +515,54 @@ def command_passport_import(args: argparse.Namespace, client: httpx.Client) -> i
     return 0
 
 
+def command_tools(args: argparse.Namespace, client: httpx.Client) -> int:
+    response = call(client, "GET", "/chat/tools")
+    tools = response.json() or []
+    if not tools:
+        print("[WARN] no tools registered on this backend")
+        return 0
+    print(f"Registered Agentic Capabilities ({len(tools)} tools):")
+    for tool in tools:
+        name = str(tool.get("name", ""))
+        desc = str(tool.get("description", ""))
+        first_sentence = desc.split(".")[0].strip() if desc else ""
+        print(f"  - {name:<18} : {first_sentence}")
+    return 0
+
+
+def command_file(args: argparse.Namespace, client: httpx.Client) -> int:
+    path = Path(args.path).expanduser()
+    if not path.is_file():
+        fail(f"file not found: {path}")
+        return 1
+    content = path.read_bytes()
+    b64 = base64.b64encode(content).decode("ascii")
+    identity = ensure_identity()
+    register_user(client, identity)
+    question = " ".join(args.question) if args.question else f"Analyze {path.name}"
+    response = call(
+        client,
+        "POST",
+        "/chat/upload",
+        json={
+            "surface": SURFACE,
+            "surface_user_id": identity["surface_user_id"],
+            "display_name": identity["display_name"],
+            "filename": path.name,
+            "content_base64": b64,
+            "question": question,
+        },
+    )
+    data = response.json()
+    print(str(data.get("reply", "")))
+    tools_used = data.get("tool_activity") or []
+    if tools_used:
+        print("TOOLS")
+        for name in tools_used:
+            print(f"  - {name}")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Argument parsing and entry point
 # ---------------------------------------------------------------------------
@@ -528,6 +577,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     chat = subparsers.add_parser("chat", help="interactive conversation loop")
     chat.set_defaults(func=command_chat)
+
+    tools = subparsers.add_parser("tools", help="list registered agentic capabilities")
+    tools.set_defaults(func=command_tools)
+
+    file_parser = subparsers.add_parser(
+        "file", help="analyze a local file with agentic document_question"
+    )
+    file_parser.add_argument("path", help="path to document (pdf, docx, txt, md, csv)")
+    file_parser.add_argument("question", nargs="*", help="question about the document")
+    file_parser.set_defaults(func=command_file)
 
     recall = subparsers.add_parser("recall", help="ranked recall for a query")
     recall.add_argument("query")

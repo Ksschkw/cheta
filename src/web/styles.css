@@ -154,16 +154,25 @@ code,
   gap: 20px;
 }
 
-.head-link {
+.head-link,
+.head-btn {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.12s ease;
 }
 
 .head-link:hover,
-.head-link:focus {
+.head-link:focus,
+.head-btn:hover,
+.head-btn:focus {
   color: var(--accent);
 }
 
@@ -331,6 +340,100 @@ select:focus {
   outline: 1px solid var(--accent);
   outline-offset: 1px;
   border-color: var(--line);
+}
+
+/* tools drawer */
+
+.tools-drawer {
+  flex: 0 0 auto;
+  margin: 14px 0 0 0;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.tools-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tools-drawer-header h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.tools-close-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.tools-close-btn:hover {
+  color: var(--text);
+}
+
+.tools-intro {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.tool-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tool-card-name {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tool-card-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+  flex-grow: 1;
+}
+
+.tool-try-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  margin-top: 6px;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.tool-try-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* degraded banner */
@@ -584,6 +687,33 @@ select:focus {
   border-top: 1px solid var(--line);
 }
 
+.attachment-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--accent);
+}
+
+.attachment-remove {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.attachment-remove:hover {
+  color: var(--text);
+}
+
 textarea {
   resize: none;
   max-height: 180px;
@@ -597,6 +727,33 @@ textarea {
   justify-content: space-between;
   gap: 12px;
   margin-top: 10px;
+}
+
+.composer-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.attach-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .composer-hint {

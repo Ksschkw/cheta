@@ -67,10 +67,71 @@
               <p class="field-note">Saved in this browser and sent with each message.</p>
             </div>
           </details>
+          <button id="tools-toggle-btn" class="head-btn" type="button">Tools (13)</button>
           <a class="head-link" href="dashboard.html">Memory</a>
           <a class="head-link" href="evidence.html">Evidence</a>
         </div>
       </header>
+
+      <div id="tools-drawer" class="tools-drawer hidden" role="region" aria-label="Agentic Capabilities">
+        <div class="tools-drawer-header">
+          <h3>Agentic Capabilities (13 Real Tools)</h3>
+          <button id="tools-drawer-close" class="tools-close-btn" type="button" aria-label="Close tools">✕</button>
+        </div>
+        <p class="tools-intro">Cheta executes multi-step reasoning across these 13 built-in tools. Click any prompt to try it:</p>
+        <div class="tools-grid">
+          <div class="tool-card" data-prompt="Calculate 14 * 25 + 350">
+            <span class="tool-card-name">calculate</span>
+            <span class="tool-card-desc">Safe arithmetic engine parsed with AST.</span>
+            <button class="tool-try-btn" type="button">Calculate 14 * 25 + 350</button>
+          </div>
+          <div class="tool-card" data-prompt="What is the weather in Lagos, Nigeria?">
+            <span class="tool-card-name">weather</span>
+            <span class="tool-card-desc">Live weather and 3-day forecast via Open-Meteo.</span>
+            <button class="tool-try-btn" type="button">Weather in Lagos</button>
+          </div>
+          <div class="tool-card" data-prompt="Wikipedia Ada Lovelace">
+            <span class="tool-card-name">wikipedia</span>
+            <span class="tool-card-desc">Encyclopedia article lookup and summary extraction.</span>
+            <button class="tool-try-btn" type="button">Wikipedia Ada Lovelace</button>
+          </div>
+          <div class="tool-card" data-prompt="Search for Walrus Protocol memory and storage">
+            <span class="tool-card-name">web_search</span>
+            <span class="tool-card-desc">Real-time web search with snippet synthesis.</span>
+            <button class="tool-try-btn" type="button">Search Walrus Protocol</button>
+          </div>
+          <div class="tool-card" data-prompt="Remind me to review hackathon submission tomorrow at 9am">
+            <span class="tool-card-name">reminder_set</span>
+            <span class="tool-card-desc">Schedule future reminders with due-time alerts.</span>
+            <button class="tool-try-btn" type="button">Remind tomorrow 9am</button>
+          </div>
+          <div class="tool-card" data-prompt="List my reminders">
+            <span class="tool-card-name">reminder_list</span>
+            <span class="tool-card-desc">Inspect pending scheduled reminders.</span>
+            <button class="tool-try-btn" type="button">List reminders</button>
+          </div>
+          <div class="tool-card" data-prompt="Schedule event Demo Presentation on Friday at 3pm">
+            <span class="tool-card-name">calendar_event</span>
+            <span class="tool-card-desc">Generate RFC 5545 iCalendar (.ics) invitations.</span>
+            <button class="tool-try-btn" type="button">Schedule event on Friday</button>
+          </div>
+          <div class="tool-card" data-prompt="What do you remember about my preferences?">
+            <span class="tool-card-name">memory_recall</span>
+            <span class="tool-card-desc">Ranked semantic recall from Walrus namespace.</span>
+            <button class="tool-try-btn" type="button">Recall my preferences</button>
+          </div>
+          <div class="tool-card" data-prompt="Fetch https://example.com">
+            <span class="tool-card-name">fetch_url</span>
+            <span class="tool-card-desc">Fetch and extract public web pages with SSRF guards.</span>
+            <button class="tool-try-btn" type="button">Fetch example.com</button>
+          </div>
+          <div class="tool-card" data-prompt="Crawl https://example.com 2 pages">
+            <span class="tool-card-name">crawl</span>
+            <span class="tool-card-desc">Multi-page web crawler with robots.txt compliance.</span>
+            <button class="tool-try-btn" type="button">Crawl example.com</button>
+          </div>
+        </div>
+      </div>
 
       <div id="degraded-banner" class="banner hidden" role="status"></div>
 
@@ -82,20 +143,31 @@
       ></main>
 
       <form id="composer" class="composer">
+        <div id="attachment-preview" class="attachment-preview hidden">
+          <span id="attachment-filename" class="attachment-filename"></span>
+          <button id="attachment-remove-btn" class="attachment-remove" type="button" title="Remove attachment">✕</button>
+        </div>
         <label class="sr-only" for="chat-input">Message</label>
         <textarea
           id="chat-input"
           rows="1"
           maxlength="8000"
-          placeholder="Message Cheta"
+          placeholder="Message Cheta (or attach a document)"
         ></textarea>
         <div class="composer-row">
-          <label id="memory-switch" class="mini-switch" for="memory-toggle">
-            <input id="memory-toggle" type="checkbox" checked>
-            <span class="mini-track" aria-hidden="true"><span class="mini-thumb"></span></span>
-            <span class="mini-label">Memory</span>
-          </label>
-          <span class="composer-hint">Enter sends, Shift+Enter adds a line. Commands such as /help are typed as normal messages.</span>
+          <div class="composer-left">
+            <label id="memory-switch" class="mini-switch" for="memory-toggle">
+              <input id="memory-toggle" type="checkbox" checked>
+              <span class="mini-track" aria-hidden="true"><span class="mini-thumb"></span></span>
+              <span class="mini-label">Memory</span>
+            </label>
+            <button id="attach-btn" class="attach-btn" type="button" title="Attach document (PDF, TXT, DOCX, CSV, MD)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+              <span>Attach</span>
+            </button>
+            <input id="file-input" type="file" accept=".pdf,.docx,.txt,.md,.csv,.json,.yaml,.xml" class="hidden">
+          </div>
+          <span class="composer-hint">Enter sends, Shift+Enter adds a line.</span>
           <button id="send-button" class="send" type="submit">Send</button>
         </div>
       </form>
