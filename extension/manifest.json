@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cheta memory side panel",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Cheta remembers you between chats, across browsers, terminals and Telegram, and can work on the page you are reading.",
   "minimum_chrome_version": "114",
   "permissions": [
