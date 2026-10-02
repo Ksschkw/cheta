@@ -21,6 +21,7 @@ from collections.abc import Sequence
 from schemas.llm_schema import (
     ChatMessageSchema,
     CompletionSchema,
+    ToolCallSchema,
     ToolDefinitionSchema,
 )
 
@@ -285,16 +286,173 @@ class OfflineLlm:
         temperature: float = 0.2,
         max_tokens: int = 800,
     ) -> CompletionSchema:
-        """The offline model never asks for a tool.
+        """Deterministic tool calling for zero-credential runs, tests, and demos.
 
-        It is a deterministic stand-in, not a reasoning model, so it always
-        answers in text. Returning the plain completion keeps the zero-key path
-        working: the agent loop simply sees no tool calls and finishes in one
-        round.
+        If a tool result was returned in messages, synthesizes the final reply.
+        Otherwise, inspects user intent and dispatches to the corresponding
+        tool so that the entire agent loop and tool execution can be verified
+        locally without requiring paid API keys.
         """
-        return await self.complete(
-            messages, temperature=temperature, max_tokens=max_tokens
-        )
+        tool_messages = [m for m in messages if m.role == "tool"]
+        if tool_messages:
+            last = tool_messages[-1]
+            content = (last.content or "").strip()
+            return CompletionSchema(
+                text=content or "Tool executed successfully.",
+                provider=self.name,
+                model="offline-deterministic",
+            )
+
+        if not tools:
+            return await self.complete(messages, temperature=temperature, max_tokens=max_tokens)
+
+        user_text = ""
+        for m in reversed(messages):
+            if m.role == "user":
+                user_text = (m.content or "").strip()
+                break
+
+        if not user_text:
+            return await self.complete(messages, temperature=temperature, max_tokens=max_tokens)
+
+        tool_names = {t.name for t in tools}
+        call = self._detect_tool_call(user_text, tool_names)
+        if call is not None:
+            return CompletionSchema(
+                text="",
+                provider=self.name,
+                model="offline-deterministic",
+                tool_calls=(call,),
+            )
+
+        return await self.complete(messages, temperature=temperature, max_tokens=max_tokens)
+
+    @staticmethod
+    def _detect_tool_call(user_text: str, available_tools: set[str]) -> ToolCallSchema | None:
+        lowered = user_text.lower().strip()
+
+        # 1. calculate
+        if "calculate" in available_tools:
+            calc_match = re.search(
+                r"^(?:calculate|compute|what\s+is)\s+([0-9\.\s\+\-\*\/\(\)\^\%]+)\??$",
+                lowered,
+            )
+            if calc_match:
+                expr = calc_match.group(1).strip()
+                return ToolCallSchema(
+                    id="call-calc-1", name="calculate", arguments=json.dumps({"expression": expr})
+                )
+            if re.match(r"^[0-9\.\s\+\-\*\/\(\)\^\%]+$", lowered) and any(
+                op in lowered for op in "+-*/%^"
+            ):
+                return ToolCallSchema(
+                    id="call-calc-1",
+                    name="calculate",
+                    arguments=json.dumps({"expression": user_text.strip()}),
+                )
+
+        # 2. weather
+        if "weather" in available_tools:
+            weather_match = re.search(
+                r"(?:weather\s+(?:in|for|at)|what(?:\'s| is)\s+the\s+weather\s+(?:in|for|at))\s+([a-zA-Z\s,]+)\??$",
+                lowered,
+            )
+            if weather_match:
+                loc = weather_match.group(1).strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-weather-1", name="weather", arguments=json.dumps({"location": loc})
+                )
+
+        # 3. wikipedia
+        if "wikipedia" in available_tools:
+            wiki_match = re.search(
+                r"^(?:wikipedia|wiki|look\s+up\s+on\s+wikipedia)\s+(.+)$", lowered
+            )
+            if wiki_match:
+                topic = wiki_match.group(1).strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-wiki-1", name="wikipedia", arguments=json.dumps({"query": topic})
+                )
+
+        # 4. web_search
+        if "web_search" in available_tools:
+            search_match = re.search(
+                r"^(?:search\s+for|web\s+search|google)\s+(.+)$", lowered
+            )
+            if search_match:
+                q = search_match.group(1).strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-search-1", name="web_search", arguments=json.dumps({"query": q})
+                )
+
+        # 5. reminder_set
+        if "reminder_set" in available_tools:
+            remind_match = re.search(
+                r"^remind\s+me\s+to\s+(.+?)\s+(?:at|in|on|tomorrow)\s+(.+)$", lowered
+            )
+            if remind_match:
+                text_part = remind_match.group(1).strip()
+                when_part = user_text[remind_match.start(2) :].strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-remind-1",
+                    name="reminder_set",
+                    arguments=json.dumps({"text": text_part, "when": when_part}),
+                )
+
+        # 6. reminder_list
+        if "reminder_list" in available_tools:
+            if lowered in (
+                "list reminders",
+                "show reminders",
+                "what are my reminders",
+                "what are my reminders?",
+                "reminders",
+            ):
+                return ToolCallSchema(
+                    id="call-remind-list-1", name="reminder_list", arguments="{}"
+                )
+
+        # 7. memory_recall
+        if "memory_recall" in available_tools:
+            recall_match = re.search(
+                r"^(?:search\s+memory\s+for|recall|what\s+do\s+you\s+remember\s+about)\s+(.+)$",
+                lowered,
+            )
+            if recall_match:
+                q = recall_match.group(1).strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-recall-1", name="memory_recall", arguments=json.dumps({"query": q})
+                )
+
+        # 8. calendar_event
+        if "calendar_event" in available_tools:
+            cal_match = re.search(
+                r"^(?:schedule\s+event|create\s+calendar\s+event|create\s+event)\s+(.+?)\s+(?:on|at)\s+(.+)$",
+                lowered,
+            )
+            if cal_match:
+                title_part = cal_match.group(1).strip()
+                start_part = user_text[cal_match.start(2) :].strip().strip("?. ")
+                return ToolCallSchema(
+                    id="call-cal-1",
+                    name="calendar_event",
+                    arguments=json.dumps({"title": title_part, "start": start_part}),
+                )
+
+        # 9. document_question
+        if "document_question" in available_tools:
+            if (
+                "document" in lowered
+                or "attached file" in lowered
+                or "in this document" in lowered
+            ):
+                return ToolCallSchema(
+                    id="call-doc-1",
+                    name="document_question",
+                    arguments=json.dumps({"question": user_text.strip()}),
+                )
+
+        return None
 
     def _reply(self, system: str, user_text: str) -> str:
         match = MEMORY_BLOCK.search(system)

@@ -106,6 +106,7 @@ COMMANDS = (
     "/sessions",
     "/unpair",
     "/name",
+    "/tools",
     # Bare "pair <code>" redeems a code on the new client, so the command has no
     # slash. It is recognised only when the argument really looks like a code,
     # which handle_turn checks before treating it as a command.
@@ -1104,6 +1105,8 @@ class ConversationService:
             return await self._correct_reply(user, argument)
         if command in ("/name", "name"):
             return self._name_command(user, argument)
+        if command in ("/tools", "tools"):
+            return self._tools_reply()
         return self.command_reply(command, surface, surface_user_id, display_name, argument)
 
     HANDLE_MIGRATION_LIMIT = 50
@@ -1709,6 +1712,7 @@ class ConversationService:
             "/sessions         list the clients sharing your memory space",
             "/unpair [number]  leave the shared space, or remove a listed client",
             "/name <name>      set or update your display name across sessions",
+            "/tools            list all agentic tools and sample prompts",
             "",
             "Things I can do for you:",
         ]
@@ -1732,6 +1736,31 @@ class ConversationService:
                 "What I cannot do, plainly: I cannot log into your accounts, I "
                 "cannot read private pages you are not viewing, and I cannot "
                 "understand images or video. I will not pretend otherwise.",
+            ]
+        )
+        return "\n".join(lines)
+
+    def _tools_reply(self) -> str:
+        count = len(self._tools.definitions()) if self._tools else 0
+        lines = [
+            f"Cheta Agentic Capabilities ({count} tools available):",
+            "",
+        ]
+        if self._tools is not None:
+            for definition in self._tools.definitions():
+                lines.append(f"- {definition.name}")
+                lines.append(f"  {definition.description}")
+                lines.append("")
+        lines.extend(
+            [
+                "Ask naturally in your messages, e.g.:",
+                "  - 'Calculate 42 * 18 + 7'",
+                "  - 'What is the weather in London right now?'",
+                "  - 'Search for Walrus Protocol documentation'",
+                "  - 'Wikipedia Alan Turing'",
+                "  - 'Remind me to buy groceries tomorrow at 10am'",
+                "  - 'Schedule meeting with Team on Friday at 2pm'",
+                "  - 'What do you remember about my preferences?'",
             ]
         )
         return "\n".join(lines)
