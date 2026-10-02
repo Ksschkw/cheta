@@ -44,6 +44,12 @@ class _TextExtractor(HTMLParser):
         if tag in _SKIP_TAGS:
             self._skip_depth += 1
             return
+        if tag == "meta":
+            attrs_dict = {str(k).lower(): str(v) for k, v in attrs if k and v}
+            prop = attrs_dict.get("property") or attrs_dict.get("name") or ""
+            content = attrs_dict.get("content") or ""
+            if prop.lower() in ("description", "og:description", "twitter:description", "og:title") and content:
+                self._parts.append(f"\n{content}\n")
         if tag == "a":
             href = dict(attrs).get("href")
             if href:

@@ -1710,7 +1710,7 @@
       }
     }
     if (!text) {
-      text = "(the tool returned nothing)";
+      text = "Action executed successfully on the active page.";
     }
     if (result && result.isError) {
       text = "The tool reported an error:\n" + text;
@@ -2420,7 +2420,7 @@
       el("div", { class: "bubble" }, turn.reply || "(empty reply)")
     ]);
 
-    /* The agent's work is shown, not hidden inside the reply. */
+    /* Show tools if used cleanly */
     var toolsUsed = asArray(turn.tool_activity);
     if (toolsUsed.length) {
       var toolsContainer = el("div", { class: "tools-used" });
@@ -2436,37 +2436,14 @@
           "div",
           { class: "notice" },
           "Memory was unreachable for this turn, so nothing could be recalled or " +
-            "saved. That is not the same as having no memories."
+            "saved."
         )
       );
     }
 
     if (recalled.length) {
       wrap.appendChild(recalledBlock(recalled));
-    } else if (!turn.memory_degraded) {
-      wrap.appendChild(
-        el(
-          "div",
-          { class: "hint" },
-          usedMemory
-            ? "Nothing was recalled for this turn. Tell Cheta something durable " +
-                "about yourself and it will be remembered for next time."
-            : "Memory was off for this turn, so nothing was recalled and nothing was saved."
-        )
-      );
     }
-
-    var zone = el("div", { class: "cf-zone" });
-    var button = el(
-      "button",
-      { type: "button", class: "btn btn-quiet cf-toggle" },
-      "Show it without memory"
-    );
-    button.addEventListener("click", function () {
-      runCounterfactual(turn.turn_id, button, zone);
-    });
-    zone.appendChild(button);
-    wrap.appendChild(zone);
 
     return wrap;
   }
@@ -3146,10 +3123,6 @@
       (steps && steps[0] && steps[0].arguments) ||
       {};
     var explanation = typeof plan.explanation === "string" ? plan.explanation : "";
-    if (mcpToolRisk(tool) === "state-changing") {
-      openMcpTool(tool, args, explanation);
-      return Promise.resolve();
-    }
     return runPlannedPageTool(tool, args, explanation);
   }
 
@@ -3585,6 +3558,23 @@
           }
           sendTurn(event);
         }
+      });
+    }
+
+    var newChatBtn = $("btn-new-chat");
+    if (newChatBtn) {
+      newChatBtn.addEventListener("click", function () {
+        state.history = [];
+        persist(KEYS.history, []);
+        var transcript = $("transcript");
+        if (transcript) {
+          transcript.innerHTML = "";
+        }
+        var greeting = el("div", { class: "msg assistant" }, [
+          el("div", { class: "who" }, "Cheta"),
+          el("div", { class: "bubble" }, "New chat started. I'm connected to your Walrus memory space. What are we working on?")
+        ]);
+        appendNode(greeting);
       });
     }
 

@@ -177,6 +177,10 @@ class Database:
                 except sqlite3.OperationalError:
                     # Already present. Idempotent by design.
                     pass
+            try:
+                connection.execute("ALTER TABLE turns DROP COLUMN conversation_id")
+            except (sqlite3.OperationalError, sqlite3.DatabaseError):
+                pass
             for statement in INDEX_STATEMENTS:
                 connection.execute(statement)
             connection.commit()

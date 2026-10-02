@@ -101,6 +101,8 @@
     }
     var heroExtBtn = document.getElementById("hero-ext-btn");
     if (heroExtBtn) {
+      heroExtBtn.href = meta.downloadUrl;
+      heroExtBtn.setAttribute("download", meta.filename);
       heroExtBtn.addEventListener("click", function () {
         openModal();
         var extCard = document.querySelector(".surface-extension");

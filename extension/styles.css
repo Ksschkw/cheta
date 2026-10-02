@@ -30,8 +30,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    "Liberation Sans", sans-serif;
+  font-family: 'Fredoka', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
@@ -41,6 +40,9 @@ h1,
 h2,
 h3,
 h4 {
+  font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   margin: 0;
   line-height: 1.3;
 }
@@ -383,21 +385,23 @@ input[readonly] {
 
 .msg.user {
   align-self: flex-end;
-  width: 92%;
-  background: #151822;
-  border: 1px solid #272e3f;
-  border-radius: 12px 12px 2px 12px;
-  padding: 9px 12px;
+  width: auto;
+  max-width: 90%;
+  background: #141a24;
+  border: 1px solid #232d3f;
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
 }
 
+.msg.assistant,
 .msg.model {
   align-self: flex-start;
   width: 100%;
-  background: #0e1117;
-  border: 1px solid #1c2230;
-  border-left: 2px solid var(--accent);
-  border-radius: 12px 12px 12px 2px;
-  padding: 10px 12px;
+  background: #0d1118;
+  border: 1px solid #1a2230;
+  border-left: 3px solid var(--accent);
+  border-radius: 18px 18px 18px 4px;
+  padding: 11px 14px;
 }
 
 .msg.error {
