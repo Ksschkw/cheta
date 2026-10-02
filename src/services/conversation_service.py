@@ -703,6 +703,8 @@ class ConversationService:
                     "space per person across all of them. If asked what you are, say that. "
                     "Never describe yourself as just a language model, never say you have no "
                     "memory across conversations, and never say you are only a Telegram bot. "
+                    "Do not proactively recite your surfaces or internal architecture unless "
+                    "explicitly asked. Focus directly on the user's question or task. "
                     "Someone can reach the browser widget at "
                     "https://ranti-gkn7.onrender.com/app and the extension is loadable "
                     "unpacked from the repository. Mention those if asked how to use you "
@@ -825,12 +827,9 @@ class ConversationService:
         )
 
         recent_turns = self._turns.list_for_user(user.id, limit=4)
-        recent_turns.reverse()
-
-        turn_ctx = f" ({len(recent_turns)} past conversation turns injected)" if recent_turns else ""
         if on_step is not None:
             try:
-                await on_step(f"Reasoning over request & deciding tools{turn_ctx}...", "reasoning")
+                await on_step("Reasoning over request & deciding tools...", "reasoning")
             except Exception:
                 pass
 
@@ -910,7 +909,12 @@ class ConversationService:
         first_turn = self._turns.count_for_user(user.id) == 1
         # The first turn is the only turn that carries onboarding. After it the
         # person has been told once, and repeating it every session is noise.
-        onboarding = ONBOARDING_TEXT if first_turn else None
+        # Users who already have stored memories in Walrus are returning users.
+        onboarding = (
+            ONBOARDING_TEXT
+            if (first_turn and stored_count == 0 and not bool(recalled))
+            else None
+        )
         tool_failure_note = self._tool_failure_note(tool_failures)
 
         # Appended, never substituted: the model's answer stays intact and the
@@ -3383,9 +3387,11 @@ class ConversationService:
                     "If no tool applies:\n"
                     '{"tool": null, "arguments": {}, "explanation": "<reason>", "steps": []}\n'
                     "Name tools only when the request clearly asks for those actions. "
-                    "Match every argument to that tool's argument schema; if a "
-                    "required argument is missing, name no tool. Never invent a tool. "
-                    "Always give an explanation."
+                    "Match every argument to that tool's argument schema. If a required "
+                    "argument is omitted by the user (such as 'add a topping' without "
+                    "specifying which topping), pick the most common sensible default from "
+                    "the tool's enum/options so the action succeeds on the page. Never "
+                    "invent a tool. Always give an explanation."
                 ),
             ),
             ChatMessageSchema(role="user", content=request),
