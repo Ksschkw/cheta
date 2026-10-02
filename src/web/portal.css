@@ -3,12 +3,17 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0a0a0a;
-  --surface: #141414;
-  --line: #262626;
-  --text: #ededed;
-  --muted: #8a8a8a;
+  --bg: #07080b;
+  --surface: #0e1118;
+  --surface-raised: #141824;
+  --line: #1c2230;
+  --line-strong: #2a3447;
+  --text: #f0f2f8;
+  --muted: #8b95a8;
   --accent: #35d0ba;
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
 * {
@@ -24,8 +29,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    "Liberation Sans", sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
@@ -69,8 +73,10 @@ code {
   padding: 24px 0 0 0;
 }
 
-.wordmark {
+.wordmark,
+.hero-wordmark {
   margin: 0;
+  font-family: var(--font-display);
   font-size: clamp(2.8rem, 8vw, 5.5rem);
   font-weight: 700;
   letter-spacing: -0.045em;
@@ -79,6 +85,7 @@ code {
 
 .tagline {
   margin: 24px 0 0 0;
+  font-family: var(--font-sans);
   font-size: clamp(1.5rem, 3.4vw, 2.6rem);
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -160,11 +167,20 @@ code {
   gap: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
+  border-radius: 12px;
   padding: 34px 32px 32px 32px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 
 .card-label {
   margin: 0;
+  font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -174,6 +190,7 @@ code {
 
 .card-title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1097,5 +1114,92 @@ body.modal-open {
   align-items: center;
   gap: 10px;
   margin-top: 14px;
+}
+
+/* -------------------------------------------------- architecture showcase */
+
+.architecture-showcase {
+  margin: 40px 0 24px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 24px 28px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.showcase-header {
+  margin-bottom: 20px;
+}
+
+.showcase-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+
+.showcase-title {
+  margin: 6px 0 0 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.architecture-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+.data-ray {
+  animation: ray-dash 22s linear infinite;
+}
+
+@keyframes ray-dash {
+  to {
+    stroke-dashoffset: -300;
+  }
+}
+
+.center-pulse {
+  animation: core-pulse 4s ease-in-out infinite;
+}
+
+@keyframes core-pulse {
+  0%, 100% {
+    stroke-width: 2px;
+  }
+  50% {
+    stroke-width: 3.5px;
+  }
+}
+
+.arch-node {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.arch-node:hover {
+  transform: scale(1.03);
+}
+
+.btn-icon {
+  flex-shrink: 0;
+}
+
+.arrow-icon {
+  margin-left: 2px;
+  opacity: 0.75;
+  transition: transform 0.18s ease;
+}
+
+.hero-pill-btn:hover .arrow-icon {
+  transform: translate(2px, -2px);
+  opacity: 1;
 }
 

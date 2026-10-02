@@ -24,6 +24,7 @@
               aria-controls="profile-panel"
               title="Identity & Device Pairing"
             >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               <span id="profile-name-badge">Profile</span>
             </button>
             <button
@@ -34,7 +35,8 @@
               aria-controls="memory-panel"
               title="Walrus Stored Memories"
             >
-              Memories
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12 2.1 12a10 10 0 0 0 9.9 10z"/></svg>
+              <span>Memories</span>
             </button>
             <button
               id="toggle-help"
@@ -44,7 +46,8 @@
               aria-controls="help-panel"
               title="Reference & Commands"
             >
-              Help
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>Help</span>
             </button>
           </div>
         </div>
@@ -125,7 +128,8 @@
       <section id="page-context" class="page-context" aria-label="The page in the active tab">
         <div class="page-row">
           <button id="use-page" class="btn btn-quiet page-use" type="button">
-            Read Tab
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>Read Tab</span>
           </button>
           <span id="page-hint" class="hint page-hint">Reads the active browser tab.</span>
           <span id="page-status" class="hint page-status" aria-live="polite"></span>
@@ -195,7 +199,10 @@
             <span>Memory</span>
           </label>
           <span id="memory-toggle-state" class="switch-state">On</span>
-          <button id="send-button" class="btn btn-accent" type="submit">Send</button>
+          <button id="send-button" class="btn btn-accent" type="submit">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>Send</span>
+          </button>
         </div>
       </form>
     </div>
