@@ -2885,17 +2885,211 @@
     label.className = "switch-state";
   }
 
-  /* The page tools the person can currently use, from the same probe the tool
-   * list uses. Empty when no page is read or the origin registered none. */
+  var NATIVE_PAGE_TOOLS = [
+    {
+      name: "page_find_text",
+      description: "Search for keywords or phrases in the active web page and extract matching context passages.",
+      source: "browser",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Text or keywords to search for in page content." }
+        },
+        required: ["query"]
+      }
+    },
+    {
+      name: "page_highlight_text",
+      description: "Visually highlight specific text occurrences in the active tab so the user can easily see them.",
+      source: "browser",
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "Text phrase to highlight on the web page." }
+        },
+        required: ["text"]
+      }
+    },
+    {
+      name: "page_scroll_to",
+      description: "Scroll the page view to a specific heading, text occurrence, or top/bottom of the page.",
+      source: "browser",
+      inputSchema: {
+        type: "object",
+        properties: {
+          target: { type: "string", description: "Text, heading, or 'top' / 'bottom' to scroll to." }
+        },
+        required: ["target"]
+      }
+    },
+    {
+      name: "page_extract_links",
+      description: "Extract hyperlinks and their anchor descriptions from the active tab.",
+      source: "browser",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filter: { type: "string", description: "Optional keyword to filter link text or URL." }
+        }
+      }
+    },
+    {
+      name: "page_summarize",
+      description: "Synthesize the core message and key sections of the active tab into a concise summary.",
+      source: "browser",
+      inputSchema: {
+        type: "object",
+        properties: {}
+      }
+    }
+  ];
+
+  function callNativeBrowserTool(tool, args) {
+    if (!state.pageTabId) {
+      return Promise.reject(new Error("No active web page tab is available."));
+    }
+    var name = tool.name;
+    var params = args || {};
+
+    if (name === "page_summarize") {
+      var summaryText = state.page && state.page.text ? state.page.text.slice(0, 1000) : "No page content";
+      return Promise.resolve("Page summary for " + (state.page.title || "tab") + ":\n" + summaryText);
+    }
+
+    if (name === "page_find_text") {
+      return browserApi.executeScript({
+        target: { tabId: state.pageTabId },
+        func: function (query) {
+          var q = String(query || "").toLowerCase().trim();
+          if (!q) return "No search query provided.";
+          var body = document.body ? document.body.innerText : "";
+          var lines = body.split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
+          var matches = lines.filter(function (line) {
+            return line.toLowerCase().indexOf(q) !== -1;
+          });
+          if (!matches.length) return "Text '" + q + "' was not found on this page.";
+          return "Found " + matches.length + " matching sections:\n- " + matches.slice(0, 4).join("\n- ");
+        },
+        args: [params.query || params.text || ""]
+      }).then(function (results) {
+        var first = Array.isArray(results) && results.length ? results[0] : null;
+        return first && first.result ? String(first.result) : "Search completed.";
+      });
+    }
+
+    if (name === "page_highlight_text") {
+      return browserApi.executeScript({
+        target: { tabId: state.pageTabId },
+        func: function (term) {
+          var t = String(term || "").trim();
+          if (!t) return "No text provided to highlight.";
+          var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+          var node;
+          var count = 0;
+          var nodes = [];
+          while ((node = walker.nextNode())) {
+            if (node.nodeValue && node.nodeValue.toLowerCase().indexOf(t.toLowerCase()) !== -1) {
+              nodes.push(node);
+              if (nodes.length >= 15) break;
+            }
+          }
+          nodes.forEach(function (n) {
+            var parent = n.parentNode;
+            if (parent && parent.nodeName !== "MARK" && parent.nodeName !== "SCRIPT" && parent.nodeName !== "STYLE") {
+              var mark = document.createElement("mark");
+              mark.style.background = "#35d0ba";
+              mark.style.color = "#0a0b0e";
+              mark.style.padding = "2px 4px";
+              mark.style.borderRadius = "3px";
+              mark.className = "cheta-highlight";
+              mark.textContent = n.nodeValue;
+              parent.replaceChild(mark, n);
+              count += 1;
+            }
+          });
+          return count > 0
+            ? "Successfully highlighted " + count + " instances of '" + t + "' on the page."
+            : "Could not find text '" + t + "' to highlight.";
+        },
+        args: [params.text || params.query || ""]
+      }).then(function (results) {
+        var first = Array.isArray(results) && results.length ? results[0] : null;
+        return first && first.result ? String(first.result) : "Highlighting executed.";
+      });
+    }
+
+    if (name === "page_scroll_to") {
+      return browserApi.executeScript({
+        target: { tabId: state.pageTabId },
+        func: function (target) {
+          var t = String(target || "").toLowerCase().trim();
+          if (t === "top") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return "Scrolled to top of the page.";
+          }
+          if (t === "bottom") {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            return "Scrolled to bottom of the page.";
+          }
+          var headers = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6, p, a, button, section"));
+          var match = headers.find(function (el) {
+            return el.innerText && el.innerText.toLowerCase().indexOf(t) !== -1;
+          });
+          if (match) {
+            match.scrollIntoView({ behavior: "smooth", block: "center" });
+            return "Scrolled to section: '" + match.innerText.trim().slice(0, 80) + "'";
+          }
+          return "Could not find target section '" + t + "' on page.";
+        },
+        args: [params.target || params.query || "top"]
+      }).then(function (results) {
+        var first = Array.isArray(results) && results.length ? results[0] : null;
+        return first && first.result ? String(first.result) : "Scroll executed.";
+      });
+    }
+
+    if (name === "page_extract_links") {
+      return browserApi.executeScript({
+        target: { tabId: state.pageTabId },
+        func: function (filter) {
+          var f = String(filter || "").toLowerCase().trim();
+          var anchors = Array.from(document.querySelectorAll("a[href]"));
+          var matches = anchors.filter(function (a) {
+            var text = (a.innerText || "").trim();
+            var href = a.getAttribute("href") || "";
+            if (!href || href.startsWith("javascript:") || href.startsWith("#")) return false;
+            if (!f) return text.length > 0;
+            return text.toLowerCase().indexOf(f) !== -1 || href.toLowerCase().indexOf(f) !== -1;
+          });
+          if (!matches.length) return "No links matching '" + f + "' found.";
+          return "Extracted " + matches.length + " links:\n" + matches.slice(0, 8).map(function (a) {
+            return "- " + a.innerText.trim().slice(0, 60) + " -> " + a.href;
+          }).join("\n");
+        },
+        args: [params.filter || ""]
+      }).then(function (results) {
+        var first = Array.isArray(results) && results.length ? results[0] : null;
+        return first && first.result ? String(first.result) : "Extracted links.";
+      });
+    }
+
+    return Promise.reject(new Error("Unknown native page tool: " + name));
+  }
+
+  /* The page tools the person can currently use, from native browser tools
+   * and WebMCP/HTTP MCP probe. */
   function currentPageTools() {
-    if (!state.page || !state.pageOrigin) {
-      return [];
+    var tools = [];
+    if (state.page) {
+      tools = tools.concat(NATIVE_PAGE_TOOLS);
     }
-    var record = mcp.origins[state.pageOrigin];
-    if (!record || record.status !== "ready") {
-      return [];
+    if (state.pageOrigin) {
+      var record = mcp.origins[state.pageOrigin];
+      if (record && record.status === "ready" && Array.isArray(record.tools)) {
+        tools = tools.concat(record.tools);
+      }
     }
-    return record.tools || [];
+    return tools;
   }
 
   function findPageTool(name) {
@@ -3012,16 +3206,19 @@
         ])
       );
 
-      var record = state.pageOrigin ? mcpStateFor(state.pageOrigin) : null;
+      var recordMcp = state.pageOrigin ? mcpStateFor(state.pageOrigin) : null;
+      var isNative = tool.source === "browser";
       var isWebMcp = tool.source === "webmcp";
-      if (!record || record.status !== "ready" || (!isWebMcp && !record.endpoint)) {
+      if (!isNative && (!recordMcp || recordMcp.status !== "ready" || (!isWebMcp && !recordMcp.endpoint))) {
         appendNode(errorNode("The tool endpoint is not available."));
         return Promise.resolve();
       }
 
-      var call = isWebMcp
+      var call = isNative
+        ? callNativeBrowserTool(tool, step.arguments || {})
+        : isWebMcp
         ? callWebMcpTool(tool, step.arguments || {})
-        : mcpCallTool(record.endpoint, tool, step.arguments || {});
+        : mcpCallTool(recordMcp.endpoint, tool, step.arguments || {});
 
       return call.then(
         function (resText) {
@@ -3047,9 +3244,10 @@
   }
 
   function runPlannedPageTool(tool, args, explanation) {
-    var record = state.pageOrigin ? mcpStateFor(state.pageOrigin) : null;
+    var recordMcp = state.pageOrigin ? mcpStateFor(state.pageOrigin) : null;
+    var isNative = tool.source === "browser";
     var isWebMcp = tool.source === "webmcp";
-    if (!record || record.status !== "ready" || (!isWebMcp && !record.endpoint)) {
+    if (!isNative && (!recordMcp || recordMcp.status !== "ready" || (!isWebMcp && !recordMcp.endpoint))) {
       return sendChatTurn(
         buildMcpMessage(tool, "(the tool is no longer available on this page)")
       );
@@ -3063,9 +3261,11 @@
       ])
     );
     record({ role: "context", text: "Page tool " + tool.name + " on " + host + ": " + note });
-    var call = isWebMcp
+    var call = isNative
+      ? callNativeBrowserTool(tool, args)
+      : isWebMcp
       ? callWebMcpTool(tool, args)
-      : mcpCallTool(record.endpoint, tool, args);
+      : mcpCallTool(recordMcp.endpoint, tool, args);
     return call.then(
       function (resultText) {
         showMcpResult(tool, resultText);
