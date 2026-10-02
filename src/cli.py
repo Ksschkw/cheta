@@ -274,6 +274,9 @@ def command_chat(args: argparse.Namespace, client: httpx.Client) -> int:
             continue
         if text == "/quit":
             break
+        if text == "/tutorial":
+            command_tutorial(args, client)
+            continue
         if text == "/nomem":
             memory_enabled = not memory_enabled
             print(f"[OK] memory {'on' if memory_enabled else 'off'} for subsequent turns")
@@ -308,6 +311,44 @@ def command_chat(args: argparse.Namespace, client: httpx.Client) -> int:
         if data.get("memory_degraded"):
             note = data.get("memory_note") or "relayer unavailable"
             print(f"[WARN] memory degraded: {note}")
+    return 0
+
+
+def command_tutorial(args: argparse.Namespace, client: httpx.Client) -> int:
+    """Print the complete step-by-step Cheta tutorial."""
+    print(
+        "====================================================\n"
+        "CHETA MASTER TUTORIAL: THE 4 SURFACES & 5 SUPERPOWERS\n"
+        "====================================================\n\n"
+        "Cheta is an autonomous memory-first AI agent powered by Walrus decentralized storage.\n"
+        "Your memory travels with you across Browser, Telegram, Terminal, and Web.\n\n"
+        "--- THE 4 SURFACES ---\n"
+        "1. BROWSER EXTENSION: In-page WebMCP automation, live reasoning pills, tab reading, and 1-click downloads.\n"
+        "2. TELEGRAM BOT: Chat on the go. Remembers what you did in browser or CLI.\n"
+        "3. COMMAND LINE (CLI): 'python -m src.cli chat'. Pure developer speed with terminal memory.\n"
+        "4. WEB PORTAL / WIDGET: Full dashboard and responsive web assistant at /app/.\n\n"
+        "--- THE 5 CORE SUPERPOWERS ---\n"
+        "1. DECENTRALIZED WALRUS MEMORY:\n"
+        "   Just talk naturally! Cheta extracts durable facts (preferences, projects, plans)\n"
+        "   and stores them in encrypted Walrus blobs. Commands:\n"
+        "   - /memories : view all remembered facts\n"
+        "   - /forget <number> : retire a memory note\n"
+        "   - /correct <number> <new text> : update wording\n\n"
+        "2. CROSS-DEVICE PAIRING IN 10 SECONDS:\n"
+        "   - Type /pair on any client you already use to get a 6-digit code.\n"
+        "   - On your other client (Telegram, CLI, Extension), type 'pair <code>'.\n"
+        "   - Instantly, both surfaces share the exact same memories!\n\n"
+        "3. PROACTIVE WEB CRAWLER & DOWNLOAD EXTRACTOR:\n"
+        "   - Ask 'crawl https://example.com' or send '/crawl <url>'.\n"
+        "   - Cheta respects robots.txt, maps pages, and outputs direct 1-click download\n"
+        "     buttons for discovered APKs, ZIPs, and PDFs.\n\n"
+        "4. IN-PAGE WEBMCP & DOM AUTOMATION (Browser):\n"
+        "   - Click 'Read Tab' or open any WebMCP page (e.g. Pizza Maker demo).\n"
+        "   - Cheta executes registered tools directly inside the live page DOM!\n\n"
+        "5. DOCUMENT & ATTACHMENT ANALYSIS:\n"
+        "   - Upload PDFs, text documents, or voice notes (up to 20MB) for instant reasoning.\n"
+        "   - In CLI: 'python -m src.cli file document.pdf \"summarize this\"'\n"
+    )
     return 0
 
 
@@ -577,6 +618,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     chat = subparsers.add_parser("chat", help="interactive conversation loop")
     chat.set_defaults(func=command_chat)
+
+    tutorial = subparsers.add_parser("tutorial", help="master tutorial for all 4 surfaces")
+    tutorial.set_defaults(func=command_tutorial)
 
     tools = subparsers.add_parser("tools", help="list registered agentic capabilities")
     tools.set_defaults(func=command_tools)

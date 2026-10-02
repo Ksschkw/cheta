@@ -107,6 +107,7 @@ COMMANDS = (
     "/unpair",
     "/name",
     "/tools",
+    "/tutorial",
     # Bare "pair <code>" redeems a code on the new client, so the command has no
     # slash. It is recognised only when the argument really looks like a code,
     # which handle_turn checks before treating it as a command.
@@ -785,7 +786,10 @@ class ConversationService:
         if memory_enabled:
             if on_step is not None:
                 try:
-                    await on_step("Recalling relevant Walrus memories...", "memory")
+                    await on_step(
+                        "Accessing Walrus memory network (indexing blobs & querying embeddings)...",
+                        "memory",
+                    )
                 except Exception:
                     pass
             # A long document makes a poor embedding query, so a caller that
@@ -794,6 +798,21 @@ class ConversationService:
             recalled, degraded, note, stored_count = await self._assemble_context(
                 user.id, namespace, recall_query or text, context_budget, display_names
             )
+            if on_step is not None:
+                try:
+                    if recalled:
+                        top_facts = "; ".join(f"'{m.text[:28]}'" for m in recalled[:2])
+                        await on_step(
+                            f"Recalled {len(recalled)} facts from Walrus: {top_facts}. Injecting into context...",
+                            "memory",
+                        )
+                    else:
+                        await on_step(
+                            f"Walrus memory active ({stored_count} stored notes, 0 matching this turn). Proceeding...",
+                            "memory",
+                        )
+                except Exception:
+                    pass
 
         # Built before the model runs and appended after it, so the returning
         # greeting is the service's product rather than something the model has
@@ -808,9 +827,10 @@ class ConversationService:
         recent_turns = self._turns.list_for_user(user.id, limit=4)
         recent_turns.reverse()
 
+        turn_ctx = f" ({len(recent_turns)} past conversation turns injected)" if recent_turns else ""
         if on_step is not None:
             try:
-                await on_step("Reasoning over request and deciding tools...", "reasoning")
+                await on_step(f"Reasoning over request & deciding tools{turn_ctx}...", "reasoning")
             except Exception:
                 pass
 
@@ -852,7 +872,10 @@ class ConversationService:
         if memory_enabled:
             if on_step is not None:
                 try:
-                    await on_step("Consolidating facts with Walrus decentralized storage...", "consolidation")
+                    await on_step(
+                        "Evaluating conversation for durable facts to commit to Walrus storage...",
+                        "consolidation",
+                    )
                 except Exception:
                     pass
             (
@@ -863,6 +886,25 @@ class ConversationService:
                 write_degraded,
             ) = await self._consolidate(user.id, namespace, surface, text, completion.text)
             degraded = degraded or write_degraded
+            if on_step is not None:
+                try:
+                    if stored:
+                        await on_step(
+                            f"Committed {len(stored)} new durable fact blob(s) to Walrus decentralized storage.",
+                            "consolidation_done",
+                        )
+                    elif skipped:
+                        await on_step(
+                            f"Memory consolidation complete: skipped {skipped} duplicate note(s).",
+                            "consolidation_done",
+                        )
+                    else:
+                        await on_step(
+                            "Memory consolidation complete: no durable new facts found.",
+                            "consolidation_done",
+                        )
+                except Exception:
+                    pass
             contradiction_note = self._contradiction_note(contradiction_pairs, display_names)
 
         first_turn = self._turns.count_for_user(user.id) == 1
@@ -1009,9 +1051,24 @@ class ConversationService:
                 )
             )
             for call in completion.tool_calls[:MAX_TOOL_CALLS_PER_ROUND]:
+                args = call.parsed_arguments()
+                detail = ""
+                if call.name in ("crawl", "fetch_url"):
+                    raw_target = str(args.get("url") or "")
+                    detail = f" on {raw_target[:45]}" if raw_target else ""
+                elif call.name == "web_search":
+                    raw_q = str(args.get("query") or "")
+                    detail = f" for '{raw_q[:35]}'" if raw_q else ""
+                elif call.name == "calculate":
+                    raw_expr = str(args.get("expression") or "")
+                    detail = f": {raw_expr[:30]}" if raw_expr else ""
+                elif call.name.startswith("memory_"):
+                    raw_f = str(args.get("fact") or args.get("query") or "")
+                    detail = f" '{raw_f[:30]}'" if raw_f else ""
+
                 if on_step is not None:
                     try:
-                        await on_step(f"Executing tool '{call.name}'...", "tool")
+                        await on_step(f"Executing tool '{call.name}'{detail}...", "tool")
                     except Exception:
                         pass
                 if self._tools.get(call.name) is None:
@@ -1019,10 +1076,13 @@ class ConversationService:
                         f"the model asked for a tool named {call.name} that does not exist"
                     )
                 activity.append(call.name)
-                result = await self._tools.execute(call.name, call.parsed_arguments(), context)
+                result = await self._tools.execute(call.name, args, context)
                 if on_step is not None:
                     try:
-                        await on_step(f"Analyzed '{call.name}' result", "tool_result")
+                        status_label = "completed successfully" if result.ok else "notice encountered"
+                        chars = len(result.output or "")
+                        size_info = f" ({chars} chars returned)" if result.ok and chars else ""
+                        await on_step(f"Analyzed '{call.name}' result - {status_label}{size_info}", "tool_result")
                     except Exception:
                         pass
                 if not result.ok and result.error:
@@ -1045,6 +1105,11 @@ class ConversationService:
                         name=call.name,
                     )
                 )
+        if on_step is not None:
+            try:
+                await on_step("Synthesizing final response from gathered facts and observations...", "synthesis")
+            except Exception:
+                pass
         # Bounded: the round limit is reached, so force a plain answer with no
         # tools offered. This can never loop forever.
         completion = await self._llm.complete(conversation)
@@ -1694,6 +1759,9 @@ class ConversationService:
         user = self._users.get_or_create(surface, surface_user_id, display_name)
         display_names = subject_names(user.display_name)
 
+        if command in ("/tutorial", "tutorial"):
+            return self._tutorial_reply()
+
         if command == "/forget":
             return self._forget_reply(user.id, argument, display_names)
 
@@ -1745,6 +1813,38 @@ class ConversationService:
             lines.append(f"- {definition.name}: {summary}")
         return lines
 
+    def _tutorial_reply(self) -> str:
+        return (
+            "CHETA MASTER TUTORIAL: THE 4 SURFACES & 5 SUPERPOWERS\n\n"
+            "Cheta is an autonomous memory-first AI agent powered by Walrus decentralized storage. "
+            "Your memory travels with you across Browser, Telegram, Terminal, and Web.\n\n"
+            "THE 4 SURFACES:\n"
+            "1. BROWSER EXTENSION: In-page WebMCP automation, live reasoning pills, tab reading, and 1-click downloads.\n"
+            "2. TELEGRAM BOT: Chat on the go. Remembers what you did in browser or CLI.\n"
+            "3. COMMAND LINE (CLI): 'python -m src.cli chat'. Pure developer speed with terminal memory.\n"
+            "4. WEB PORTAL / WIDGET: Full dashboard and responsive web assistant at /app/.\n\n"
+            "THE 5 CORE SUPERPOWERS:\n"
+            "1. DECENTRALIZED WALRUS MEMORY:\n"
+            "   Just talk naturally! Cheta extracts durable facts (preferences, projects, plans) "
+            "and stores them in encrypted Walrus blobs. Commands:\n"
+            "   - /memories : view all remembered facts\n"
+            "   - /forget <number> : retire a memory note\n"
+            "   - /correct <number> <new text> : update wording\n\n"
+            "2. CROSS-DEVICE PAIRING IN 10 SECONDS:\n"
+            "   - Type /pair on any client you already use to get a 6-digit code.\n"
+            "   - On your other client (Telegram, CLI, Extension), type 'pair <code>'.\n"
+            "   - Instantly, both surfaces share the exact same memories!\n\n"
+            "3. PROACTIVE WEB CRAWLER & DOWNLOAD EXTRACTOR:\n"
+            "   - Ask 'crawl https://example.com' or send '/crawl <url>'.\n"
+            "   - Cheta respects robots.txt, maps pages, and outputs direct 1-click download "
+            "buttons for discovered APKs, ZIPs, and PDFs.\n\n"
+            "4. IN-PAGE WEBMCP & DOM AUTOMATION (Browser):\n"
+            "   - Click 'Read Tab' or open any WebMCP page (e.g. Pizza Maker demo).\n"
+            "   - Cheta executes registered tools directly inside the live page DOM!\n\n"
+            "5. DOCUMENT & ATTACHMENT ANALYSIS:\n"
+            "   - Upload PDFs, text documents, or voice notes (up to 20MB) for instant reasoning."
+        )
+
     def _help_reply(self) -> str:
         """The complete reference, built from the real commands and real tools."""
         lines = [
@@ -1753,6 +1853,7 @@ class ConversationService:
             "",
             "/start            greet, and show what I already remember",
             "/help             this full reference",
+            "/tutorial         step-by-step master tutorial for all 4 surfaces",
             "/memories         show every note I have stored about you",
             "/forget <number>  retire a note so I stop bringing it up",
             "/correct <number> <text>  replace a note with your own wording",

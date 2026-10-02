@@ -937,17 +937,75 @@
         payload.document_base64 = attachment.contentBase64;
       }
 
-      api("/chat/turn", {
+      var pillText = el("span", { class: "reasoning-text" }, "Reasoning with Walrus memory...");
+      var pill = el("div", { class: "reasoning-pill" }, [
+        el("span", { class: "pulsing-dot" }),
+        pillText
+      ]);
+      var pillWrap = el("div", { class: "turn assistant reasoning-turn" }, [pill]);
+      transcript.appendChild(pillWrap);
+      scrollDown();
+
+      function updatePill(msg) {
+        if (pillText) {
+          pillText.textContent = msg;
+          scrollDown();
+        }
+      }
+
+      fetch("/chat/stream", {
         method: "POST",
-        body: payload
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify(payload)
       })
+        .then(function (response) {
+          if (!response.ok || !response.body || typeof response.body.getReader !== "function") {
+            return api("/chat/turn", { method: "POST", body: payload });
+          }
+          var reader = response.body.getReader();
+          var decoder = new TextDecoder();
+          var buffer = "";
+          return new Promise(function (resolve, reject) {
+            function readChunk() {
+              reader.read().then(function (res) {
+                if (res.done) return;
+                buffer += decoder.decode(res.value, { stream: true });
+                var parts = buffer.split("\n\n");
+                buffer = parts.pop();
+                parts.forEach(function (chunk) {
+                  var line = chunk.trim();
+                  if (line.startsWith("data: ")) {
+                    try {
+                      var data = JSON.parse(line.slice(6));
+                      if (data.type === "step" && data.message) {
+                        updatePill(data.message);
+                      } else if (data.type === "done" && data.turn) {
+                        resolve(data.turn);
+                      } else if (data.type === "error") {
+                        reject(new Error(data.message || "Streaming failed"));
+                      }
+                    } catch (e) {}
+                  }
+                });
+                readChunk();
+              }).catch(reject);
+            }
+            readChunk();
+          });
+        })
         .then(function (turn) {
+          if (pillWrap.parentNode) {
+            pillWrap.parentNode.removeChild(pillWrap);
+          }
           state.userId = turn.user_id;
           storeSet(KEYS.userId, turn.user_id);
           appendAssistant(turn, usedMemory);
           setDegraded(Boolean(turn.memory_degraded));
         })
         .catch(function (err) {
+          if (pillWrap.parentNode) {
+            pillWrap.parentNode.removeChild(pillWrap);
+          }
           appendError(plainError(err));
         })
         .then(function () {

@@ -56,10 +56,10 @@
               type="button"
               aria-expanded="false"
               aria-controls="help-panel"
-              title="Reference & Commands"
+              title="Master Tutorial & Commands Guide"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span>Help</span>
+              <span>Tutorial</span>
             </button>
           </div>
         </div>
@@ -101,49 +101,84 @@
         </div>
       </section>
 
-      <section id="help-panel" class="help-panel hidden" aria-label="Cheta reference">
+      <section id="help-panel" class="help-panel hidden" aria-label="Cheta tutorial and reference">
         <div class="panel-head">
-          <h2>Reference</h2>
+          <h2>Cheta Master Tutorial</h2>
           <div class="panel-head-actions">
             <button id="help-tour" class="btn btn-quiet" type="button">
-              Show me around
+              Interactive Tour
             </button>
             <button id="close-help" class="btn btn-quiet" type="button">Close</button>
           </div>
         </div>
         <div class="help-body">
-          <h3>Commands</h3>
-          <ul class="help-list">
-            <li><code>/start</code> greet, and show what I already remember.</li>
-            <li><code>/memories</code> show every note I have stored about you.</li>
-            <li><code>/forget 2</code> retire a note so I stop bringing it up.</li>
-            <li><code>/pair</code> get a one-time code to add another client.</li>
-            <li><code>/sessions</code> list the clients sharing your memory space.</li>
-            <li><code>/unpair 2</code> leave the shared space, or remove a listed client.</li>
-            <li><code>/name Kosisochukwu</code> set your name across all sessions.</li>
-            <li><code>/help</code> this full reference.</li>
-          </ul>
-          <p class="hint">Commands are typed as normal messages.</p>
+          <div class="tutorial-card">
+            <h3>1. The 4 Unified Surfaces</h3>
+            <p class="help-text">
+              Cheta is unified across 4 platforms with a single shared Walrus decentralized memory space:
+            </p>
+            <ul class="help-list">
+              <li><strong>Browser Extension</strong> (Sidepanel): In-page WebMCP automation, live reasoning pills, tab reading, and instant APK/file download buttons.</li>
+              <li><strong>Telegram Bot</strong>: Mobile companion. Remembers what you did on your laptop or terminal.</li>
+              <li><strong>Terminal CLI</strong>: <code>python -m src.cli chat</code> for developer workflows and terminal memory.</li>
+              <li><strong>Web Dashboard</strong>: Accessible via <code>/app/</code> for complete memory inspection and settings.</li>
+            </ul>
+          </div>
 
-          <h3>What the tools do</h3>
-          <ul class="help-list">
-            <li>Search the web, read a page you name, check Wikipedia or the weather.</li>
-            <li>Do arithmetic and set or list reminders.</li>
-            <li>Answer questions about a document you send; voice notes are transcribed.</li>
-          </ul>
+          <div class="tutorial-card">
+            <h3>2. Decentralized Walrus Memory</h3>
+            <p class="help-text">
+              Talk naturally! Cheta automatically detects durable facts about you, your projects, and preferences, encrypts them, and commits them to Walrus storage blobs.
+            </p>
+            <ul class="help-list">
+              <li><code>/memories</code> &mdash; lists every active note stored about you.</li>
+              <li><code>/forget &lt;number&gt;</code> &mdash; permanently retires a memory note.</li>
+              <li><code>/correct &lt;number&gt; &lt;text&gt;</code> &mdash; edits the exact wording.</li>
+            </ul>
+          </div>
 
-          <h3>Pairing</h3>
-          <p class="help-text">
-            Type <code>/pair</code> on a client you already use to get a one-time
-            code, then type <code>/pair</code> and that code on the new client.
-          </p>
+          <div class="tutorial-card">
+            <h3>3. 10-Second Cross-Device Pairing</h3>
+            <p class="help-text">
+              Want your Telegram bot or Terminal to share the exact same memories as this browser?
+            </p>
+            <ol class="help-steps">
+              <li>Click <strong>Profile</strong> above (or type <code>/pair</code>) to get a 6-digit code.</li>
+              <li>Open your other client (e.g. Telegram or CLI) and type <code>pair &lt;code&gt;</code>.</li>
+              <li>Done! Both surfaces now read and write to the same Walrus memory space.</li>
+            </ol>
+          </div>
 
-          <h3>Memory</h3>
-          <p class="help-text">
-            Each reply lists what was recalled for it. "Show it without memory"
-            replays that turn with memory off, so you can see the difference. The
-            Memory switch turns memory off for one message only.
-          </p>
+          <div class="tutorial-card">
+            <h3>4. Proactive Web Crawler & 1-Click Downloads</h3>
+            <p class="help-text">
+              Extract knowledge and direct download links from any public website:
+            </p>
+            <ul class="help-list">
+              <li>Type <code>/crawl https://example.com</code> or <code>crawl &lt;url&gt;</code>.</li>
+              <li>Cheta inspects robots.txt, traverses pages, extracts key content, and surfaces prominent <strong>Download Buttons</strong> for discovered APKs, ZIPs, and PDFs.</li>
+            </ul>
+          </div>
+
+          <div class="tutorial-card">
+            <h3>5. In-Page WebMCP DOM Automation</h3>
+            <p class="help-text">
+              Click <strong>Read Tab</strong> on any webpage. On sites exposing WebMCP tools (like the Pizza Maker demo), Cheta registers their capabilities and can execute actions directly inside the webpage when you ask (e.g. "add mushrooms and make it large")!
+            </p>
+          </div>
+
+          <div class="tutorial-card">
+            <h3>6. Complete Command Reference</h3>
+            <ul class="help-list">
+              <li><code>/tutorial</code> &mdash; print this master tutorial.</li>
+              <li><code>/crawl &lt;url&gt;</code> &mdash; crawl website and extract download links.</li>
+              <li><code>/start</code> &mdash; greet and view remembered facts.</li>
+              <li><code>/tools</code> &mdash; list all registered agentic capabilities.</li>
+              <li><code>/name &lt;name&gt;</code> &mdash; set your display name across all clients.</li>
+              <li><code>/sessions</code> &mdash; view all connected devices.</li>
+              <li><code>/unpair</code> &mdash; disconnect this device from the shared memory space.</li>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -202,6 +237,7 @@
       <form id="composer" class="composer">
         <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Commands"></div>
         <div class="quick-chips" id="quick-chips">
+          <button type="button" class="chip" data-cmd="/tutorial">/tutorial</button>
           <button type="button" class="chip" data-cmd="/crawl ">/crawl</button>
           <button type="button" class="chip" data-cmd="/memories">/memories</button>
           <button type="button" class="chip" data-cmd="/start">/start</button>

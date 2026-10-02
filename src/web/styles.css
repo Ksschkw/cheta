@@ -1492,3 +1492,41 @@ tbody tr {
   align-items: center;
   margin-top: 0.5rem;
 }
+
+.reasoning-turn {
+  margin-bottom: 8px;
+}
+
+.reasoning-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #141b26;
+  border: 1px solid #232d3f;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #35d0ba;
+  animation: reasoning-fade-in 0.25s ease-out;
+}
+
+@keyframes reasoning-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pulsing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #35d0ba;
+  box-shadow: 0 0 8px #35d0ba;
+  animation: pulse-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+

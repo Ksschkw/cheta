@@ -204,6 +204,10 @@
       hint: "/crawl <url>",
       description: "crawl public website and extract key links"
     },
+    {
+      command: "/tutorial",
+      description: "step-by-step master tutorial for all 4 surfaces"
+    },
     { command: "/help", description: "this full reference" }
   ];
 
@@ -3361,9 +3365,66 @@
     tick();
   }
 
-  function sendFallbackTurn(payload, streamWrap, reasoningPill, pillText, bubbleNode, usedMemory) {
-    if (pillText) {
-      pillText.textContent = "Reasoning with Walrus memory...";
+  function createReasoningWidget() {
+    var steps = [];
+    var pulsingDot = el("span", { class: "pulsing-dot" });
+    var pillText = el("span", { class: "reasoning-text" }, "Reasoning & planning...");
+    var chevron = el("span", { class: "reasoning-chevron" });
+    var pill = el(
+      "button",
+      {
+        type: "button",
+        class: "reasoning-pill",
+        title: "Click to toggle activity log"
+      },
+      [pulsingDot, pillText, chevron]
+    );
+
+    var logList = el("div", { class: "reasoning-log hidden" });
+    var container = el("div", { class: "reasoning-container" }, [pill, logList]);
+
+    pill.addEventListener("click", function (e) {
+      e.preventDefault();
+      logList.classList.toggle("hidden");
+      chevron.classList.toggle("open");
+      scrollToEnd();
+    });
+
+    return {
+      element: container,
+      pill: pill,
+      textNode: pillText,
+      logList: logList,
+      addStep: function (msg) {
+        if (!msg) {
+          return;
+        }
+        steps.push(msg);
+        pillText.textContent = msg;
+        var prev = logList.querySelector(".reasoning-log-item.active");
+        if (prev) {
+          prev.classList.remove("active");
+        }
+        var item = el("div", { class: "reasoning-log-item active" }, msg);
+        logList.appendChild(item);
+        scrollToEnd();
+      },
+      complete: function () {
+        pill.classList.add("completed");
+        var count = steps.length || 1;
+        pillText.textContent = "Completed reasoning (" + count + (count === 1 ? " step" : " steps") + ")";
+        pulsingDot.classList.add("hidden");
+        var active = logList.querySelector(".reasoning-log-item.active");
+        if (active) {
+          active.classList.remove("active");
+        }
+      }
+    };
+  }
+
+  function sendFallbackTurn(payload, streamWrap, reasoning, bubbleNode, usedMemory) {
+    if (reasoning) {
+      reasoning.addStep("Reasoning over request with Walrus memory...");
     }
     return api("/chat/turn", {
       method: "POST",
@@ -3372,11 +3433,8 @@
     }).then(function (turn) {
       state.userId = turn.user_id;
       persist(KEYS.userId, turn.user_id);
-      if (reasoningPill) {
-        reasoningPill.classList.add("completed");
-      }
-      if (pillText) {
-        pillText.textContent = "Completed reasoning";
+      if (reasoning) {
+        reasoning.complete();
       }
 
       if (turn.command) {
@@ -3423,32 +3481,24 @@
     persist(KEYS.memoryEnabled, usedMemory);
     var name = (state.displayName || "").trim() || DEFAULT_DISPLAY_NAME;
 
-    var pillText = el("span", { class: "reasoning-text" }, "Thinking...");
-    var reasoningPill = el("div", { class: "reasoning-pill" }, [
-      el("span", { class: "pulsing-dot" }),
-      pillText
-    ]);
+    var reasoning = createReasoningWidget();
     var bubbleNode = el("div", { class: "bubble hidden" });
     var streamWrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
       el("div", { class: "who" }, "Cheta"),
-      reasoningPill,
+      reasoning.element,
       bubbleNode
     ]);
     appendNode(streamWrap);
     scrollToEnd();
 
     function updateStep(msg) {
-      if (pillText) {
-        pillText.textContent = msg;
-        scrollToEnd();
-      }
+      reasoning.addStep(msg);
     }
 
     function finalizeTurn(turn) {
       state.userId = turn.user_id;
       persist(KEYS.userId, turn.user_id);
-      reasoningPill.classList.add("completed");
-      pillText.textContent = "Completed reasoning";
+      reasoning.complete();
 
       if (turn.command) {
         if (streamWrap && streamWrap.parentNode) {
@@ -3501,7 +3551,7 @@
     })
       .then(function (response) {
         if (!response.ok || !response.body || typeof response.body.getReader !== "function") {
-          return sendFallbackTurn(payload, streamWrap, reasoningPill, pillText, bubbleNode, usedMemory);
+          return sendFallbackTurn(payload, streamWrap, reasoning, bubbleNode, usedMemory);
         }
         var reader = response.body.getReader();
         var decoder = new TextDecoder();
@@ -3887,6 +3937,17 @@
           return;
         }
         var cmd = btn.getAttribute("data-cmd") || "";
+        if (cmd === "/tutorial") {
+          var helpPanel = $("help-panel");
+          if (helpPanel) {
+            helpPanel.classList.remove("hidden");
+            var helpBtn = $("toggle-help");
+            if (helpBtn) {
+              helpBtn.setAttribute("aria-expanded", "true");
+            }
+          }
+          return;
+        }
         var input = $("chat-input");
         if (!input) {
           return;
