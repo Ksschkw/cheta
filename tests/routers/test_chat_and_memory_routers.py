@@ -18,7 +18,7 @@ from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from main import create_app
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
-from services.conversation_service import ConversationService
+from services.conversation_service import PAGE_PLAN_MARKER, ConversationService
 from services.memory_admin_service import MemoryAdminService
 from services.user_service import UserService
 
@@ -27,9 +27,17 @@ ADJUDICATE_MARKER = "compare one remembered fact"
 
 
 class FakeLlm:
-    def __init__(self, facts: Sequence[dict[str, object]], verdict: str = "DIFFERENT") -> None:
+    def __init__(
+        self,
+        facts: Sequence[dict[str, object]],
+        verdict: str = "DIFFERENT",
+        plan: str = "",
+    ) -> None:
         self.facts = list(facts)
         self.verdict = verdict
+        # The raw answer to the page-tool planning prompt, when a test wants to
+        # exercise the planner. Empty means "no tool", which is the safe answer.
+        self.plan = plan
         self.reply_calls = 0
         # The user content of every reply call, so a test can prove what the
         # model actually saw (for example the text extracted from a PDF).
@@ -43,7 +51,11 @@ class FakeLlm:
         max_tokens: int = 800,
     ) -> CompletionSchema:
         system = messages[0].content
-        if EXTRACT_MARKER in system:
+        if PAGE_PLAN_MARKER in system:
+            text = self.plan or json.dumps(
+                {"tool": None, "arguments": {}, "explanation": ""}
+            )
+        elif EXTRACT_MARKER in system:
             text = json.dumps(self.facts)
         elif ADJUDICATE_MARKER in system:
             text = self.verdict
@@ -110,6 +122,7 @@ def build_test_container(
     webhook_secret: str = "",
     attachment_gateway: object | None = None,
     attachment_parser: object | None = None,
+    plan: str = "",
 ) -> tuple[Container, FakeLlm | None, RecordingReplyChannel]:
     settings = Settings(
         database_path=":memory:",
@@ -124,7 +137,7 @@ def build_test_container(
     turns = TurnCrud(database)
     contradictions = ContradictionCrud(database)
     gateway = build_memory_gateway(settings)
-    llm = FakeLlm(facts, verdict) if with_llm else None
+    llm = FakeLlm(facts, verdict, plan) if with_llm else None
     channel = reply_channel or RecordingReplyChannel()
 
     conversation = ConversationService(
@@ -182,6 +195,83 @@ def turn(client: TestClient, text: str, memory_enabled: bool = True) -> dict:
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+def page_plan_client(plan: str) -> TestClient:
+    """A client whose model answers the page-tool planner with `plan`."""
+    container, _, _ = build_test_container([], plan=plan)
+    return TestClient(create_app(container=container))
+
+
+PIZZA_TOOL = {
+    "name": "add_topping",
+    "description": "Add one or more toppings to the pizza",
+    "input_schema": {
+        "type": "object",
+        "properties": {"topping": {"type": "string"}},
+        "required": ["topping"],
+    },
+    "state_changing": True,
+}
+
+
+def test_the_page_plan_route_names_an_offered_tool_with_its_arguments() -> None:
+    plan = json.dumps(
+        {
+            "tool": "add_topping",
+            "arguments": {"topping": "pepperoni"},
+            "explanation": "Adding pepperoni to the pizza.",
+        }
+    )
+    with page_plan_client(plan) as client:
+        response = client.post(
+            "/chat/page-plan",
+            json={"request": "add pepperoni", "tools": [PIZZA_TOOL]},
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["tool"] == "add_topping"
+    assert body["arguments"] == {"topping": "pepperoni"}
+    assert "pepperoni" in body["explanation"]
+
+
+def test_the_page_plan_route_drops_a_tool_the_page_never_offered() -> None:
+    plan = json.dumps(
+        {"tool": "delete_everything", "arguments": {}, "explanation": "on it"}
+    )
+    with page_plan_client(plan) as client:
+        response = client.post(
+            "/chat/page-plan",
+            json={"request": "delete everything", "tools": [PIZZA_TOOL]},
+        )
+
+    body = response.json()
+    assert body["tool"] is None
+    assert body["arguments"] == {}
+
+
+def test_the_page_plan_route_names_no_tool_when_the_page_has_none() -> None:
+    plan = json.dumps(
+        {"tool": "add_topping", "arguments": {}, "explanation": "sure"}
+    )
+    with page_plan_client(plan) as client:
+        response = client.post(
+            "/chat/page-plan", json={"request": "add pepperoni", "tools": []}
+        )
+
+    assert response.json()["tool"] is None
+
+
+def test_the_page_plan_route_survives_an_unparseable_plan() -> None:
+    with page_plan_client("I would rather just chat about pizza.") as client:
+        response = client.post(
+            "/chat/page-plan",
+            json={"request": "add pepperoni", "tools": [PIZZA_TOOL]},
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["tool"] is None
 
 
 def test_a_turn_returns_the_reply_and_the_stored_fact(client: TestClient) -> None:

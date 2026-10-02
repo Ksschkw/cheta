@@ -71,6 +71,28 @@ class MemoryAdminService:
         """The name forms every surface uses to resolve a record's subject."""
         return subject_names(user.display_name)
 
+    def _scope_user_ids(self, user_id: str) -> list[str]:
+        """Every local identity whose rows belong to this person's memory space.
+
+        A shared handle is one Walrus namespace, but the local index rows are
+        stored per surface identity. Reading only the caller's rows is why a
+        freshly paired client listed three notes while the originator listed
+        forty-eight; every listing, repair, stats and passport read now covers
+        the whole shared space.
+        """
+        user = self._users.get_by_id(user_id)
+        if user is None or user.memory_handle is None:
+            return [user_id]
+        ids = [member.id for member in self._users.list_by_memory_handle(user.memory_handle)]
+        if user_id not in ids:
+            ids.append(user_id)
+        return ids
+
+    def _scope_records(
+        self, user_id: str, status: str | None = None, limit: int = 1000
+    ) -> list:
+        return self._memories.list_for_scope(self._scope_user_ids(user_id), status, limit)
+
     def list_memories(self, user_id: str, include_inactive: bool = False) -> list[MemoryViewSchema]:
         user = self._users.get_by_id(user_id)
         if user is None:
@@ -79,7 +101,7 @@ class MemoryAdminService:
         # collapsed: exact duplicates, self-contradictions and facts about the
         # assistant are retired in the local index before the cards render.
         self.repair_memories(user_id)
-        records = self._memories.list_for_user(user_id, None, 500)
+        records = self._scope_records(user_id, None, 500)
         if not include_inactive:
             records = [record for record in records if record.status == STATUS_ACTIVE]
         # A record about the assistant is not part of what is known about the
@@ -101,7 +123,7 @@ class MemoryAdminService:
         user = self._users.get_by_id(user_id)
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
-        records = self._memories.list_for_user(user_id, None, 1000)
+        records = self._scope_records(user_id, None, 1000)
         actions = plan_repairs(records, self._names_for(user))
         for action in actions:
             if action.kind == KIND_DUPLICATE:
@@ -162,6 +184,19 @@ class MemoryAdminService:
 
         namespace = self._settings.memory_namespace(user.memory_key)
         written = await self._memory.remember(corrected, namespace)
+        existing = self._memories.get_by_blob_id(written.blob_id)
+        if existing is not None:
+            # The relayer returned a blob id this index already holds, so reuse
+            # that row instead of violating UNIQUE(blob_id). The superseded note
+            # is still retired below.
+            self._memories.mark_status(record.id, STATUS_SUPERSEDED, written.blob_id)
+            return {
+                "retired_id": record.id,
+                "retired_text": record_facing(record, self._names_for(user)),
+                "id": existing.id,
+                "blob_id": existing.blob_id,
+                "text": corrected,
+            }
         created = self._memories.create(
             user_id=user_id,
             blob_id=written.blob_id,
@@ -200,9 +235,9 @@ class MemoryAdminService:
             display_name=user.display_name,
             surface=user.surface,
             namespace=namespace,
-            active=self._memories.count_for_user(user_id, STATUS_ACTIVE),
-            superseded=self._memories.count_for_user(user_id, STATUS_SUPERSEDED),
-            contradicted=self._memories.count_for_user(user_id, STATUS_CONTRADICTED),
+            active=self._memories.count_for_scope(self._scope_user_ids(user_id), STATUS_ACTIVE),
+            superseded=self._memories.count_for_scope(self._scope_user_ids(user_id), STATUS_SUPERSEDED),
+            contradicted=self._memories.count_for_scope(self._scope_user_ids(user_id), STATUS_CONTRADICTED),
             open_contradictions=len(self._contradictions.list_open_for_user(user_id)),
             turns=self._turns.count_for_user(user_id),
             relayer_memory_count=stored_on_walrus,
@@ -240,7 +275,7 @@ class MemoryAdminService:
 
         memory_namespace = self._settings.memory_namespace(user.memory_key)
         known = {
-            record.blob_id for record in self._memories.list_for_user(user_id, None, 1000)
+            record.blob_id for record in self._scope_records(user_id, None, 1000)
         }
         records_recovered = 0
         records_already_present = 0
@@ -307,7 +342,7 @@ class MemoryAdminService:
         user = self._users.get_by_id(user_id)
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
-        records = self._memories.list_for_user(user_id, None, 1000)
+        records = self._scope_records(user_id, None, 1000)
         return build_passport(user, records, self._settings.memory_namespace(user.memory_key))
 
     async def import_passport(self, payload: dict[str, object]) -> dict[str, object]:
@@ -332,7 +367,7 @@ class MemoryAdminService:
 
         user = self._users.get_or_create(surface, surface_user_id, display_name)
         namespace = self._settings.memory_namespace(user.memory_key)
-        seen = {record.text for record in self._memories.list_for_user(user.id, None, 1000)}
+        seen = {record.text for record in self._scope_records(user.id, None, 1000)}
 
         imported = 0
         skipped = 0
@@ -346,6 +381,12 @@ class MemoryAdminService:
                 skipped += 1
                 continue
             written = await self._memory.remember(text, namespace)
+            if self._memories.get_by_blob_id(written.blob_id) is not None:
+                # The relayer returned a blob id this index already holds, for
+                # example an identical note written into a second namespace.
+                # Keep the existing row rather than violating UNIQUE(blob_id).
+                skipped += 1
+                continue
             try:
                 importance = float(item.get("importance", 0.5))
             except (TypeError, ValueError):

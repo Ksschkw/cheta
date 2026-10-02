@@ -61,6 +61,10 @@ class TurnSchema(BaseModel):
     # Set when the message was a command rather than a conversation turn, so a
     # caller can tell the difference and no turn row is implied.
     command: str | None = None
+    # The tools this turn actually ran, in the order they ran. Empty for a turn
+    # that used none. This is what makes the agent's work visible on a surface
+    # instead of hidden inside the reply text.
+    tool_activity: list[str] = Field(default_factory=list)
 
 
 class CounterfactualSchema(BaseModel):

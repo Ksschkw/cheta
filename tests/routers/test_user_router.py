@@ -74,3 +74,22 @@ def test_health_reports_mock_memory_when_credentials_are_absent(client: TestClie
     assert body["status"] == "ok"
     assert body["memory"]["mode"] == "mock"
     assert body["memory"]["degraded"] is False
+
+
+def test_health_reports_a_measured_per_turn_budget(client: TestClient) -> None:
+    """Slowness must be visible as a number, and so must the relayer call count."""
+    client.post(
+        "/chat/turn",
+        json={
+            "surface": "cli",
+            "surface_user_id": "meter",
+            "display_name": "Meter",
+            "text": "I like tea",
+        },
+    )
+
+    body = client.get("/health").json()
+
+    assert body["performance"]["turns_measured"] >= 1
+    assert body["performance"]["p50_ms"] >= 0
+    assert body["memory"]["requests"] >= 1

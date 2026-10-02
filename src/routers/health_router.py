@@ -18,7 +18,14 @@ def build_router() -> APIRouter:
             "memory": {
                 "mode": "walrus" if container.settings.memwal_configured else "mock",
                 "degraded": container.memory_gateway.degraded,
+                # Every boundary call, which is what the relayer's per-minute
+                # limit actually counts. A turn that spends several is the turn
+                # that trips a 429.
+                "requests": container.memory_gateway.request_count,
             },
+            # A measured per-turn latency budget rather than a mystery: the last
+            # observed turn, the median, p95 and the worst, in milliseconds.
+            "performance": container.conversation_service.performance_report(),
             "llm": {
                 "providers": (
                     list(container.llm_gateway.provider_names)

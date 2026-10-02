@@ -254,6 +254,37 @@ async def test_a_tool_timeout_is_a_readable_failure_and_the_turn_completes() -> 
     assert result.reply
 
 
+async def test_the_turn_reports_the_tools_it_ran() -> None:
+    """The agent's work is reported, not hidden inside the reply text."""
+    spy = SpyTool()
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, ToolRegistry([spy.spec()]))
+
+    result = await service.handle_turn("web", "u1", "Ada", "please use your tool")
+
+    assert result.tool_activity == ["spy"]
+
+
+async def test_a_turn_without_tools_reports_no_activity() -> None:
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, None)
+
+    result = await service.handle_turn("web", "u1", "Ada", "just talk to me")
+
+    assert result.tool_activity == []
+
+
+async def test_the_pushed_reply_names_the_tools_it_ran() -> None:
+    """A pushed surface that says what it did is easier to trust."""
+    spy = SpyTool()
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, ToolRegistry([spy.spec()]))
+
+    result = await service.handle_turn("telegram", "42", "Ada", "use your tool")
+
+    assert "tools: spy" in service._render_reply(result)
+
+
 # ------------------------------------------------ tool on every surface
 
 

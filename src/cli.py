@@ -299,6 +299,11 @@ def command_chat(args: argparse.Namespace, client: httpx.Client) -> int:
                     f"(salience={fmt_number(item.get('salience'))}, "
                     f"surface={item.get('origin_surface', 'unknown')})"
                 )
+        tools_used = data.get("tool_activity") or []
+        if tools_used:
+            print("TOOLS")
+            for name in tools_used:
+                print(f"  - {name}")
         if data.get("memory_degraded"):
             note = data.get("memory_note") or "relayer unavailable"
             print(f"[WARN] memory degraded: {note}")

@@ -172,16 +172,18 @@ The panel names the specific reason rather than failing silently:
 - A page with no visible text: the panel says the page may be empty, still
   loading, or drawn on a canvas.
 
-## Public MCP tools on the page
+## MCP and WebMCP tools on the page
 
-After a page is read, the panel probes the page's own origin for a public
-Model Context Protocol endpoint. MCP servers speak JSON-RPC 2.0 over HTTP.
-This is a new and uncommon capability.
+After a page is read, the panel looks for tools two ways: it probes the page's
+own origin for a public Model Context Protocol endpoint (JSON-RPC 2.0 over
+HTTP), and it asks the page itself for tools it registered through WebMCP
+(`document.modelContext`, with `navigator.modelContext` as the older name).
+Both sets are merged into one list. This is a new and uncommon capability.
 
-**Most sites will not have an MCP endpoint, and finding none is the normal case,
-not a failure.** When none is found, the panel says so once, in one short line
-("No public MCP tools on this site."), and does not probe that origin again for
-the rest of the session. The message is not repeated on later actions.
+**Most sites will have neither, and finding none is the normal case, not a
+failure.** When none is found, the panel says so once, in one short line
+("No tools on this page."), and does not look again for the rest of the
+session. The message is not repeated on later actions.
 
 ### Discovery rules
 
@@ -208,6 +210,8 @@ the rest of the session. The message is not repeated on later actions.
 - Response size: the body is cut at 65536 characters before parsing.
 - Tool count: at most 50 tools are listed.
 - Tool result: at most 5000 characters are shown and sent.
+- WebMCP tools: at most 25 are listed, and the cap is repeated inside the page
+  in case the page registered an unbounded number.
 - Every tool name and description is cut before it reaches the DOM.
 
 A slow or hostile endpoint cannot hang the panel: every request is bounded, and
@@ -226,15 +230,58 @@ The probe and every `tools/call` request:
 These are **public tools only**. If a tool requires the page's login, the panel
 will not and cannot use it, by design.
 
+### WebMCP: tools the page registers itself
+
+WebMCP is the page registering its own tools with the browser. The API lives in
+the page's **main world**, which an isolated content script cannot reach, so the
+panel invokes it through a main-world injection (`scripting.executeScript` with
+`world: "MAIN"`) on the tab that was just read.
+
+- The panel calls `getTools()` after the read and lists what the page returned,
+  tagged "WebMCP tool registered by this page". The list is re-probed when it is
+  opened, so a tool the page registers later is still found.
+- Running one calls `executeTool(tool, args)` in the page, with the same
+  argument handling and the same untrusted-result handling as an HTTP tool.
+- Both names are feature-detected: `document.modelContext` first, then
+  `navigator.modelContext`. A browser or page without it contributes no tools,
+  and that is never shown as an error.
+- The `world: "MAIN"` option is Chromium-only. On a browser that ignores it the
+  injection runs in the isolated world, finds no `modelContext`, and WebMCP
+  reports nothing; nothing else in the panel changes.
+
+### Tools that can change state or spend money
+
+A page-registered tool can do anything the page can, so the panel classifies
+before it offers to run one:
+
+- The label is derived from the tool's WebMCP `readOnlyHint` / `destructiveHint`
+  annotations first, then from its name (a write token such as `fund`, `pay`,
+  `release`, `accept`, `post` or `delete`).
+- A tool the panel cannot classify, and any WebMCP tool with no annotation, is
+  treated as state-changing rather than assumed safe.
+- A state-changing tool is labelled "Can change state or spend money - confirms
+  before running" in the list, and its run control stays inert until the person
+  ticks an explicit confirmation.
+- The same label applies to an HTTP tool whose name or annotations imply a
+  write; read-only tools are unchanged.
+
 ### Using a discovered tool
 
-- The collapsed line shows a small count, for example "3 public MCP tools on
-  this site", with a **Tools** control.
-- Expanding **Tools** lists the tool names with their descriptions. The list is
+- After a read, a one-line notice names how many tools the page offers and says
+  to ask for one. It hides itself after a few seconds so it never sits in front
+  of the conversation; opening the list keeps it open.
+- Expanding the list shows the tool names with their descriptions. The list is
   height-capped and scrolls.
-- Choosing a tool opens a small arguments form. The arguments are edited as a
-  JSON object, prefilled with an empty scaffold from the tool's `inputSchema`
-  when one is present, and validated before sending.
+- The tools are normally driven from the composer. Sending an ordinary message
+  (for example "add pepperoni") while a page with tools is read calls
+  `POST /chat/page-plan` with the message and the tool catalog. The server picks
+  at most one tool and its arguments, and the extension runs it in the page.
+- A read-only tool runs at once. A tool that can change state or spend money
+  opens the confirmation form prefilled with the planned arguments and runs only
+  after the person ticks the confirmation.
+- The same small form is still there for a tool chosen by hand: a plain-words
+  field fills the arguments through the planner, and a JSON field stays for
+  anyone who wants to edit the exact call.
 - Running the tool sends JSON-RPC `tools/call`. The result is shown in the
   transcript as a labelled context block, "MCP tool result - untrusted page
   data", and is then sent to `POST /chat/turn` as part of that turn's message,
@@ -242,6 +289,13 @@ will not and cannot use it, by design.
   markers, exactly like page text.
 - An invalid JSON body, a refused request, or a tool error is shown in the form
   and nothing is sent.
+
+### When the tab changes
+
+A read page and its tools belong to one tab. When the person switches tabs,
+navigates the read tab, or closes it, the panel drops the read page and its
+tools, clears the tool notice, and brings the **Read page** control back so the
+page in front can be read. Only the panel's own window is followed.
 
 ## Design
 

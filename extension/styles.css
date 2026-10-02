@@ -393,6 +393,81 @@ input[readonly] {
   color: var(--muted);
 }
 
+.tools-used {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  background: rgba(53, 208, 186, 0.08);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.profile-panel {
+  flex: 0 0 auto;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 10px 0;
+}
+
+.text-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.text-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.pairing-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.pair-code-display {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
+
 .recalled-list {
   display: flex;
   flex-direction: column;
@@ -693,6 +768,10 @@ input[readonly] {
 .mcp-args-label {
   font-size: 11px;
   color: var(--muted);
+}
+
+.mcp-args input.mcp-request {
+  width: 100%;
 }
 
 .mcp-args textarea {

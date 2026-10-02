@@ -102,6 +102,34 @@ def build_target(name: str, manifest: Path) -> list[Path]:
     return written
 
 
+import zipfile
+
+
+def build_archives() -> None:
+    """Create .xpi and .zip archives for Firefox so about:debugging works even when .json cannot be selected."""
+    firefox_dir = DIST / "firefox"
+    if not firefox_dir.exists():
+        return
+    xpi_path = DIST / "cheta-firefox.xpi"
+    zip_path = DIST / "cheta-firefox.zip"
+    with zipfile.ZipFile(xpi_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(firefox_dir.rglob("*")):
+            if path.is_file():
+                archive.write(path, arcname=str(path.relative_to(firefox_dir)))
+    shutil.copy2(xpi_path, zip_path)
+    print(f"[OK] {relative(xpi_path)} (Firefox add-on package)")
+    print(f"[OK] {relative(zip_path)} (Firefox zip package)")
+
+    chrome_dir = DIST / "chrome"
+    if chrome_dir.exists():
+        chrome_zip = DIST / "cheta-chrome.zip"
+        with zipfile.ZipFile(chrome_zip, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(chrome_dir.rglob("*")):
+                if path.is_file():
+                    archive.write(path, arcname=str(path.relative_to(chrome_dir)))
+        print(f"[OK] {relative(chrome_zip)} (Chrome zip package)")
+
+
 def main() -> int:
     check_inputs()
     for name, manifest in TARGETS:
@@ -109,7 +137,8 @@ def main() -> int:
         print(f"[OK] {relative(DIST / name)}/ ({len(written)} files)")
         for path in written:
             print(f"     {relative(path)}")
-    print("[OK] both targets rebuilt. Load each manifest.json unpacked.")
+    build_archives()
+    print("[OK] all targets and archives rebuilt.")
     return 0
 
 

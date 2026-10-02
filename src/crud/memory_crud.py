@@ -57,6 +57,56 @@ class MemoryCrud:
             )
         return [_row_to_model(row) for row in rows]
 
+    def list_for_scope(
+        self, user_ids: list[str], status: str | None = None, limit: int = 200
+    ) -> list[MemoryModel]:
+        """Records for every identity sharing one memory space, newest first.
+
+        A shared handle is one memory space across several surface identities,
+        but each identity has its own local rows. Listing, recall and repair
+        have to read across all of them or a linked client sees only the notes
+        it wrote itself. Placeholders are generated from the list length, so no
+        value is interpolated into SQL.
+        """
+        ids = list(dict.fromkeys(user_ids))
+        if not ids:
+            return []
+        placeholders = ",".join("?" for _ in ids)
+        if status is None:
+            rows = self._database.fetch_all(
+                f"SELECT * FROM memories WHERE user_id IN ({placeholders})"
+                " ORDER BY created_at DESC LIMIT ?",
+                (*ids, limit),
+            )
+        else:
+            rows = self._database.fetch_all(
+                f"SELECT * FROM memories WHERE user_id IN ({placeholders})"
+                " AND status = ? ORDER BY created_at DESC LIMIT ?",
+                (*ids, status, limit),
+            )
+        return [_row_to_model(row) for row in rows]
+
+    def count_for_scope(
+        self, user_ids: list[str], status: str | None = STATUS_ACTIVE
+    ) -> int:
+        """Count across every identity sharing one memory space."""
+        ids = list(dict.fromkeys(user_ids))
+        if not ids:
+            return 0
+        placeholders = ",".join("?" for _ in ids)
+        if status is None:
+            row = self._database.fetch_one(
+                f"SELECT COUNT(*) AS total FROM memories WHERE user_id IN ({placeholders})",
+                tuple(ids),
+            )
+        else:
+            row = self._database.fetch_one(
+                f"SELECT COUNT(*) AS total FROM memories WHERE user_id IN ({placeholders})"
+                " AND status = ?",
+                (*ids, status),
+            )
+        return int(row["total"]) if row else 0
+
     def count_for_user(self, user_id: str, status: str | None = STATUS_ACTIVE) -> int:
         if status is None:
             row = self._database.fetch_one(

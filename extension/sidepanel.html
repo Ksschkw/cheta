@@ -30,12 +30,44 @@
             >
               Memories
             </button>
+            <button
+              id="toggle-profile-panel"
+              class="btn btn-quiet"
+              type="button"
+              aria-expanded="false"
+              aria-controls="profile-panel"
+            >
+              <span id="profile-name-badge">Profile</span>
+            </button>
           </div>
         </div>
 
         <p id="conn-status" class="status" aria-live="polite"></p>
         <div id="degraded-banner" class="notice hidden"></div>
       </header>
+
+      <section id="profile-panel" class="profile-panel hidden" aria-label="Profile and Pairing">
+        <div class="panel-head">
+          <h2>Identity & Pairing</h2>
+          <button id="close-profile" class="btn btn-quiet" type="button">Close</button>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="field-label" for="profile-name-input">Your Name</label>
+            <div class="input-row">
+              <input id="profile-name-input" class="text-input" type="text" maxlength="128" placeholder="e.g. Kosisochukwu">
+              <button id="save-profile-name" class="btn btn-accent" type="button">Save</button>
+            </div>
+            <p class="hint">Identifies you across Telegram, Terminal, and Browser.</p>
+          </div>
+          <div class="form-group pairing-section">
+            <h3>Cross-Device Pairing</h3>
+            <p class="help-text">Share this memory space with your Telegram bot or CLI client:</p>
+            <button id="btn-pair-code" class="btn btn-quiet" type="button">Get Pairing Code</button>
+            <div id="pair-code-display" class="pair-code-display hidden"></div>
+          </div>
+        </div>
+      </section>
 
       <section id="help-panel" class="help-panel hidden" aria-label="Cheta reference">
         <div class="panel-head">
@@ -56,6 +88,7 @@
             <li><code>/pair</code> get a one-time code to add another client.</li>
             <li><code>/sessions</code> list the clients sharing your memory space.</li>
             <li><code>/unpair 2</code> leave the shared space, or remove a listed client.</li>
+            <li><code>/name Kosisochukwu</code> set your name across all sessions.</li>
             <li><code>/help</code> this full reference.</li>
           </ul>
           <p class="hint">Commands are typed as normal messages.</p>
@@ -132,7 +165,7 @@
           id="mcp-tools"
           class="mcp-tools hidden"
           role="group"
-          aria-label="Public tools on this page"
+          aria-label="Tools on this page"
         ></div>
         <div id="mcp-args" class="mcp-args hidden"></div>
       </section>

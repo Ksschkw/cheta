@@ -243,6 +243,86 @@ def test_the_extension_listing_renders_cards_with_the_same_actions() -> None:
     assert "Next" in sidepanel
 
 
+def test_the_extension_discovers_and_calls_webmcp_page_tools() -> None:
+    """The page registers WebMCP tools in the main world; the panel must reach them."""
+    sidepanel = (REPO_ROOT / "extension" / "sidepanel.js").read_text(encoding="utf-8")
+
+    # Both API names are feature-detected, so an older or newer page works.
+    assert "document.modelContext" in sidepanel
+    assert "navigator.modelContext" in sidepanel
+    # Discovery and invocation are the two WebMCP operations.
+    assert "getTools" in sidepanel
+    assert "executeTool" in sidepanel
+    # The API only exists in the page's main world, so the injection must ask
+    # for it; without this the content script sees nothing.
+    assert 'world: "MAIN"' in sidepanel
+    # WebMCP tools are tagged so the invoke path routes them to the page rather
+    # than to an HTTP endpoint.
+    assert 'tool.source = "webmcp"' in sidepanel
+    # A tool that can change state or spend money is labelled and needs an
+    # explicit confirmation before it can run.
+    assert "mcpToolRisk" in sidepanel
+    assert "state-changing" in sidepanel
+    assert "mcp-confirm" in sidepanel
+    assert "Confirm and run" in sidepanel
+
+
+def test_the_extension_plans_a_page_tool_from_plain_words() -> None:
+    """The page tool list asked people to write raw JSON; the chat now drives it."""
+    sidepanel = (REPO_ROOT / "extension" / "sidepanel.js").read_text(encoding="utf-8")
+
+    assert "/chat/page-plan" in sidepanel
+    assert "function planToolFor" in sidepanel
+    assert "function currentPageTools" in sidepanel
+    assert "function handlePlannedPageTool" in sidepanel
+    assert "function runPlannedPageTool" in sidepanel
+    # Read-only runs at once; a state-changing plan opens the confirmation form.
+    assert 'mcpToolRisk(tool) === "state-changing"' in sidepanel
+    # The form still takes plain words and fills the JSON itself.
+    assert 'id: "mcp-request"' in sidepanel
+    assert "What should it do? (plain words)" in sidepanel
+    # The heads-up hides itself so it never sits in front of the conversation.
+    assert "MCP_NOTICE_MS" in sidepanel
+    assert "showMcpNotice" in sidepanel
+    # Opening the list re-probes, so a tool registered after the first look is
+    # still found rather than missing forever.
+    assert "refreshPageTools" in sidepanel
+
+
+def test_the_extension_drops_a_read_page_when_the_tab_changes() -> None:
+    """Reading one page hid the Read page button for the rest of the session.
+
+    The panel only ever showed the last page it read, so switching to a new tab
+    left no way to read the page in front. The tab events now clear the read
+    page and bring the button back.
+    """
+    sidepanel = (REPO_ROOT / "extension" / "sidepanel.js").read_text(encoding="utf-8")
+
+    assert "watchTabs" in sidepanel
+    assert "onActivated" in sidepanel
+    assert "onUpdated" in sidepanel
+    assert "onRemoved" in sidepanel
+    assert "You switched tabs. Read page to use the page in front." in sidepanel
+    # Only the panel's own window is followed, so another window cannot clear it.
+    assert "pageWindowId" in sidepanel
+
+
+def test_the_extension_does_not_promise_a_failed_pairing_changed_nothing() -> None:
+    """A real /pair redemption failed with a lost reply.
+
+    The panel printed "memory is unchanged" even though a pairing that never
+    returned can still have applied on the server, which invited a retry against
+    a space the client had already joined.
+    """
+    sidepanel = (REPO_ROOT / "extension" / "sidepanel.js").read_text(encoding="utf-8")
+
+    assert "commandMayChangeMemorySpace" in sidepanel
+    assert "can still take effect on the" in sidepanel
+    assert "run /sessions here before you" in sidepanel
+    # The plain path keeps its honest, narrower promise.
+    assert "Nothing was saved for it, and memory is unchanged. Please try again." in sidepanel
+
+
 def test_the_web_listing_renders_cards_with_the_same_actions() -> None:
     app_js = (REPO_ROOT / "src" / "web" / "app.js").read_text(encoding="utf-8")
 

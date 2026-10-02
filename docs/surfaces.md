@@ -117,20 +117,19 @@ Load it unpacked:
 2. Turn on Developer mode (top right).
 3. Click Load unpacked.
 4. Select the `extension/` folder, the one that contains `manifest.json`.
-5. Click the Ranti toolbar button. The side panel opens on the right.
+5. Click the Cheta toolbar button. The side panel opens on the right.
 
 Requires Chrome or Edge 114 or newer. The default API base URL is
 `https://ranti-gkn7.onrender.com`; the Settings block in the panel can change
 it, and the value is kept in `chrome.storage.local`. The panel sends
 `surface="extension"` on every turn.
 
-Current limitation: the deployed API rejects `surface="extension"` with HTTP
-500. `VALID_SURFACES` in
+`VALID_SURFACES` in
 [src/models/entities/user_model.py](../src/models/entities/user_model.py) is
-`("telegram", "cli", "web")`, and a request whose surface is not in that tuple
-raises before a turn is served. The extension cannot complete a turn until the
-backend accepts `"extension"`. This was observed against
-`https://ranti-gkn7.onrender.com`, not assumed.
+`("telegram", "cli", "web", "extension")`, so a turn with
+`surface="extension"` is served like any other. The earlier HTTP 500 (the
+surface was shipped before it was added to the tuple) is fixed and covered by
+the user-service test.
 
 ## What all surfaces share
 
@@ -138,7 +137,7 @@ backend accepts `"extension"`. This was observed against
   [src/schemas/turn_schema.py](../src/schemas/turn_schema.py) and
   [src/schemas/memory_schema.py](../src/schemas/memory_schema.py).
 - The same `POST /chat/turn` contract with a `surface` field
-  (`"telegram"`, `"cli"`, `"web"`, and `"extension"` once accepted).
+  (`"telegram"`, `"cli"`, `"web"` and `"extension"`).
 - The same Walrus Memory service, so a namespace written by one surface is
   readable by any other surface that is pointed at the same namespace, for
   example through a passport import.

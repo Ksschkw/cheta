@@ -39,6 +39,7 @@ class MemWalGateway:
         self._boundary = boundary
         self._mode = mode
         self._degradation_count = 0
+        self._request_count = 0
         self._last_error: str | None = None
 
     @property
@@ -51,6 +52,15 @@ class MemWalGateway:
         return self._degradation_count > 0
 
     @property
+    def request_count(self) -> int:
+        """Every boundary call made since process start, so /health can show it.
+
+        This is the number that matters for the relayer's rate limit: a turn
+        that calls the relayer several times is the turn that trips a 429.
+        """
+        return self._request_count
+
+    @property
     def last_error(self) -> str | None:
         return self._last_error
 
@@ -59,11 +69,13 @@ class MemWalGateway:
         operation: Callable[[], Awaitable[T]],
         fallback: Callable[[str], Awaitable[Outcome[T]]],
     ) -> T:
+        self._request_count += 1
         outcome = await self._boundary.call(operation, fallback, idempotent=True)
         return self._resolve(outcome)
 
     async def _write(self, operation: Callable[[], Awaitable[T]]) -> T:
         fallback = failure_fallback("walrus-memory", "write_failed")
+        self._request_count += 1
         outcome = await self._boundary.call(operation, fallback, idempotent=False)
         return self._resolve(outcome)
 

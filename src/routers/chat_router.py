@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from core.container import Container, get_container
 from schemas.memory_schema import RecallRequestSchema
+from schemas.page_tool_schema import PagePlanRequestSchema, PagePlanSchema
 from schemas.turn_schema import (
     CounterfactualSchema,
     RecalledMemoryView,
@@ -37,6 +38,15 @@ def build_router() -> APIRouter:
             user_id=payload.user_id, query=payload.query, budget=payload.budget
         )
         return recalled
+
+    @router.post("/page-plan", response_model=PagePlanSchema)
+    async def plan_page_tool(
+        payload: PagePlanRequestSchema, container: Container = Depends(get_container)
+    ) -> PagePlanSchema:
+        """Decide which page tool, if any, a plain request is asking for."""
+        return await container.conversation_service.plan_page_tool(
+            payload.request, payload.tools
+        )
 
     @router.post("/counterfactual/{turn_id}", response_model=CounterfactualSchema)
     async def counterfactual(

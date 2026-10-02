@@ -752,8 +752,18 @@
 
     function appendAssistant(turn, usedMemory) {
       var recalled = asArray(turn.recalled);
+      var toolsUsed = asArray(turn.tool_activity);
       var isCommand = Boolean(turn.command) || !turn.turn_id;
       var bubble = el("div", { class: "bubble" }, turn.reply || "(empty reply)");
+
+      if (toolsUsed.length) {
+        // The agent's work is shown, not hidden inside the reply.
+        var toolsBox = el("div", { class: "turn-tools" });
+        toolsUsed.forEach(function (name) {
+          toolsBox.appendChild(el("span", { class: "tool-chip" }, name));
+        });
+        bubble.appendChild(toolsBox);
+      }
 
       if (turn.memory_degraded) {
         bubble.appendChild(
@@ -818,6 +828,17 @@
       }
       if (value.length > MAX_TEXT) {
         value = value.slice(0, MAX_TEXT);
+      }
+
+      var trimmed = value.trim();
+      if (trimmed.toLowerCase().startsWith("/name ")) {
+        var customName = trimmed.slice(6).trim();
+        if (customName) {
+          setName(customName);
+          if (nameInput) {
+            nameInput.value = customName;
+          }
+        }
       }
 
       var name = displayName();

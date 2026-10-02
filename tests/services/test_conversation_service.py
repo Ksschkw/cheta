@@ -22,7 +22,7 @@ from crud.memory_crud import MemoryCrud
 from crud.pairing_crud import PairingCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
-from models.entities.memory_rank_model import ConsolidationThresholds
+from models.entities.memory_rank_model import ConsolidationThresholds, RankedMemory
 from schemas.llm_schema import ChatMessageSchema, CompletionSchema
 from schemas.memory_schema import RecallOutcomeSchema
 from services.conversation_service import ConversationService
@@ -568,6 +568,30 @@ async def test_the_prompt_forbids_markdown_because_clients_showed_asterisks() ->
     assert "no asterisks" in system
 
 
+async def test_the_prompt_forbids_contradicting_a_recalled_fact() -> None:
+    """A real Gigr turn answered "zero active jobs" while the recalled fact it
+    was handed in the same prompt said "5 active jobs". The model flipped a
+    remembered fact to its opposite, and the recalled block only told it to use
+    facts "when relevant", never that they are authoritative over the page.
+    """
+    harness = Harness([])
+    recalled = [
+        RankedMemory(
+            blob_id="blob-1",
+            text="You have 5 active jobs and 0 pending applications on Gigr",
+            distance=0.1,
+            importance=0.5,
+            age_days=0.0,
+        )
+    ]
+
+    system = harness.service._build_prompt("Ada", "explain this page", recalled)[0].content
+    lowered = system.lower()
+
+    assert "never contradict" in lowered
+    assert "as its opposite" in lowered
+
+
 async def test_the_memories_command_lists_stored_notes_without_calling_the_model() -> None:
     """The most requested feature in the real transcripts.
 
@@ -725,10 +749,15 @@ async def test_the_prompt_names_the_person_and_forbids_false_capability_claims()
     assert "called Kosisochukwu" in system
     assert "Only use a different name if they explicitly ask" in system
     # The truthful replacement: readable formats are stated, unreadable ones are
-    # still forbidden, and no claim is made about images or presentations.
+    # still forbidden, and the list is generated from the parser so it cannot
+    # drift. Presentations and spreadsheets are now readable, so forbidding them
+    # would be the same class of lie in the other direction.
     assert "can read a document" in system
     assert "PDF" in system
-    assert "cannot read or open images, audio, video, archives" in system
+    assert "PPTX" in system
+    assert "XLSX" in system
+    assert "cannot read or open images, video or archives" in system
+    assert "spreadsheets or presentations" not in system
     assert "Never claim otherwise" in system
     assert "four surfaces" in system
     assert "never say you have no memory across conversations" in system
@@ -918,6 +947,9 @@ async def test_a_fact_stored_on_one_surface_is_recalled_on_another() -> None:
         "/link", "telegram", "42", "Ada", "ada-shared"
     )
     assert "shared space 'ada-shared'" in linked
+    # The copy into the shared namespace runs in the background so linking does
+    # not sit on the relayer's write latency. Wait for it before recalling.
+    await harness.service.await_pending_writes()
 
     await harness.service.answer_command("/link", "cli", "kossi", "Ada", "ada-shared")
 
@@ -951,7 +983,7 @@ async def test_linking_copies_notes_and_leaves_the_old_space_alone() -> None:
 
     reply = await harness.service.answer_command("/link", "telegram", "42", "Ada", "ada-shared")
 
-    assert "copied 1 note" in reply
+    assert "copying 1 note" in reply
     assert "Nothing was removed" in reply
     # The original record still exists in its original namespace.
     originals = [
@@ -1171,3 +1203,66 @@ class _Channel:
 
     async def send_photo(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         return None
+
+
+async def test_name_command_sets_and_reports_display_name() -> None:
+    harness = Harness([])
+
+    # First query current name
+    reply1 = await harness.service.answer_command("/name", "extension", "ext-1", "Visitor")
+    assert "Tell me your name using /name" in reply1 or "Your name is currently set to" in reply1
+
+    # Now set a name
+    reply2 = await harness.service.answer_command("/name", "extension", "ext-1", "Visitor", "Kosisochukwu")
+    assert "I updated your name to Kosisochukwu" in reply2
+
+    # Query again
+    reply3 = await harness.service.answer_command("/name", "extension", "ext-1", "Kosisochukwu", "")
+    assert "Your name is currently set to Kosisochukwu" in reply3
+
+
+async def test_plan_page_tool_multi_step_sequence() -> None:
+    from schemas.page_tool_schema import PageToolSchema
+
+    tools = [
+        PageToolSchema(
+            name="add_to_cart",
+            description="Add item to shopping cart",
+            input_schema={"type": "object", "properties": {"item": {"type": "string"}}},
+        ),
+        PageToolSchema(
+            name="apply_coupon",
+            description="Apply discount coupon",
+            input_schema={"type": "object", "properties": {"code": {"type": "string"}}},
+        ),
+    ]
+
+    class MultiStepLlm(FakeLlm):
+        async def complete(self, messages, *, temperature=0.2, max_tokens=800):  # type: ignore[no-untyped-def]
+            return CompletionSchema(
+                text=json.dumps(
+                    {
+                        "tool": "add_to_cart",
+                        "arguments": {"item": "pizza"},
+                        "explanation": "Add pizza then apply discount",
+                        "steps": [
+                            {"tool": "add_to_cart", "arguments": {"item": "pizza"}, "explanation": "Add pizza"},
+                            {"tool": "apply_coupon", "arguments": {"code": "SAVE10"}, "explanation": "Apply coupon"},
+                        ],
+                    }
+                ),
+                provider="mock",
+                model="mock",
+            )
+
+    harness = Harness([])
+    harness.service._llm = MultiStepLlm([])
+
+    plan = await harness.service.plan_page_tool("Add pizza and use coupon SAVE10", tools)
+    assert plan.tool == "add_to_cart"
+    assert len(plan.steps) == 2
+    assert plan.steps[0].tool == "add_to_cart"
+    assert plan.steps[0].arguments == {"item": "pizza"}
+    assert plan.steps[1].tool == "apply_coupon"
+    assert plan.steps[1].arguments == {"code": "SAVE10"}
+

@@ -1,12 +1,18 @@
-# Ranti
+# Cheta
 
-Ranti is a memory-first chatbot built for the Walrus Session 8 hackathon. It
-keeps one portable memory space per person across four surfaces - a Telegram
-bot, a CLI, a web widget served at `/app`, and a Chromium extension in
-[extension/](extension) - using Walrus Memory through the `memwal` Python SDK.
-It is for developers who need an assistant to still be accurate after weeks of
-use, and for anyone testing whether Walrus Memory holds up under real
-conversation.
+Cheta (the Igbo word for "remember") is a memory-first assistant built for the
+Walrus Session 8 hackathon. It keeps one portable memory space per person across
+four surfaces - a Telegram bot, a CLI, a web widget served at `/app`, and a
+Chromium extension in [extension/](extension) - using Walrus Memory through the
+`memwal` Python SDK. It is for developers who need an assistant to still be
+accurate after weeks of use, and for anyone testing whether Walrus Memory holds
+up under real conversation.
+
+The persona was renamed to Cheta without moving any memory. The Python package,
+the repository and the environment variables keep the original `ranti` name on
+purpose: `MEMWAL_NAMESPACE_PREFIX=ranti` and every memory namespace are
+unchanged, so the rename orphaned nothing. A person who still addresses the bot
+as Ranti is answered naturally.
 
 The problem it solves is memory rot. Walrus Memory is permanent, encrypted and
 portable, but it is append-only, and the Python SDK's high-level recall is plain
@@ -94,6 +100,7 @@ python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install fastapi "uvicorn[standard]" httpx openai pydantic memwal
+python -m pip install pypdf python-docx python-pptx openpyxl PyYAML
 python -m pip install pytest pytest-asyncio import-linter respx
 cp .env.example .env
 ```
@@ -122,6 +129,13 @@ Required environment variables:
   ([src/core/gateways/offline_llm_gateway.py](src/core/gateways/offline_llm_gateway.py)),
   which is loud about being a fallback and is good enough to demonstrate the
   consolidation behaviour but is not a real model.
+- `BOT_NAME` (default `Cheta`) - the assistant's own user-facing name. It never
+  touches the memory namespaces, which stay on `MEMWAL_NAMESPACE_PREFIX`, so
+  renaming cannot orphan a stored memory.
+- `RANTI_MEMORY_RECEIPTS` (default `0`) - internal plumbing such as
+  `1 accepted, persisting` appended to a reply. Off by default so it never
+  reaches a real conversation; turn it on only to show the memory engine at work
+  in a demo.
 - `RANTI_RESUME_AFTER_HOURS` (default `6`) - how long a known user must have
   been away before the first reply of a returning session opens by naming one or
   two facts that are actually stored. The line is service-authored, comes only
@@ -177,16 +191,17 @@ RANTI_LIVE_TESTS=1 MEMWAL_PRIVATE_KEY=... MEMWAL_ACCOUNT_ID=... \
 
 ## The four surfaces
 
-Each surface records which client produced a memory (`origin_surface`) and
-derives its memory namespace from its own identity: the namespace is
+Each surface records which client produced a memory (`origin_surface`) and, by
+default, derives its memory namespace from its own identity:
 `{MEMWAL_NAMESPACE_PREFIX}.user.{surface}-{surface_user_id}` plus an `.idx`
-companion, built in [src/core/config.py](src/core/config.py). Recall and listing
-are scoped to one namespace, so two surfaces are two spaces until a Memory
-Passport moves memories between them. The product goal is one memory space per
-person. `VALID_SURFACES` in
-[src/models/entities/user_model.py](src/models/entities/user_model.py) is
-`("telegram", "cli", "web")`. [docs/surfaces.md](docs/surfaces.md) has the
-per-surface detail, including the extension load steps.
+companion, built in [src/core/config.py](src/core/config.py). A person can join
+those spaces with `/link <handle>`, or prove a new client belongs to them with
+`/pair` (a one-time code from a client already in use), and every client on the
+same handle then reads one memory space. Until a person links, two surfaces are
+deliberately two spaces, which is what keeps existing memories where they are.
+`VALID_SURFACES` in [src/models/entities/user_model.py](src/models/entities/user_model.py)
+is `("telegram", "cli", "web", "extension")`. [docs/surfaces.md](docs/surfaces.md)
+has the per-surface detail, including the extension load steps.
 
 **Telegram.** Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` and
 `PUBLIC_BASE_URL` (a public HTTPS URL), then register the webhook:
@@ -203,16 +218,21 @@ identity is the Telegram chat id. The bot also has:
 
 - **Commands answered without a model call.** `/start` and `/help` print the
   command list, `/memories` lists what is stored for that chat, and `/forget N`
-  retires note N. `POST /chat/turn` dispatches the same commands on the HTTP
-  path, so the CLI and the web widget get them too.
+  retires note N. `/link <handle>` puts clients on one shared space, and `/pair`
+  mints a one-time code to add another client without typing a handle. `POST
+  /chat/turn` dispatches the same commands on the HTTP path, so the CLI, the web
+  widget and the extension get them too.
 - **Inline buttons.** `/start` and `/help` carry a keyboard with "What I know
   about you", "Export my memory" and "Forget one". The export button sends the
   passport as a Telegram document; the forget button opens a numbered keyboard.
   A tap is answered with `answerCallbackQuery` and never stored as a turn.
-- **Local document parsing.** PDF, plain text, markdown, CSV and DOCX
-  attachments up to 20 MB are downloaded and parsed locally, and the extracted
-  text (capped at 12000 characters) is used for that turn. Images, audio, video,
-  archives, spreadsheets and presentations are refused by name.
+- **Local document parsing.** Attachments up to 20 MB are downloaded and parsed
+  locally, and the extracted text (capped at 12000 characters) is used for that
+  turn. The advertised list is generated from the parser's own table, so it
+  cannot drift: PDF, DOCX, PPTX, XLSX/XLSM, XML, JSON, YAML, HTML, CSV/TSV and
+  any plain text or source file. Legacy `.doc`, `.ppt` and `.xls` are refused by
+  name with the format to save as, and images, video, audio and archives are
+  refused. Voice notes are transcribed instead when a transcription key is set.
 
 These Telegram paths are described from the source in this checkout; they were
 not exercised end to end as part of the web-widget verification. See
@@ -256,10 +276,8 @@ at `/app/dashboard.html` is the per-user evidence dashboard.
 targets `POST /chat/turn` with `surface="extension"`. Load it unpacked from
 `chrome://extensions` (Edge: `edge://extensions`) with Developer mode on and
 the `extension/` folder selected. The default API base URL is
-`https://ranti-gkn7.onrender.com`. Note: the current backend
-`VALID_SURFACES` tuple above does not contain `"extension"`, and a turn with
-that surface was observed to return HTTP 500 against the deployed host, so the
-extension cannot complete a turn until the backend accepts it.
+`https://ranti-gkn7.onrender.com`. `VALID_SURFACES` accepts `"extension"`, so a
+turn from the panel is served like any other surface.
 
 ## Tests and the architecture check
 
@@ -285,6 +303,23 @@ fails the default test run. The check enforces:
 
 The contracts live in [pyproject.toml](pyproject.toml), and the test is
 [tests/test_architecture.py](tests/test_architecture.py).
+
+## Health and the per-turn budget
+
+`GET /health` reports liveness plus the numbers that make slowness visible
+instead of a mystery:
+
+- `memory.requests` - every boundary call made to Walrus Memory since process
+  start. A turn that spends several is the turn that trips the relayer's
+  per-minute limit, so this is the count to watch.
+- `memory.degraded` - true once any call was served by a fallback.
+- `performance` - the measured per-turn latency of the last observed turns:
+  `last_ms`, `p50_ms`, `p95_ms`, `max_ms` and `turns_measured`.
+
+Index recovery is a relayer round trip and runs at most once per user per
+process, not on every turn. `/pair` skips recovery entirely because it never
+reads the index, and copying notes into a shared space is a background task, so
+pairing answers immediately instead of sitting on the relayer's write latency.
 
 ## Evidence
 
@@ -315,8 +350,9 @@ populate the leaderboard and print the counters in one command.
 
 - **Namespaces are flat.** A namespace is
   `{MEMWAL_NAMESPACE_PREFIX}.user.{surface}-{surface_user_id}` plus an `.idx`
-  companion. There is no hierarchy and no wildcard query, so per-user isolation
-  is exact but grouping across users is not expressible.
+  companion, or `{MEMWAL_NAMESPACE_PREFIX}.user.shared-{handle}` once a person
+  links clients. There is no hierarchy and no wildcard query, so per-user
+  isolation is exact but grouping across users is not expressible.
 - **Recall has no default relevance floor.** `MemWal.recall` defaults to
   `max_distance=None`. Ranti passes a threshold only for the consolidation
   neighbour search, not for ordinary recall, so a weak match can still be
