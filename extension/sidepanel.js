@@ -199,6 +199,11 @@
       hint: "/name <name>",
       description: "set or update your display name across sessions"
     },
+    {
+      command: "/crawl",
+      hint: "/crawl <url>",
+      description: "crawl public website and extract key links"
+    },
     { command: "/help", description: "this full reference" }
   ];
 
@@ -583,6 +588,7 @@
   function readWebMcpToolsInPage() {
     var mc =
       (typeof document !== "undefined" && document.modelContext) ||
+      (typeof window !== "undefined" && window.modelContext) ||
       (typeof navigator !== "undefined" && navigator.modelContext) ||
       null;
     if (!mc || typeof mc.getTools !== "function") {
@@ -617,9 +623,10 @@
   function callWebMcpToolInPage(name, args) {
     var mc =
       (typeof document !== "undefined" && document.modelContext) ||
+      (typeof window !== "undefined" && window.modelContext) ||
       (typeof navigator !== "undefined" && navigator.modelContext) ||
       null;
-    if (!mc || typeof mc.getTools !== "function" || typeof mc.executeTool !== "function") {
+    if (!mc || typeof mc.getTools !== "function") {
       throw new Error("This page does not expose WebMCP tools.");
     }
     return Promise.resolve(mc.getTools()).then(function (rows) {
@@ -633,7 +640,17 @@
       if (!found) {
         throw new Error("The page no longer registers a tool named " + name + ".");
       }
-      return mc.executeTool(found, args || {});
+      if (typeof found.execute === "function") {
+        return found.execute(args || {});
+      }
+      if (typeof mc.executeTool === "function") {
+        try {
+          return mc.executeTool(found, args || {});
+        } catch (e) {
+          return mc.executeTool(found, JSON.stringify(args || {}));
+        }
+      }
+      throw new Error("No execution mechanism available for tool " + name + ".");
     });
   }
 
@@ -2413,11 +2430,79 @@
       });
   }
 
+  function formatRichTextInto(container, text) {
+    container.textContent = "";
+    if (!text) {
+      return;
+    }
+    var urlRegex = /(https?:\/\/[^\s<>"'()]+)/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = urlRegex.exec(text)) !== null) {
+      var matchIndex = match.index;
+      var rawUrl = match[0];
+      var cleanUrl = rawUrl.replace(/[.,;!?)]+$/, "");
+      var trailing = rawUrl.slice(cleanUrl.length);
+
+      if (matchIndex > lastIndex) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex, matchIndex)));
+      }
+
+      var lower = cleanUrl.toLowerCase();
+      var isDownload =
+        [".apk", ".zip", ".tar.gz", ".pdf", ".exe", ".dmg"].some(function (ext) {
+          return lower.indexOf(ext) !== -1;
+        }) || lower.indexOf("/download") !== -1;
+
+      if (isDownload) {
+        var filename = cleanUrl.split("/").pop().split("?")[0] || "file";
+        var chip = el(
+          "a",
+          {
+            class: "download-link-chip",
+            href: cleanUrl,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            title: cleanUrl
+          },
+          [
+            document.createTextNode("Download " + filename)
+          ]
+        );
+        container.appendChild(chip);
+      } else {
+        var link = el(
+          "a",
+          {
+            class: "chat-link",
+            href: cleanUrl,
+            target: "_blank",
+            rel: "noopener noreferrer"
+          },
+          cleanUrl
+        );
+        container.appendChild(link);
+      }
+
+      if (trailing) {
+        container.appendChild(document.createTextNode(trailing));
+      }
+
+      lastIndex = matchIndex + rawUrl.length;
+    }
+
+    if (lastIndex < text.length) {
+      container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
   function assistantNode(turn, usedMemory) {
     var recalled = asArray(turn.recalled);
+    var bubble = el("div", { class: "bubble" });
+    formatRichTextInto(bubble, turn.reply || "(empty reply)");
     var wrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
       el("div", { class: "who" }, "Cheta"),
-      el("div", { class: "bubble" }, turn.reply || "(empty reply)")
+      bubble
     ]);
 
     /* Show tools if used cleanly */
@@ -3116,7 +3201,7 @@
     var toolName = plan.tool || (steps && steps[0] && steps[0].tool);
     var tool = findPageTool(toolName);
     if (!tool) {
-      return sendChatTurn(wireText);
+      return sendStreamingTurn(wireText);
     }
     var args =
       (plan.arguments && typeof plan.arguments === "object" ? plan.arguments : null) ||
@@ -3215,7 +3300,7 @@
     var isNative = tool.source === "browser";
     var isWebMcp = tool.source === "webmcp";
     if (!isNative && (!recordMcp || recordMcp.status !== "ready" || (!isWebMcp && !recordMcp.endpoint))) {
-      return sendChatTurn(
+      return sendStreamingTurn(
         buildMcpMessage(tool, "(the tool is no longer available on this page)")
       );
     }
@@ -3266,6 +3351,7 @@
         if (cursor.parentNode) {
           cursor.parentNode.removeChild(cursor);
         }
+        formatRichTextInto(element, text);
         if (typeof onDone === "function") {
           onDone();
         }
@@ -3488,7 +3574,7 @@
 
     planning
       .then(function (plan) {
-        if (plan && plan.tool) {
+        if (plan && (plan.tool || (Array.isArray(plan.steps) && plan.steps.length > 0))) {
           return handlePlannedPageTool(plan, wireText);
         }
         return sendStreamingTurn(wireText);
@@ -3656,6 +3742,10 @@
     );
 
     state.baseUrl = normalizeBaseUrl(items[KEYS.baseUrl] || DEFAULT_BASE_URL) || DEFAULT_BASE_URL;
+    var backendSelect = $("backend-url-select");
+    if (backendSelect) {
+      backendSelect.value = state.baseUrl;
+    }
     state.displayName = items[KEYS.displayName] || "";
     if (!state.displayName.trim() || state.displayName.trim().toLowerCase() === "extension visitor") {
       state.displayName = "Friend";
@@ -3896,6 +3986,16 @@
           }
           postTurn("/name " + val, "/name " + val, { planPageTools: false });
         }
+      });
+    }
+
+    var backendSelect = $("backend-url-select");
+    if (backendSelect) {
+      backendSelect.addEventListener("change", function () {
+        var selected = normalizeBaseUrl(backendSelect.value) || DEFAULT_BASE_URL;
+        state.baseUrl = selected;
+        persist(KEYS.baseUrl, selected);
+        checkHealth();
       });
     }
 

@@ -82,6 +82,16 @@
             </div>
             <p class="hint">Identifies you across Telegram, Terminal, and Browser.</p>
           </div>
+          <div class="form-group">
+            <label class="field-label" for="backend-url-select">API Backend Server</label>
+            <div class="input-row">
+              <select id="backend-url-select" class="text-input">
+                <option value="https://ranti-gkn7.onrender.com">Cloud Production (Render)</option>
+                <option value="http://127.0.0.1:8000">Local Dev Server (127.0.0.1:8000)</option>
+              </select>
+            </div>
+            <p class="hint">Switch to local if testing locally, or Cloud Production.</p>
+          </div>
           <div class="form-group pairing-section">
             <h3>Cross-Device Pairing</h3>
             <p class="help-text">Share this memory space with your Telegram bot or CLI client:</p>
@@ -192,6 +202,7 @@
       <form id="composer" class="composer">
         <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Commands"></div>
         <div class="quick-chips" id="quick-chips">
+          <button type="button" class="chip" data-cmd="/crawl ">/crawl</button>
           <button type="button" class="chip" data-cmd="/memories">/memories</button>
           <button type="button" class="chip" data-cmd="/start">/start</button>
           <button type="button" class="chip" data-cmd="/pair">/pair</button>

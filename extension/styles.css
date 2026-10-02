@@ -1168,3 +1168,40 @@ input[readonly] {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+.chat-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-all;
+  transition: color 0.15s ease;
+}
+
+.chat-link:hover {
+  color: #ffffff;
+}
+
+.download-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 2px;
+  padding: 6px 12px;
+  background: rgba(53, 208, 186, 0.12);
+  border: 1px solid rgba(53, 208, 186, 0.35);
+  border-radius: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  word-break: break-all;
+}
+
+.download-link-chip:hover {
+  background: var(--accent);
+  color: #07080b;
+  box-shadow: 0 0 10px rgba(53, 208, 186, 0.4);
+}
+

@@ -96,11 +96,28 @@ def _truncate(text: str, limit: int) -> str:
     return text[:limit].rstrip() + "\n[truncated]"
 
 
+def _normalize_target_url(raw: str) -> str:
+    cleaned = raw.strip(" '\"<>")
+    if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
+        if cleaned.startswith("http:/"):
+            cleaned = "http://" + cleaned[6:].lstrip("/")
+        elif cleaned.startswith("https:/"):
+            cleaned = "https://" + cleaned[7:].lstrip("/")
+        elif cleaned.startswith("http:"):
+            cleaned = "http://" + cleaned[5:].lstrip("/")
+        elif cleaned.startswith("https:"):
+            cleaned = "https://" + cleaned[6:].lstrip("/")
+        else:
+            cleaned = "https://" + cleaned
+    return cleaned
+
+
 async def _fetch_url(
     arguments: dict[str, object], context: ToolContext, gateway: WebGatewayProtocol
 ) -> ToolResultSchema:
-    url = require_string(arguments, "url")
+    url = _normalize_target_url(require_string(arguments, "url"))
     try:
+        gateway.validate_url(url)
         page = await gateway.fetch_page(url, FETCH_URL_MAX_BYTES)
     except BlockedUrlError as error:
         return ToolResultSchema.failure("fetch_url", f"that URL was refused: {error.message}")
@@ -161,7 +178,7 @@ async def _web_search(
 async def _crawl(
     arguments: dict[str, object], context: ToolContext, gateway: WebGatewayProtocol
 ) -> ToolResultSchema:
-    start = require_string(arguments, "url")
+    start = _normalize_target_url(require_string(arguments, "url"))
     max_pages = optional_int(
         arguments, "max_pages", CRAWL_DEFAULT_PAGES, 1, CRAWL_HARD_MAX_PAGES
     )
@@ -190,6 +207,8 @@ async def _crawl(
     refused: list[str] = []
     total = 0
     pages_read = 0
+
+    key_resources: list[str] = []
 
     while queue and pages_read < max_pages and total < CRAWL_MAX_TOTAL_CHARS:
         url = queue.pop(0)
@@ -224,6 +243,12 @@ async def _crawl(
                 break
             sections.append(_truncate(block, remaining))
             total += len(sections[-1])
+        if page.links:
+            for lk in page.links:
+                lk_lower = lk.lower()
+                if any(x in lk_lower for x in (".apk", ".zip", ".tar.gz", ".pdf", ".exe", ".dmg", "/download", "/start", "/signup", "/register", "/app")):
+                    if lk not in key_resources and len(key_resources) < 8:
+                        key_resources.append(lk)
         if follow_links and pages_read < max_pages:
             for link in page.links:
                 if link in visited:
@@ -249,8 +274,11 @@ async def _crawl(
             f" Refused {len(refused)} link(s), including non-public addresses: "
             + "; ".join(refused[:3])
         )
+    footer = ""
+    if key_resources:
+        footer = "\n\nDiscovered Key Action & Download Links:\n" + "\n".join(f"- {lk}" for lk in key_resources)
     return ToolResultSchema.success(
-        "crawl", header + "\n\n" + "\n\n".join(sections)
+        "crawl", header + "\n\n" + "\n\n".join(sections) + footer
     )
 
 

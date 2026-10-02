@@ -575,6 +575,7 @@ class ConversationService:
         tool_summary: str = "",
         memory_degraded: bool = False,
         current_time: str = "",
+        recent_turns: Sequence[TurnModel] | None = None,
     ) -> list[ChatMessageSchema]:
         nonce = secrets.token_hex(8)
         if recalled:
@@ -667,7 +668,13 @@ class ConversationService:
                 "their name, remember it, or let them know they can use /name <your name> to set it. "
             )
 
-        return [
+        proactive_clause = (
+            "PROACTIVE AGENT: When web search, crawl, or tools discover links, files "
+            "(such as APKs, PDFs, downloads), or actions, quote the exact URL clearly and "
+            "proactively ask what next action the person wants you to take. "
+        )
+
+        messages = [
             ChatMessageSchema(
                 role="system",
                 content=(
@@ -677,6 +684,7 @@ class ConversationService:
                     "Answer in at most 120 words unless asked for more. Write plain text only: "
                     "no markdown, no asterisks, no headings. "
                     + name_clause
+                    + proactive_clause
                     + "WHAT YOU CAN AND CANNOT READ: you can read a document someone uploads "
                     f"when it is a {READABLE_FORMATS} file up to 20 MB; the extracted text "
                     "is placed in this conversation and you answer from it. You cannot read "
@@ -703,9 +711,17 @@ class ConversationService:
                     + " "
                     + tool_section
                 ),
-            ),
-            ChatMessageSchema(role="user", content=text),
+            )
         ]
+        if recent_turns:
+            for past in recent_turns:
+                past_user = (past.user_text or "").strip()
+                past_assistant = (past.assistant_text or "").strip()
+                if past_user and past_assistant:
+                    messages.append(ChatMessageSchema(role="user", content=past_user[:800]))
+                    messages.append(ChatMessageSchema(role="assistant", content=past_assistant[:800]))
+        messages.append(ChatMessageSchema(role="user", content=text))
+        return messages
 
     async def handle_turn(
         self,
@@ -789,6 +805,9 @@ class ConversationService:
             else None
         )
 
+        recent_turns = self._turns.list_for_user(user.id, limit=4)
+        recent_turns.reverse()
+
         if on_step is not None:
             try:
                 await on_step("Reasoning over request and deciding tools...", "reasoning")
@@ -814,6 +833,7 @@ class ConversationService:
                 can_send_documents=self._reply_channel is not None and bool(recipient_id),
             ),
             on_step=on_step,
+            recent_turns=recent_turns,
         )
 
         turn = self._turns.create(
@@ -947,6 +967,7 @@ class ConversationService:
         memory_degraded: bool,
         context: ToolContext,
         on_step: Any = None,
+        recent_turns: Sequence[TurnModel] | None = None,
     ) -> tuple[CompletionSchema, list[str], list[str]]:
         """Answer, running any tool the model asks for, bounded and never raising.
 
@@ -964,6 +985,7 @@ class ConversationService:
             tool_summary=self._tools.describe() if self._tools is not None else "",
             memory_degraded=memory_degraded,
             current_time=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
+            recent_turns=recent_turns,
         )
         if self._llm is None:
             raise DependencyUnavailableError("llm", "no language model provider is configured")
