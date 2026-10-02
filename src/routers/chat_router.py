@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import json
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 from core.container import Container, get_container
 from schemas.memory_schema import RecallRequestSchema
@@ -81,6 +84,61 @@ def build_router() -> APIRouter:
             memory_enabled=payload.memory_enabled,
             document_text=doc_text,
             recall_query=payload.recall_query,
+        )
+
+    @router.post("/stream")
+    async def stream_turn(
+        payload: TurnRequestSchema,
+        container: Container = Depends(get_container),
+    ) -> StreamingResponse:
+        """Stream conversational turn with live reasoning steps and completion."""
+        doc_text = payload.document_text
+        if not doc_text and payload.document_base64:
+            fname = payload.document_name or "document.txt"
+            doc_text = _decode_document_content(container, fname, payload.document_base64)
+
+        disp_name = (payload.display_name or "").strip() or "Friend"
+
+        async def event_generator():
+            queue: asyncio.Queue[dict[str, object]] = asyncio.Queue()
+
+            async def step_callback(message: str, kind: str):
+                await queue.put({"type": "step", "message": message, "kind": kind})
+
+            async def run_turn():
+                try:
+                    turn = await container.conversation_service.handle_turn(
+                        surface=payload.surface,
+                        surface_user_id=payload.surface_user_id,
+                        display_name=disp_name,
+                        text=payload.text,
+                        memory_enabled=payload.memory_enabled,
+                        document_text=doc_text,
+                        recall_query=payload.recall_query,
+                        on_step=step_callback,
+                    )
+                    await queue.put({"type": "done", "turn": turn.model_dump()})
+                except Exception as exc:
+                    await queue.put({"type": "error", "message": str(exc)})
+
+            task = asyncio.create_task(run_turn())
+
+            while True:
+                item = await queue.get()
+                yield f"data: {json.dumps(item)}\n\n"
+                if item.get("type") in ("done", "error"):
+                    break
+
+            await task
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
         )
 
     @router.post("/upload", response_model=TurnSchema)

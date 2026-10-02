@@ -3247,44 +3247,216 @@
     );
   }
 
-  /* The /chat/turn call itself, kept apart from postTurn so a page tool can
-   * narrate its result through the same path without being planned again. */
-  function sendChatTurn(wireText) {
-    var toggle = $("memory-toggle");
-    var usedMemory = toggle ? toggle.checked : true;
-    state.memoryEnabled = usedMemory;
-    persist(KEYS.memoryEnabled, usedMemory);
-    var name = (state.displayName || "").trim() || DEFAULT_DISPLAY_NAME;
+  function streamTypewriter(element, text, onDone) {
+    var cursor = el("span", { class: "typing-cursor" });
+    element.textContent = "";
+    element.appendChild(cursor);
+    var i = 0;
+    var speed = Math.max(8, Math.min(22, Math.floor(1000 / (text.length || 1))));
+    var stepSize = text.length > 500 ? 5 : 2;
+
+    function tick() {
+      if (i < text.length) {
+        var chunk = text.slice(i, i + stepSize);
+        i += stepSize;
+        element.insertBefore(document.createTextNode(chunk), cursor);
+        scrollToEnd();
+        window.setTimeout(tick, speed);
+      } else {
+        if (cursor.parentNode) {
+          cursor.parentNode.removeChild(cursor);
+        }
+        if (typeof onDone === "function") {
+          onDone();
+        }
+        scrollToEnd();
+      }
+    }
+    tick();
+  }
+
+  function sendFallbackTurn(payload, streamWrap, reasoningPill, pillText, bubbleNode, usedMemory) {
+    if (pillText) {
+      pillText.textContent = "Reasoning with Walrus memory...";
+    }
     return api("/chat/turn", {
       method: "POST",
       timeoutMs: CHAT_TIMEOUT_MS,
-      body: {
-        surface: SURFACE,
-        surface_user_id: state.surfaceUserId,
-        display_name: name,
-        text: wireText.slice(0, MAX_TEXT),
-        memory_enabled: usedMemory
-      }
+      body: payload
     }).then(function (turn) {
       state.userId = turn.user_id;
       persist(KEYS.userId, turn.user_id);
-      /* A command answered by the server carries no turn id and no recalled
-       * memories, so it is shown as a plain reply rather than a model turn
-       * with an empty "nothing was recalled" note. */
+      if (reasoningPill) {
+        reasoningPill.classList.add("completed");
+      }
+      if (pillText) {
+        pillText.textContent = "Completed reasoning";
+      }
+
       if (turn.command) {
+        if (streamWrap && streamWrap.parentNode) {
+          streamWrap.parentNode.removeChild(streamWrap);
+        }
         appendNode(commandNode(turn.reply || ""));
         record({ role: "command", text: turn.reply || "" });
         setDegraded(false);
         return;
       }
-      appendNode(assistantNode(turn, usedMemory));
-      record({ role: "assistant", turn: turn, usedMemory: usedMemory });
-      setDegraded(Boolean(turn.memory_degraded));
-      var panel = $("memory-panel");
-      if (panel && !panel.classList.contains("hidden")) {
-        loadMemories();
+
+      var toolsUsed = asArray(turn.tool_activity);
+      if (toolsUsed.length) {
+        var toolsContainer = el("div", { class: "tools-used" });
+        toolsUsed.forEach(function (toolName) {
+          toolsContainer.appendChild(el("span", { class: "tool-chip" }, toolName));
+        });
+        streamWrap.insertBefore(toolsContainer, bubbleNode);
       }
+
+      var recalled = asArray(turn.recalled);
+      if (recalled.length) {
+        streamWrap.appendChild(recalledBlock(recalled));
+      }
+
+      bubbleNode.classList.remove("hidden");
+      streamTypewriter(bubbleNode, turn.reply || "(empty reply)", function () {
+        record({ role: "assistant", turn: turn, usedMemory: usedMemory });
+        setDegraded(Boolean(turn.memory_degraded));
+        var panel = $("memory-panel");
+        if (panel && !panel.classList.contains("hidden")) {
+          loadMemories();
+        }
+      });
     });
+  }
+
+  /* The /chat/stream call itself, streaming live reasoning steps and typing out replies. */
+  function sendStreamingTurn(wireText) {
+    var toggle = $("memory-toggle");
+    var usedMemory = toggle ? toggle.checked : true;
+    state.memoryEnabled = usedMemory;
+    persist(KEYS.memoryEnabled, usedMemory);
+    var name = (state.displayName || "").trim() || DEFAULT_DISPLAY_NAME;
+
+    var pillText = el("span", { class: "reasoning-text" }, "Thinking...");
+    var reasoningPill = el("div", { class: "reasoning-pill" }, [
+      el("span", { class: "pulsing-dot" }),
+      pillText
+    ]);
+    var bubbleNode = el("div", { class: "bubble hidden" });
+    var streamWrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
+      el("div", { class: "who" }, "Cheta"),
+      reasoningPill,
+      bubbleNode
+    ]);
+    appendNode(streamWrap);
+    scrollToEnd();
+
+    function updateStep(msg) {
+      if (pillText) {
+        pillText.textContent = msg;
+        scrollToEnd();
+      }
+    }
+
+    function finalizeTurn(turn) {
+      state.userId = turn.user_id;
+      persist(KEYS.userId, turn.user_id);
+      reasoningPill.classList.add("completed");
+      pillText.textContent = "Completed reasoning";
+
+      if (turn.command) {
+        if (streamWrap && streamWrap.parentNode) {
+          streamWrap.parentNode.removeChild(streamWrap);
+        }
+        appendNode(commandNode(turn.reply || ""));
+        record({ role: "command", text: turn.reply || "" });
+        setDegraded(false);
+        return;
+      }
+
+      var toolsUsed = asArray(turn.tool_activity);
+      if (toolsUsed.length) {
+        var toolsContainer = el("div", { class: "tools-used" });
+        toolsUsed.forEach(function (toolName) {
+          toolsContainer.appendChild(el("span", { class: "tool-chip" }, toolName));
+        });
+        streamWrap.insertBefore(toolsContainer, bubbleNode);
+      }
+
+      var recalled = asArray(turn.recalled);
+      if (recalled.length) {
+        streamWrap.appendChild(recalledBlock(recalled));
+      }
+
+      bubbleNode.classList.remove("hidden");
+      streamTypewriter(bubbleNode, turn.reply || "(empty reply)", function () {
+        record({ role: "assistant", turn: turn, usedMemory: usedMemory });
+        setDegraded(Boolean(turn.memory_degraded));
+        var panel = $("memory-panel");
+        if (panel && !panel.classList.contains("hidden")) {
+          loadMemories();
+        }
+      });
+    }
+
+    var payload = {
+      surface: SURFACE,
+      surface_user_id: state.surfaceUserId,
+      display_name: name,
+      text: wireText.slice(0, MAX_TEXT),
+      memory_enabled: usedMemory
+    };
+
+    var streamUrl = baseUrl() + "/chat/stream";
+    return fetch(streamUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (response) {
+        if (!response.ok || !response.body || typeof response.body.getReader !== "function") {
+          return sendFallbackTurn(payload, streamWrap, reasoningPill, pillText, bubbleNode, usedMemory);
+        }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = "";
+
+        function readNext() {
+          return reader.read().then(function (result) {
+            if (result.done) {
+              return;
+            }
+            buffer += decoder.decode(result.value, { stream: true });
+            var parts = buffer.split("\n\n");
+            buffer = parts.pop();
+            parts.forEach(function (block) {
+              var trimmed = block.trim();
+              if (trimmed.startsWith("data: ")) {
+                try {
+                  var data = JSON.parse(trimmed.slice(6));
+                  if (data.type === "step" && data.message) {
+                    updateStep(data.message);
+                  } else if (data.type === "done" && data.turn) {
+                    finalizeTurn(data.turn);
+                  } else if (data.type === "error") {
+                    throw new Error(data.message || "Streaming failed.");
+                  }
+                } catch (e) {
+                  // ignore non-json chunk
+                }
+              }
+            });
+            return readNext();
+          });
+        }
+        return readNext();
+      })
+      .catch(function (err) {
+        if (streamWrap && streamWrap.parentNode) {
+          streamWrap.parentNode.removeChild(streamWrap);
+        }
+        throw err;
+      });
   }
 
   /* Sends one turn. wireText is what the model reads; label is what the
@@ -3319,7 +3491,7 @@
         if (plan && plan.tool) {
           return handlePlannedPageTool(plan, wireText);
         }
-        return sendChatTurn(wireText);
+        return sendStreamingTurn(wireText);
       })
       .catch(function (err) {
         var message =

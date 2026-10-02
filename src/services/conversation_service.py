@@ -718,6 +718,7 @@ class ConversationService:
         recall_query: str | None = None,
         recipient_id: str = "",
         document_text: str | None = None,
+        on_step: Any = None,
     ) -> TurnSchema:
         started = time.monotonic()
         # Commands answer identically on every surface. Before this, they were
@@ -766,6 +767,11 @@ class ConversationService:
         note: str | None = None
         stored_count = 0
         if memory_enabled:
+            if on_step is not None:
+                try:
+                    await on_step("Recalling relevant Walrus memories...", "memory")
+                except Exception:
+                    pass
             # A long document makes a poor embedding query, so a caller that
             # knows the real question (for example the attachment caption) can
             # supply it separately.
@@ -782,6 +788,12 @@ class ConversationService:
             if memory_enabled
             else None
         )
+
+        if on_step is not None:
+            try:
+                await on_step("Reasoning over request and deciding tools...", "reasoning")
+            except Exception:
+                pass
 
         completion, tool_failures, tool_activity = await self._run_agent(
             display_name,
@@ -801,6 +813,7 @@ class ConversationService:
                 # service owns that decision; the tool states it honestly.
                 can_send_documents=self._reply_channel is not None and bool(recipient_id),
             ),
+            on_step=on_step,
         )
 
         turn = self._turns.create(
@@ -817,6 +830,11 @@ class ConversationService:
         contradiction_count = 0
         contradiction_note: str | None = None
         if memory_enabled:
+            if on_step is not None:
+                try:
+                    await on_step("Consolidating facts with Walrus decentralized storage...", "consolidation")
+                except Exception:
+                    pass
             (
                 stored,
                 skipped,
@@ -928,6 +946,7 @@ class ConversationService:
         stored_count: int,
         memory_degraded: bool,
         context: ToolContext,
+        on_step: Any = None,
     ) -> tuple[CompletionSchema, list[str], list[str]]:
         """Answer, running any tool the model asks for, bounded and never raising.
 
@@ -968,12 +987,22 @@ class ConversationService:
                 )
             )
             for call in completion.tool_calls[:MAX_TOOL_CALLS_PER_ROUND]:
+                if on_step is not None:
+                    try:
+                        await on_step(f"Executing tool '{call.name}'...", "tool")
+                    except Exception:
+                        pass
                 if self._tools.get(call.name) is None:
                     failures.append(
                         f"the model asked for a tool named {call.name} that does not exist"
                     )
                 activity.append(call.name)
                 result = await self._tools.execute(call.name, call.parsed_arguments(), context)
+                if on_step is not None:
+                    try:
+                        await on_step(f"Analyzed '{call.name}' result", "tool_result")
+                    except Exception:
+                        pass
                 if not result.ok and result.error:
                     failures.append(result.error)
                 if result.document is not None:
