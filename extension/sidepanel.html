@@ -10,34 +10,41 @@
     <div id="app" class="app">
       <header class="topbar">
         <div class="topbar-row">
-          <h1 class="brand">Cheta</h1>
+          <div class="brand-group">
+            <span class="status-dot" id="conn-dot" title="Connected"></span>
+            <h1 class="brand">Cheta</h1>
+            <span class="badge badge-accent">Agentic</span>
+          </div>
           <div class="topbar-actions">
             <button
-              id="toggle-help"
-              class="btn btn-quiet"
+              id="toggle-profile-panel"
+              class="btn btn-quiet btn-pill"
               type="button"
               aria-expanded="false"
-              aria-controls="help-panel"
+              aria-controls="profile-panel"
+              title="Identity & Device Pairing"
             >
-              Help
+              <span id="profile-name-badge">Profile</span>
             </button>
             <button
               id="toggle-memory-panel"
-              class="btn btn-quiet"
+              class="btn btn-quiet btn-pill"
               type="button"
               aria-expanded="false"
               aria-controls="memory-panel"
+              title="Walrus Stored Memories"
             >
               Memories
             </button>
             <button
-              id="toggle-profile-panel"
-              class="btn btn-quiet"
+              id="toggle-help"
+              class="btn btn-quiet btn-pill"
               type="button"
               aria-expanded="false"
-              aria-controls="profile-panel"
+              aria-controls="help-panel"
+              title="Reference & Commands"
             >
-              <span id="profile-name-badge">Profile</span>
+              Help
             </button>
           </div>
         </div>
@@ -118,36 +125,11 @@
       <section id="page-context" class="page-context" aria-label="The page in the active tab">
         <div class="page-row">
           <button id="use-page" class="btn btn-quiet page-use" type="button">
-            Read page
+            Read Tab
           </button>
-          <span id="page-hint" class="hint page-hint">Reads only the tab you are viewing.</span>
+          <span id="page-hint" class="hint page-hint">Reads the active browser tab.</span>
           <span id="page-status" class="hint page-status" aria-live="polite"></span>
           <span id="page-summary" class="page-summary hidden"></span>
-          <button
-            id="page-actions-toggle"
-            class="btn btn-quiet page-actions-toggle hidden"
-            type="button"
-            aria-expanded="false"
-            aria-controls="page-actions"
-          >
-            Actions
-          </button>
-        </div>
-        <div
-          id="page-actions"
-          class="page-actions hidden"
-          role="group"
-          aria-label="What to do with this page"
-        >
-          <button id="page-action-summarise" class="btn btn-quiet page-action" type="button">
-            Summarise this page
-          </button>
-          <button id="page-action-save" class="btn btn-quiet page-action" type="button">
-            Save the useful facts to my memory
-          </button>
-          <button id="page-action-explain" class="btn btn-quiet page-action" type="button">
-            Explain this to me like I am new to it
-          </button>
         </div>
         <div id="mcp-row" class="page-row mcp-row hidden">
           <span id="mcp-summary" class="hint mcp-summary" aria-live="polite"></span>
@@ -193,15 +175,22 @@
 
       <form id="composer" class="composer">
         <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Commands"></div>
+        <div class="quick-chips" id="quick-chips">
+          <button type="button" class="chip" data-cmd="/memories">/memories</button>
+          <button type="button" class="chip" data-cmd="/start">/start</button>
+          <button type="button" class="chip" data-cmd="/pair">/pair</button>
+          <button type="button" class="chip" data-cmd="/tools">/tools</button>
+          <button type="button" class="chip" data-cmd="/name ">/name</button>
+        </div>
         <label class="sr-only" for="chat-input">Message</label>
         <textarea
           id="chat-input"
           rows="2"
           maxlength="8000"
-          placeholder="Message Cheta"
+          placeholder="Message Cheta (or ask to search, calculate, summarize...)"
         ></textarea>
         <div class="composer-row">
-          <label id="memory-switch" class="switch" for="memory-toggle">
+          <label id="memory-switch" class="switch" for="memory-toggle" title="Persist and recall memories for this turn">
             <input id="memory-toggle" type="checkbox" checked>
             <span>Memory</span>
           </label>

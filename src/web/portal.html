@@ -13,17 +13,27 @@
     <section class="hero" id="hero" aria-label="Cheta">
       <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
       <div class="hero-type">
+        <div class="hero-badge">
+          <span class="pulsing-orbit"></span>
+          <span>Decentralized Agentic Memory</span>
+        </div>
         <h1 class="hero-wordmark">CHETA</h1>
         <p class="hero-tagline">
           <span class="hero-tagline-line">delete the app. keep the memory.</span>
-          <span class="hero-tagline-line">your assistant's memory lives on <span class="accent-underline">Walrus</span>, not in our database</span>
+          <span class="hero-tagline-line">your assistant's memory lives on <a href="https://walrus.xyz" target="_blank" rel="noopener noreferrer" class="accent-underline walrus-link">Walrus</a>, not in our database</span>
         </p>
-        <p class="hero-cta">
+        <div class="hero-cta-group">
           <button class="try-btn try-btn-hero" type="button" id="try-open-hero" aria-haspopup="dialog" aria-controls="try-modal">
-            Try Cheta now
+            ⚡ Try Cheta now
           </button>
-          <span class="hero-cta-note">Four surfaces. One memory space per person.</span>
-        </p>
+          <a class="hero-pill-btn hero-pill-telegram" href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener noreferrer" title="Chat on Telegram">
+            <span>✈️ Telegram Bot</span>
+          </a>
+          <button class="hero-pill-btn hero-pill-ext" type="button" id="hero-ext-btn" title="Get Extension">
+            <span>🧩 <span id="hero-ext-label">Web Extension</span></span>
+          </button>
+        </div>
+        <p class="hero-cta-note">Four surfaces. One memory space per person. Zero data lock-in.</p>
       </div>
     </section>
 
@@ -46,7 +56,7 @@
           <a href="#surfaces">Surfaces</a>
           <a href="#pairing">Pairing</a>
           <a href="#honesty">Honesty</a>
-          <a href="/app/evidence.html">Evidence</a>
+          <a href="/app/evidence.html" target="_blank" rel="noopener noreferrer">Evidence ↗</a>
           <button class="try-btn try-btn-nav" type="button" id="try-open-nav" aria-haspopup="dialog" aria-controls="try-modal">
             Try Cheta now
           </button>
@@ -237,7 +247,7 @@
               you back to every other client.
             </p>
             <p class="card-action">
-              <a href="https://t.me/Kosi_test_walrus1_bot" rel="noopener">Open the bot</a>
+              <a href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener noreferrer">Open the bot ↗</a>
             </p>
           </article>
 
@@ -263,8 +273,8 @@ PYTHONPATH=src python -m cli</code></pre>
               memory off. A per-user evidence dashboard sits beside it.
             </p>
             <p class="card-action">
-              <a href="/app/index.html">Open the widget</a>
-              <a href="/app/dashboard.html">Open the dashboard</a>
+              <a href="/app/index.html" target="_blank" rel="noopener noreferrer">Open the widget ↗</a>
+              <a href="/app/dashboard.html" target="_blank" rel="noopener noreferrer">Open the dashboard ↗</a>
             </p>
           </article>
 
@@ -272,17 +282,16 @@ PYTHONPATH=src python -m cli</code></pre>
             <p class="card-label">Surface 04</p>
             <h3 class="card-title">Browser extension</h3>
             <p class="card-desc">
-              A Manifest V3 side panel for Chrome, Edge and Firefox. It shows
-              the exact memories recalled under every reply, and it can read the
-              page you are on when you click, then summarise it, save its facts,
-              or explain it.
+              A Manifest V3 side panel for Chrome, Edge, and Firefox. It shows
+              the exact memories recalled under every reply, executes native DOM
+              browser tools (find, highlight, scroll, extract links), and runs
+              multi-step tasks across tabs.
             </p>
-            <div id="extension-cta">
-              <a class="btn" href="/app/extension-help.html">Install instructions</a>
+            <div id="extension-cta" class="extension-cta-row">
+              <a class="btn" href="/app/extension-help.html" target="_blank" rel="noopener noreferrer">Install instructions ↗</a>
             </div>
             <p class="fineprint">
-              The extension is not published to any store yet, so this opens
-              unpacked install instructions rather than a store listing.
+              One-click download available for your detected browser. Opens side panel with native tool execution.
             </p>
           </article>
         </div>
@@ -348,11 +357,12 @@ PYTHONPATH=src python -m cli</code></pre>
     <footer class="footer">
       <div class="footer-inner">
         <nav class="footer-links" aria-label="Project links">
-          <a href="https://github.com/Ksschkw/ranti" rel="noopener">GitHub repository</a>
-          <a href="https://ranti-gkn7.onrender.com" rel="noopener">Live API</a>
-          <a href="/app/intro.html">3D intro</a>
+          <a href="https://github.com/Ksschkw/ranti" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a>
+          <a href="https://ranti-gkn7.onrender.com" target="_blank" rel="noopener noreferrer">Live API ↗</a>
+          <a href="/app/evidence.html" target="_blank" rel="noopener noreferrer">Live Evidence ↗</a>
+          <a href="/app/intro.html" target="_blank" rel="noopener noreferrer">3D intro ↗</a>
         </nav>
-        <p class="footer-note">Built on Walrus Memory</p>
+        <p class="footer-note">Built on <a href="https://walrus.xyz" target="_blank" rel="noopener noreferrer" class="walrus-link">Walrus Memory</a></p>
       </div>
     </footer>
 
@@ -367,9 +377,9 @@ PYTHONPATH=src python -m cli</code></pre>
         tabindex="-1"
       >
         <div class="modal-head">
-          <p class="modal-kicker">Try it out</p>
+          <p class="modal-kicker">Try Cheta</p>
           <h2 class="modal-title" id="try-modal-title">
-            Four surfaces, one memory space per person.
+            Pick Your Preferred Surface
           </h2>
           <button class="modal-close" type="button" id="try-modal-close" aria-label="Close">
             Close
@@ -378,56 +388,80 @@ PYTHONPATH=src python -m cli</code></pre>
 
         <p class="modal-lede">
           Start on whichever surface you already have open. Every one of them
-          writes to the same memory space, so the notes follow you.
+          writes to the same Walrus memory space, so your memories follow you everywhere.
         </p>
 
         <ul class="surfaces">
-          <li class="surface">
+          <li class="surface surface-featured surface-telegram">
+            <div class="surface-badge">
+              <span class="dot-online"></span>
+              <span>⚡ Quickest Path • Zero Setup</span>
+            </div>
             <div class="surface-head">
-              <h3 class="surface-name">
-                Telegram <span class="surface-tag">Quickest path</span>
-              </h3>
-              <a class="surface-action" href="https://t.me/Kosi_test_walrus1_bot" rel="noopener">Open the bot</a>
+              <div class="surface-title-group">
+                <svg class="surface-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                <h3 class="surface-name">Telegram Bot</h3>
+              </div>
+              <a class="btn btn-accent surface-action" href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener noreferrer">
+                Open @Kosi_test_walrus1_bot ↗
+              </a>
             </div>
             <p class="surface-desc">
-              The only surface that works instantly with nothing installed: open
-              the bot and send <code>/start</code>.
+              Instant conversational agent with real-time Walrus Memory persistence, voice note transcription, document analysis, and scheduled reminders. Open and send <code>/start</code>.
+            </p>
+          </li>
+
+          <li class="surface surface-featured surface-extension">
+            <div class="surface-badge">
+              <span class="dot-online"></span>
+              <span>🧩 Deepest In-Browser Companion</span>
+            </div>
+            <div class="surface-head">
+              <div class="surface-title-group">
+                <svg class="surface-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                <h3 class="surface-name">Browser Extension</h3>
+              </div>
+              <div id="modal-extension-cta" class="extension-oneclick-container"></div>
+            </div>
+            <p class="surface-desc">
+              Manifest V3 side panel for Chrome, Firefox, and Edge. Reads active tabs on demand, runs page tools (highlight, find, links, scroll), and recalls memories per turn.
+            </p>
+            <div id="modal-extension-guide" class="extension-guide-box hidden">
+              <p class="guide-step"><strong>1.</strong> Extract the downloaded package.</p>
+              <p class="guide-step"><strong>2.</strong> Go to <code id="browser-ext-url">chrome://extensions</code> and toggle <em>Developer mode</em>.</p>
+              <p class="guide-step"><strong>3.</strong> Click <em>Load unpacked</em> and select the folder. You are ready!</p>
+            </div>
+          </li>
+
+          <li class="surface">
+            <div class="surface-head">
+              <div class="surface-title-group">
+                <svg class="surface-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <h3 class="surface-name">Web Widget & Evidence</h3>
+              </div>
+              <div class="surface-actions-row">
+                <a class="surface-action" href="/app/index.html" target="_blank" rel="noopener noreferrer">Open Web Widget ↗</a>
+                <a class="surface-action" href="/app/evidence.html" target="_blank" rel="noopener noreferrer">Live Evidence ↗</a>
+              </div>
+            </div>
+            <p class="surface-desc">
+              Browser chat with per-turn memory switches, live recalled notes, tool palette, and counterfactual replies.
             </p>
           </li>
 
           <li class="surface">
             <div class="surface-head">
-              <h3 class="surface-name">Web widget</h3>
-              <a class="surface-action" href="/app/index.html">Open the chat page</a>
+              <div class="surface-title-group">
+                <svg class="surface-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                <h3 class="surface-name">Command Line (CLI)</h3>
+              </div>
+              <button class="copy surface-copy" type="button" id="copy-modal-cli">Copy Command</button>
             </div>
             <p class="surface-desc">
-              The chat page in the browser at <code>/app/index.html</code>. No
-              install, no account, no extension.
-            </p>
-          </li>
-
-          <li class="surface">
-            <div class="surface-head">
-              <h3 class="surface-name">Command line</h3>
-              <button class="copy surface-copy" type="button" id="copy-modal-cli">Copy</button>
-            </div>
-            <p class="surface-desc">
-              Install the package, then run the terminal client against the API.
+              Terminal client communicating with the API over HTTP, with interactive multi-step tools and file analysis.
             </p>
             <pre class="code modal-code" id="modal-cli-command"><code>python -m pip install -e .
 PYTHONPATH=src python -m cli</code></pre>
-          </li>
-
-          <li class="surface">
-            <div class="surface-head">
-              <h3 class="surface-name">Browser extension</h3>
-              <a class="surface-action" href="/app/extension-help.html">Install instructions</a>
-            </div>
-            <p class="surface-desc">
-              A side panel for Chrome, Edge and Firefox. It is not in any browser
-              store, so it has to be loaded unpacked, and the instructions show
-              exactly how.
-            </p>
           </li>
         </ul>
 

@@ -55,7 +55,7 @@
   var CHAT_TIMEOUT_MS = 90000;
   var READ_TIMEOUT_MS = 30000;
   var HEALTH_TIMEOUT_MS = 12000;
-  var DEFAULT_DISPLAY_NAME = "";
+  var DEFAULT_DISPLAY_NAME = "Friend";
 
   /* The transport caps the whole turn text at 8000 characters, so page text is
    * kept well below that to leave room for the untrusted-data framing and the
@@ -448,6 +448,15 @@
             if (data && typeof data === "object") {
               detail = data.detail || data.error;
             }
+            if (Array.isArray(detail)) {
+              detail = detail
+                .map(function (d) {
+                  return d && d.msg ? d.msg : (typeof d === "object" ? JSON.stringify(d) : String(d));
+                })
+                .join("; ");
+            } else if (detail && typeof detail === "object") {
+              detail = JSON.stringify(detail);
+            }
             throw new Error(detail || "The server returned HTTP " + response.status + ".");
           }
           return data;
@@ -722,24 +731,9 @@
     return title + " - " + host + " - " + count + " characters" + suffix;
   }
 
-  function setPageActionsOpen(open) {
-    var zone = $("page-actions");
-    var toggle = $("page-actions-toggle");
-    if (zone) {
-      if (open) {
-        zone.classList.remove("hidden");
-      } else {
-        zone.classList.add("hidden");
-      }
-    }
-    if (toggle) {
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    }
-  }
+  function setPageActionsOpen(open) {}
 
-  function collapsePageActions() {
-    setPageActionsOpen(false);
-  }
+  function collapsePageActions() {}
 
   function hidePageHint() {
     var hint = $("page-hint");
@@ -3502,10 +3496,10 @@
     var input = $("profile-name-input");
     var name = (state.displayName || "").trim();
     if (badge) {
-      badge.textContent = name || "Profile";
+      badge.textContent = (name && name.toLowerCase() !== "friend") ? name : "Profile";
     }
     if (input && document.activeElement !== input) {
-      input.value = name;
+      input.value = (name && name.toLowerCase() !== "friend") ? name : "";
     }
   }
 
@@ -3518,9 +3512,9 @@
 
     state.baseUrl = normalizeBaseUrl(items[KEYS.baseUrl] || DEFAULT_BASE_URL) || DEFAULT_BASE_URL;
     state.displayName = items[KEYS.displayName] || "";
-    if (state.displayName.trim().toLowerCase() === "extension visitor") {
-      state.displayName = "";
-      persist(KEYS.displayName, "");
+    if (!state.displayName.trim() || state.displayName.trim().toLowerCase() === "extension visitor") {
+      state.displayName = "Friend";
+      persist(KEYS.displayName, "Friend");
     }
     updateProfileBadge();
     state.userId = items[KEYS.userId] || "";
@@ -3633,11 +3627,24 @@
       usePageButton.addEventListener("click", usePage);
     }
 
-    var actionsToggle = $("page-actions-toggle");
-    var actionsZone = $("page-actions");
-    if (actionsToggle && actionsZone) {
-      actionsToggle.addEventListener("click", function () {
-        setPageActionsOpen(actionsZone.classList.contains("hidden"));
+    var chipsContainer = $("quick-chips");
+    if (chipsContainer) {
+      chipsContainer.addEventListener("click", function (evt) {
+        var btn = evt.target && evt.target.closest ? evt.target.closest("button.chip") : null;
+        if (!btn) {
+          return;
+        }
+        var cmd = btn.getAttribute("data-cmd") || "";
+        var input = $("chat-input");
+        if (!input) {
+          return;
+        }
+        if (cmd.endsWith(" ")) {
+          input.value = cmd;
+          input.focus();
+        } else {
+          postTurn(cmd, cmd);
+        }
       });
     }
 
@@ -3657,15 +3664,6 @@
         mcpToggle.setAttribute("aria-expanded", open ? "true" : "false");
       });
     }
-
-    Object.keys(PAGE_ACTION_IDS).forEach(function (id) {
-      var button = $(id);
-      if (button) {
-        button.addEventListener("click", function () {
-          runPageAction(PAGE_ACTION_IDS[id]);
-        });
-      }
-    });
 
     var helpButton = $("toggle-help");
     var helpPanel = $("help-panel");

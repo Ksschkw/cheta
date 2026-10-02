@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class TurnRequestSchema(BaseModel):
     surface: str = Field(min_length=1, max_length=32)
     surface_user_id: str = Field(min_length=1, max_length=128)
-    display_name: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(default="Friend", max_length=128)
     text: str = Field(min_length=1, max_length=8000)
     memory_enabled: bool = True
     document_text: str | None = None
@@ -20,7 +20,7 @@ class TurnRequestSchema(BaseModel):
 class DocumentUploadSchema(BaseModel):
     surface: str = Field(default="web", min_length=1, max_length=32)
     surface_user_id: str = Field(min_length=1, max_length=128)
-    display_name: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(default="Friend", max_length=128)
     filename: str = Field(min_length=1, max_length=256)
     content_base64: str
     question: str = Field(default="", max_length=8000)

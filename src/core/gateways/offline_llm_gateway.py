@@ -273,6 +273,8 @@ class OfflineLlm:
         elif ADJUDICATION_MARKER in system:
             existing, _, candidate = user_text.partition("CANDIDATE:")
             text = adjudicate(existing.replace("REMEMBERED:", "", 1), candidate)
+        elif "choose at most one tool" in system:
+            text = json.dumps({"tool": None, "arguments": {}, "explanation": "", "steps": []})
         else:
             text = self._reply(system, user_text)
 

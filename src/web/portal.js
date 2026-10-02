@@ -18,58 +18,138 @@
 
   function detectBrowser() {
     var ua = navigator.userAgent || "";
-    var isEdge = /Edg\//.test(ua) || /EdgA\//.test(ua) || /EdgiOS\//.test(ua);
-    var isOpera = /OPR\//.test(ua) || /OPiOS\//.test(ua);
-    var isFirefox = /Firefox\//.test(ua) || /FxiOS\//.test(ua);
-    var isChrome = !isEdge && !isOpera && /Chrome\//.test(ua);
+    var isEdge = /Edg\//i.test(ua) || /EdgA\//i.test(ua) || /EdgiOS\//i.test(ua);
+    var isOpera = /OPR\//i.test(ua) || /OPiOS\//i.test(ua);
+    var isFirefox = /Firefox\//i.test(ua) || /FxiOS\//i.test(ua);
+    var isBrave = Boolean(navigator.brave && typeof navigator.brave.isBrave === "function");
+    var isChrome = !isEdge && !isOpera && !isBrave && /Chrome\//i.test(ua);
 
-    if (isFirefox) {
-      return "firefox";
-    }
-    if (isEdge || isChrome) {
-      return "chromium";
-    }
+    if (isFirefox) return "firefox";
+    if (isEdge) return "edge";
+    if (isBrave) return "brave";
+    if (isOpera) return "opera";
+    if (isChrome) return "chrome";
+    if (/WebKit|Safari|Chromium/i.test(ua)) return "chromium";
     return "other";
   }
 
-  function makeButton(label) {
-    var link = document.createElement("a");
-    link.className = "btn";
-    link.href = HELP_URL;
-    link.textContent = label;
-    return link;
+  function getBrowserMeta() {
+    var b = detectBrowser();
+    if (b === "firefox") {
+      return {
+        name: "Firefox",
+        downloadUrl: "/app/downloads/cheta-firefox.xpi",
+        filename: "cheta-firefox.xpi",
+        instructionsUrl: "about:debugging#/runtime/this-firefox",
+        urlName: "about:debugging"
+      };
+    }
+    if (b === "edge") {
+      return {
+        name: "Edge",
+        downloadUrl: "/app/downloads/cheta-chrome.zip",
+        filename: "cheta-chrome.zip",
+        instructionsUrl: "edge://extensions",
+        urlName: "edge://extensions"
+      };
+    }
+    if (b === "brave") {
+      return {
+        name: "Brave",
+        downloadUrl: "/app/downloads/cheta-chrome.zip",
+        filename: "cheta-chrome.zip",
+        instructionsUrl: "brave://extensions",
+        urlName: "brave://extensions"
+      };
+    }
+    if (b === "opera") {
+      return {
+        name: "Opera",
+        downloadUrl: "/app/downloads/cheta-chrome.zip",
+        filename: "cheta-chrome.zip",
+        instructionsUrl: "opera://extensions",
+        urlName: "opera://extensions"
+      };
+    }
+    return {
+      name: "Chrome",
+      downloadUrl: "/app/downloads/cheta-chrome.zip",
+      filename: "cheta-chrome.zip",
+      instructionsUrl: "chrome://extensions",
+      urlName: "chrome://extensions"
+    };
+  }
+
+  function makeDownloadButton(meta, customClass) {
+    var btn = document.createElement("a");
+    btn.className = "btn btn-accent " + (customClass || "");
+    btn.href = meta.downloadUrl;
+    btn.setAttribute("download", meta.filename);
+    btn.innerHTML = "<span>Install for " + meta.name + "</span> <span class=\"ext-icon\">📥</span>";
+    return btn;
   }
 
   function renderExtensionCta() {
+    var meta = getBrowserMeta();
+
+    // 1. Hero extension pill label
+    var heroExtLabel = document.getElementById("hero-ext-label");
+    if (heroExtLabel) {
+      heroExtLabel.textContent = "Extension for " + meta.name;
+    }
+    var heroExtBtn = document.getElementById("hero-ext-btn");
+    if (heroExtBtn) {
+      heroExtBtn.addEventListener("click", function () {
+        openModal();
+        var extCard = document.querySelector(".surface-extension");
+        if (extCard) {
+          extCard.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    }
+
+    // 2. Section 04 card
     var host = document.getElementById("extension-cta");
-    if (!host) {
-      return;
+    if (host) {
+      host.textContent = "";
+      var btn = makeDownloadButton(meta, "btn-oneclick");
+      host.appendChild(btn);
+
+      var guideLink = document.createElement("a");
+      guideLink.className = "btn btn-quiet";
+      guideLink.href = HELP_URL;
+      guideLink.target = "_blank";
+      guideLink.rel = "noopener noreferrer";
+      guideLink.textContent = "Step-by-step Guide ↗";
+      host.appendChild(guideLink);
     }
 
-    var browser = detectBrowser();
-    host.textContent = "";
+    // 3. Modal extension container
+    var modalHost = document.getElementById("modal-extension-cta");
+    if (modalHost) {
+      modalHost.textContent = "";
+      var mBtn = makeDownloadButton(meta, "btn-oneclick");
+      mBtn.addEventListener("click", function () {
+        var guide = document.getElementById("modal-extension-guide");
+        if (guide) {
+          guide.classList.remove("hidden");
+        }
+      });
+      modalHost.appendChild(mBtn);
 
-    if (browser === "chromium") {
-      host.appendChild(makeButton("Add to Chrome"));
-      return;
+      var mHelp = document.createElement("a");
+      mHelp.className = "btn btn-quiet";
+      mHelp.href = HELP_URL;
+      mHelp.target = "_blank";
+      mHelp.rel = "noopener noreferrer";
+      mHelp.textContent = "Guide ↗";
+      modalHost.appendChild(mHelp);
     }
 
-    if (browser === "firefox") {
-      host.appendChild(makeButton("Add to Firefox"));
-      return;
+    var extUrlEl = document.getElementById("browser-ext-url");
+    if (extUrlEl) {
+      extUrlEl.textContent = meta.urlName;
     }
-
-    var note = document.createElement("p");
-    note.className = "alt-note";
-    note.textContent =
-      "Other browser. The extension ships as a Chromium side panel and a " +
-      "Firefox temporary add-on, so this browser is not supported yet.";
-    host.appendChild(note);
-
-    var link = document.createElement("a");
-    link.href = HELP_URL;
-    link.textContent = "Read the install notes";
-    host.appendChild(link);
   }
 
   function legacyCopy(text) {

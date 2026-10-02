@@ -111,11 +111,50 @@ a:hover {
   gap: 10px;
 }
 
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--accent);
+}
+
 .brand {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.2px;
   color: var(--text);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+}
+
+.badge-accent {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.btn-pill {
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .status {
@@ -338,27 +377,49 @@ input[readonly] {
 .msg {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .msg.user {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 8px 10px;
+  align-self: flex-end;
+  width: 92%;
+  background: #151822;
+  border: 1px solid #272e3f;
+  border-radius: 12px 12px 2px 12px;
+  padding: 9px 12px;
+}
+
+.msg.model {
+  align-self: flex-start;
+  width: 100%;
+  background: #0e1117;
+  border: 1px solid #1c2230;
+  border-left: 2px solid var(--accent);
+  border-radius: 12px 12px 12px 2px;
+  padding: 10px 12px;
 }
 
 .msg.error {
-  border: 1px solid var(--line);
+  border: 1px solid #4a2222;
+  border-left: 2px solid #e05252;
   border-radius: var(--radius);
-  padding: 8px 10px;
-  background: var(--surface);
+  padding: 9px 12px;
+  background: #171012;
 }
 
 .msg.context {
-  border-left: 1px solid var(--muted);
-  padding-left: 9px;
+  border-left: 2px solid var(--muted);
+  padding-left: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.msg.command {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
 }
 
 .msg.command .bubble {
@@ -791,6 +852,38 @@ input[readonly] {
   border-top: 1px solid var(--line);
   padding: 9px 12px;
   padding-bottom: calc(9px + env(safe-area-inset-bottom, 0px));
+}
+
+.quick-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 0 2px 0;
+}
+
+.quick-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .composer textarea {

@@ -932,3 +932,170 @@ body.modal-open {
     animation: none !important;
   }
 }
+
+/* ------------------------------------------------------------- portal revamp elements */
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #202738;
+  background: #0d1017;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.pulsing-orbit {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  display: inline-block;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.hero-cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.hero-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  background: #0f131c;
+  border: 1px solid #252e42;
+  color: var(--text);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+}
+
+.hero-pill-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  color: var(--accent);
+}
+
+.hero-pill-ext {
+  color: var(--accent);
+}
+
+.walrus-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.surface-featured {
+  background: #0e121a !important;
+  border: 1px solid #232d40 !important;
+  position: relative;
+}
+
+.surface-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.dot-online {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.surface-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.surface-icon {
+  stroke: var(--accent);
+  flex-shrink: 0;
+}
+
+.surface-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.extension-oneclick-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-oneclick {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+.extension-guide-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #080a0f;
+  border: 1px solid #1c2434;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #9aa4b8;
+}
+
+.guide-step {
+  margin: 4px 0;
+}
+
+.guide-step strong {
+  color: var(--accent);
+}
+
+.extension-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+

@@ -72,10 +72,11 @@ def build_router() -> APIRouter:
             fname = payload.document_name or "document.txt"
             doc_text = _decode_document_content(container, fname, payload.document_base64)
 
+        disp_name = (payload.display_name or "").strip() or "Friend"
         return await container.conversation_service.handle_turn(
             surface=payload.surface,
             surface_user_id=payload.surface_user_id,
-            display_name=payload.display_name,
+            display_name=disp_name,
             text=payload.text,
             memory_enabled=payload.memory_enabled,
             document_text=doc_text,
@@ -95,10 +96,11 @@ def build_router() -> APIRouter:
             payload.question.strip()
             or f"Please read the attached {payload.filename} and summarize its key points."
         )
+        disp_name = (payload.display_name or "").strip() or "Friend"
         return await container.conversation_service.handle_turn(
             surface=payload.surface,
             surface_user_id=payload.surface_user_id,
-            display_name=payload.display_name,
+            display_name=disp_name,
             text=user_query,
             memory_enabled=payload.memory_enabled,
             document_text=extracted_text,
