@@ -1426,7 +1426,12 @@
         ]
       );
       item.addEventListener("click", function () {
-        openMcpTool(tool);
+        collapseMcpTools();
+        var chatInput = $("chat-input");
+        if (chatInput) {
+          chatInput.value = "Use " + tool.name + " on this page to ";
+          chatInput.focus();
+        }
       });
       box.appendChild(item);
     });
@@ -1744,8 +1749,6 @@
       risk === "state-changing" ? "Confirm and run" : "Run tool"
     );
     if (risk === "state-changing") {
-      // A run that can change state or spend money is inert until the person
-      // ticks the confirmation, so a stray tap cannot trigger it.
       run.disabled = true;
     }
     box.appendChild(run);
@@ -1763,17 +1766,17 @@
         });
       }
     }
-    box.classList.remove("hidden");
     run.addEventListener("click", runMcpTool);
     var cancel = $("mcp-cancel");
     if (cancel) {
       cancel.addEventListener("click", collapseMcpArgs);
     }
-    var words = $("mcp-request");
-    if (words) {
-      words.focus();
-    } else {
-      area.focus();
+
+    // Rather than forcing a modal onto the user, drive interaction through chat!
+    var chatInput = $("chat-input");
+    if (chatInput) {
+      chatInput.value = "Use the " + tool.name + " tool on this page" + (tool.description ? " to " + tool.description.toLowerCase() : "");
+      chatInput.focus();
     }
   }
 
@@ -4101,6 +4104,26 @@
       });
   }
 
+  function isPageToolsQuery(text) {
+    var t = (text || "").toLowerCase().trim();
+    if (!t) {
+      return false;
+    }
+    if (/\b(no\s+tools|what\s+tools|list\s+tools|show\s+tools|which\s+tools|available\s+tools|tools\s+here)\b/i.test(t)) {
+      return true;
+    }
+    if (/\bwhat\s+(can|do)\s+(you|we|i)\s+do\s+(on|with|in|for)?\s*(this|the)?\s*(site|page|tab|website)?\b/i.test(t)) {
+      return true;
+    }
+    if (/\bwhat\s+(can|do)\s+(you|we|i)\s+do\s+here\b/i.test(t)) {
+      return true;
+    }
+    if (/\bwhat\s+tools\s+(are\s+)?(on|in)?\s*(this|the)?\s*(site|page|tab)?\b/i.test(t)) {
+      return true;
+    }
+    return false;
+  }
+
   /* Sends one turn. wireText is what the model reads; label is what the
    * transcript shows, so a long page block never becomes a wall of text in the
    * chat view. When a page with tools is read, the message is first offered to
@@ -4119,6 +4142,47 @@
     appendNode(userNode(label));
     record({ role: "user", text: label });
     setBusy(true);
+
+    if (opts.planPageTools !== false && isPageToolsQuery(label)) {
+      var tools = currentPageTools();
+      var host = (state.page && state.page.hostname) || state.pageOrigin || "this site";
+      var pageTitle = (state.page && state.page.title) ? " (" + state.page.title + ")" : "";
+      var replyText = "";
+      if (tools.length) {
+        var lines = [
+          "On " + host + pageTitle + ", I have " + tools.length + " tools available that I can execute directly on the active page:\n"
+        ];
+        tools.forEach(function (t) {
+          var desc = t.description ? ": " + t.description : "";
+          lines.push("- " + t.name + desc);
+        });
+        lines.push("\nTell me what you would like to do in plain words (e.g. 'Add pepperoni to the pizza', 'Set size to large'), and I will run it directly on the page.");
+        replyText = lines.join("\n");
+      } else if (state.page) {
+        replyText = "I have read the page " + host + pageTitle + ". It does not register custom in-page WebMCP tools, but I can read and summarize the text, save key facts to your Walrus memory, search the web, or extract links for you.";
+      } else {
+        replyText = "I haven't read the active tab yet. Click 'Read Tab' above or tell me what to do on the page, and I will read and interact with it for you.";
+      }
+
+      var streamWrap = el("div", { class: "msg assistant" }, [
+        el("div", { class: "who" }, "Cheta"),
+        el("div", { class: "bubble" }, replyText)
+      ]);
+      appendNode(streamWrap);
+      record({
+        role: "assistant",
+        turn: {
+          reply: replyText,
+          user_id: state.userId || "",
+          recalled: [],
+          tool_activity: []
+        },
+        usedMemory: state.memoryEnabled
+      });
+      saveCurrentSession();
+      setBusy(false);
+      return;
+    }
 
     var planning =
       opts.planPageTools === false
@@ -4187,7 +4251,25 @@
         updateProfileBadge();
       }
     }
-    postTurn(value, value);
+
+    var wire = value;
+    if (state.page) {
+      var tools = currentPageTools();
+      var toolDescriptions = tools.slice(0, 15).map(function (t) {
+        return t.name + (t.description ? ": " + t.description : "");
+      });
+      var contextHeader =
+        "[Active Tab: " +
+        (state.page.title || "Untitled") +
+        " (" +
+        (state.page.hostname || state.pageOrigin || "") +
+        ")" +
+        (toolDescriptions.length ? " | Page Tools: " + toolDescriptions.join("; ") : "") +
+        "]\n";
+      wire = contextHeader + value;
+    }
+
+    postTurn(wire, value);
   }
 
   /* -------------------------------------------------------------- boot */
@@ -4535,19 +4617,10 @@
     }
 
     var mcpToggle = $("mcp-tools-toggle");
-    var mcpTools = $("mcp-tools");
-    if (mcpToggle && mcpTools) {
+    if (mcpToggle) {
       mcpToggle.addEventListener("click", function () {
-        var open = mcpTools.classList.contains("hidden");
-        if (open) {
-          /* Opening the list is using the notice, so it stops auto-hiding. */
-          clearMcpNoticeTimer();
-          refreshPageTools();
-          mcpTools.classList.remove("hidden");
-        } else {
-          mcpTools.classList.add("hidden");
-        }
-        mcpToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        var query = "What tools are available on this page?";
+        postTurn(query, query);
       });
     }
 

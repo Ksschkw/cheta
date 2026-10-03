@@ -705,9 +705,10 @@ class ConversationService:
                     + "WHAT YOU CAN AND CANNOT READ: you can read a document someone uploads "
                     f"when it is a {READABLE_FORMATS} file up to 20 MB; the extracted text "
                     "is placed in this conversation and you answer from it. You cannot read "
-                    "or open images, video or archives directly, and you cannot access, "
-                    "connect to or act on any external "
-                    "account such as email or Google. "
+                    "or open images, video or archives directly. When the user is viewing a "
+                    "web page or asking what you can do on a site or page, answer from the "
+                    "active page context and available page tools. Do not recite external "
+                    "account limitations unless specifically asked about them. "
                     + web_clause
                     + "Never claim otherwise, not even to "
                     "be helpful. "
