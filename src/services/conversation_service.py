@@ -577,6 +577,7 @@ class ConversationService:
         memory_degraded: bool = False,
         current_time: str = "",
         recent_turns: Sequence[TurnModel] | None = None,
+        surface: str = "",
     ) -> list[ChatMessageSchema]:
         nonce = secrets.token_hex(8)
         if recalled:
@@ -675,6 +676,20 @@ class ConversationService:
             "proactively ask what next action the person wants you to take. "
         )
 
+        surface_clause = ""
+        if surface:
+            surface_map = {
+                "telegram": "Telegram",
+                "extension": "browser extension sidepanel",
+                "cli": "terminal CLI",
+                "web": "web portal",
+            }
+            client_name = surface_map.get(surface.lower(), surface)
+            surface_clause = (
+                f"CURRENT SURFACE: You are interacting with {display_name} right now on {client_name}. "
+                f"If asked what surface or app they are currently on, state clearly that they are on {client_name}. "
+            )
+
         messages = [
             ChatMessageSchema(
                 role="system",
@@ -685,6 +700,7 @@ class ConversationService:
                     "Answer in at most 120 words unless asked for more. Write plain text only: "
                     "no markdown, no asterisks, no headings. "
                     + name_clause
+                    + surface_clause
                     + proactive_clause
                     + "WHAT YOU CAN AND CANNOT READ: you can read a document someone uploads "
                     f"when it is a {READABLE_FORMATS} file up to 20 MB; the extracted text "
@@ -1032,6 +1048,7 @@ class ConversationService:
             memory_degraded=memory_degraded,
             current_time=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
             recent_turns=recent_turns,
+            surface=context.surface if context else "",
         )
         if self._llm is None:
             raise DependencyUnavailableError("llm", "no language model provider is configured")

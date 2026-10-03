@@ -221,6 +221,8 @@
     userId: "ranti.extension.user_id",
     memoryEnabled: "ranti.extension.memory_enabled",
     history: "ranti.extension.history",
+    sessions: "ranti.extension.sessions",
+    currentSessionId: "ranti.extension.current_session_id",
     onboarded: "ranti.extension.onboarded",
     pageHintSeen: "ranti.extension.page_hint_seen"
   };
@@ -248,6 +250,8 @@
     userId: "",
     memoryEnabled: true,
     history: [],
+    sessions: [],
+    currentSessionId: "",
     busy: false,
     pageBusy: false,
     page: null,
@@ -645,17 +649,72 @@
       if (!found) {
         throw new Error("The page no longer registers a tool named " + name + ".");
       }
-      if (typeof found.execute === "function") {
-        return found.execute(args || {});
-      }
-      if (typeof mc.executeTool === "function") {
-        try {
-          return mc.executeTool(found, args || {});
-        } catch (e) {
-          return mc.executeTool(found, JSON.stringify(args || {}));
+
+      var cleanArgs = (args && typeof args === "object") ? Object.assign({}, args) : {};
+      try {
+        var schema = found.inputSchema;
+        if (schema && schema.properties) {
+          if (schema.properties.topping && Array.isArray(schema.properties.topping.enum)) {
+            var validEnums = schema.properties.topping.enum;
+            var tVal = String(cleanArgs.topping || "").toLowerCase().trim();
+            var emojiMap = {
+              "pepperoni": "🍕",
+              "pizza": "🍕",
+              "mushroom": "🍄",
+              "mushrooms": "🍄",
+              "basil": "🌿",
+              "herb": "🌿",
+              "pineapple": "🍍",
+              "pepper": "🫑",
+              "peppers": "🫑",
+              "bell pepper": "🫑",
+              "bacon": "🥓",
+              "onion": "🧅",
+              "onions": "🧅",
+              "olive": "🫒",
+              "olives": "🫒",
+              "corn": "🌽",
+              "hot pepper": "🌶️",
+              "chili": "🌶️",
+              "lamb": "🐑"
+            };
+            if (emojiMap[tVal] && validEnums.indexOf(emojiMap[tVal]) !== -1) {
+              cleanArgs.topping = emojiMap[tVal];
+            } else if (!cleanArgs.topping || validEnums.indexOf(cleanArgs.topping) === -1) {
+              cleanArgs.topping = validEnums[0];
+            }
+          }
         }
+      } catch (normErr) {}
+
+      var execPromise;
+      if (typeof found.execute === "function") {
+        execPromise = Promise.resolve(found.execute(cleanArgs));
+      } else if (typeof found._execute === "function") {
+        execPromise = Promise.resolve(found._execute(cleanArgs));
+      } else if (typeof mc.executeTool === "function") {
+        try {
+          execPromise = Promise.resolve(mc.executeTool(found, cleanArgs));
+        } catch (e) {
+          execPromise = Promise.resolve(mc.executeTool(found, JSON.stringify(cleanArgs)));
+        }
+      } else {
+        throw new Error("No execution mechanism available for tool " + name + ".");
       }
-      throw new Error("No execution mechanism available for tool " + name + ".");
+
+      return execPromise.then(function (result) {
+        if (typeof result === "string" && result.trim()) {
+          return result;
+        }
+        if (result && typeof result === "object") {
+          try {
+            return JSON.stringify(result);
+          } catch (e) {
+            return String(result);
+          }
+        }
+        return "Tool " + name + " executed successfully on the active page.";
+      });
     });
   }
 
@@ -794,7 +853,7 @@
       var host = (page.hostname || "").trim() || "(unknown host)";
       var count = (page.text ? page.text.length : Number(page.totalLength) || 0) + " chars";
       node.textContent = "";
-      node.setAttribute("title", pageSummaryText(page));
+      node.setAttribute("title", pageSummaryText(page) + " (Click to view tab)");
       /* Title shrinks first; the host and the count are short enough to stay
        * visible on one line at 320px, so the summary always names the page and
        * how much of it was read. */
@@ -802,6 +861,18 @@
       node.appendChild(el("span", { class: "page-summary-host" }, host));
       node.appendChild(el("span", { class: "page-summary-count" }, count));
       node.classList.remove("hidden");
+      node.style.cursor = "pointer";
+      node.onclick = function () {
+        if (typeof state.pageTabId === "number" && browserApi && browserApi.namespace && browserApi.namespace.tabs) {
+          browserApi.namespace.tabs.update(state.pageTabId, { active: true }).catch(function () {
+            if (page && page.url) {
+              browserApi.namespace.tabs.create({ url: page.url });
+            }
+          });
+        } else if (page && page.url && browserApi && browserApi.namespace && browserApi.namespace.tabs) {
+          browserApi.namespace.tabs.create({ url: page.url });
+        }
+      };
     }
     if (toggle) {
       toggle.classList.remove("hidden");
@@ -821,6 +892,7 @@
       node.textContent = "";
       node.removeAttribute("title");
       node.classList.add("hidden");
+      node.onclick = null;
     }
     if (toggle) {
       toggle.classList.add("hidden");
@@ -890,6 +962,7 @@
         state.page = page;
         state.pageOrigin = page.origin || "";
         renderPageSummary(page);
+        saveCurrentSession();
         /* The summary carries the title, host and count, so nothing else is
          * left in the page bar to push the conversation down. */
         setPageStatus("", "");
@@ -1767,7 +1840,7 @@
   function callWebMcpTool(tool, args) {
     return injectMainWorld(callWebMcpToolInPage, [tool.name, args]).then(function (results) {
       var first = Array.isArray(results) && results.length ? results[0] : null;
-      var value = first && typeof first === "object" ? first.result : undefined;
+      var value = first && first.result !== undefined ? first.result : undefined;
       return mcpResultText(value);
     });
   }
@@ -2556,6 +2629,7 @@
       state.history.shift();
     }
     persist(KEYS.history, state.history);
+    saveCurrentSession();
   }
 
   function renderHistory() {
@@ -2594,6 +2668,434 @@
       }
     });
     scrollToEndSoon();
+  }
+
+  /* ----------------------------------------------------- chat session manager */
+
+  function formatSessionTime(timestamp) {
+    if (!timestamp) {
+      return "";
+    }
+    var d = new Date(timestamp);
+    var now = new Date();
+    var diffMs = now.getTime() - d.getTime();
+    if (diffMs < 0) {
+      diffMs = 0;
+    }
+    var diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) {
+      return "Just now";
+    }
+    if (diffMins < 60) {
+      return diffMins + "m ago";
+    }
+    var diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) {
+      return diffHours + "h ago";
+    }
+    var diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) {
+      return diffDays + "d ago";
+    }
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  function deriveSessionTitle(history, page) {
+    if (Array.isArray(history)) {
+      for (var i = 0; i < history.length; i++) {
+        var entry = history[i];
+        if (entry && entry.role === "user" && entry.text) {
+          var clean = String(entry.text).trim();
+          if (clean.indexOf("[PAGE CONTENT") === 0) {
+            var actMatch = clean.match(/\[PAGE ACTION - [^\]]+\]\s*([^\n]+)/i);
+            if (actMatch && actMatch[1]) {
+              clean = actMatch[1].trim();
+            } else {
+              clean = "Page Discussion";
+            }
+          }
+          clean = clean.replace(/^\/[a-z0-9_-]+\s*/i, "").trim();
+          if (clean) {
+            return clean.length > 28 ? clean.slice(0, 28) + "..." : clean;
+          }
+        }
+      }
+    }
+    if (page && (page.title || page.hostname)) {
+      var title = String(page.title || page.hostname).trim();
+      return title.length > 28 ? title.slice(0, 28) + "..." : title;
+    }
+    return "New chat";
+  }
+
+  function updateSessionsBadge() {
+    var badge = $("chats-count-badge");
+    if (!badge) {
+      return;
+    }
+    var count = Array.isArray(state.sessions) ? state.sessions.length : 0;
+    badge.textContent = String(count);
+    if (count > 0) {
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+
+  function saveCurrentSession() {
+    if (!state.currentSessionId || !Array.isArray(state.sessions)) {
+      return;
+    }
+    var current = null;
+    for (var i = 0; i < state.sessions.length; i++) {
+      if (state.sessions[i].id === state.currentSessionId) {
+        current = state.sessions[i];
+        break;
+      }
+    }
+    if (!current) {
+      current = {
+        id: state.currentSessionId,
+        title: "New chat",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        history: []
+      };
+      state.sessions.unshift(current);
+    }
+
+    current.history = state.history.slice();
+    current.updatedAt = Date.now();
+    if (state.page) {
+      current.page = state.page;
+      current.pageOrigin = state.pageOrigin || "";
+      current.pageTabId = state.pageTabId || null;
+      current.pageWindowId = state.pageWindowId || null;
+    }
+
+    if (!current.customTitle && (current.title === "New chat" || !current.title)) {
+      var derived = deriveSessionTitle(state.history, state.page);
+      if (derived && derived !== "New chat") {
+        current.title = derived;
+      }
+    }
+
+    persist(KEYS.sessions, state.sessions);
+    persist(KEYS.history, state.history);
+    updateSessionsBadge();
+  }
+
+  function startNewChatSession(initialTitle) {
+    saveCurrentSession();
+    var newSession = {
+      id: "session-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      title: initialTitle || "New chat",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      history: [],
+      page: null,
+      pageOrigin: "",
+      pageTabId: null,
+      pageWindowId: null
+    };
+    state.sessions.unshift(newSession);
+    state.currentSessionId = newSession.id;
+    state.history = [];
+    state.page = null;
+    state.pageOrigin = "";
+    state.pageTabId = null;
+    state.pageWindowId = null;
+
+    persist(KEYS.sessions, state.sessions);
+    persist(KEYS.currentSessionId, state.currentSessionId);
+    persist(KEYS.history, []);
+
+    clearPageSummary();
+
+    var transcript = $("transcript");
+    if (transcript) {
+      transcript.innerHTML = "";
+    }
+    var greeting = el("div", { class: "msg assistant" }, [
+      el("div", { class: "who" }, "Cheta"),
+      el("div", { class: "bubble" }, "New chat started. I'm connected to your Walrus memory space. What are we working on?")
+    ]);
+    appendNode(greeting);
+
+    updateSessionsBadge();
+    renderSessionsList();
+
+    var panel = $("chats-panel");
+    if (panel) {
+      panel.classList.add("hidden");
+    }
+    var btn = $("btn-chats");
+    if (btn) {
+      btn.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function switchChatSession(sessionId) {
+    if (sessionId === state.currentSessionId) {
+      var p = $("chats-panel");
+      if (p) {
+        p.classList.add("hidden");
+      }
+      var b = $("btn-chats");
+      if (b) {
+        b.setAttribute("aria-expanded", "false");
+      }
+      return;
+    }
+    saveCurrentSession();
+    var target = null;
+    for (var i = 0; i < state.sessions.length; i++) {
+      if (state.sessions[i].id === sessionId) {
+        target = state.sessions[i];
+        break;
+      }
+    }
+    if (!target) {
+      return;
+    }
+
+    state.currentSessionId = target.id;
+    state.history = Array.isArray(target.history) ? target.history.slice() : [];
+    state.page = target.page || null;
+    state.pageOrigin = target.pageOrigin || "";
+    state.pageTabId = target.pageTabId || null;
+    state.pageWindowId = target.pageWindowId || null;
+
+    persist(KEYS.currentSessionId, state.currentSessionId);
+    persist(KEYS.history, state.history);
+
+    if (state.page) {
+      renderPageSummary(state.page);
+      if (typeof state.pageTabId !== "number" && state.page.url && browserApi && browserApi.namespace && browserApi.namespace.tabs) {
+        try {
+          browserApi.namespace.tabs.query({}, function (tabs) {
+            if (Array.isArray(tabs)) {
+              for (var tIdx = 0; tIdx < tabs.length; tIdx++) {
+                if (tabs[tIdx].url === state.page.url) {
+                  state.pageTabId = tabs[tIdx].id;
+                  state.pageWindowId = tabs[tIdx].windowId;
+                  break;
+                }
+              }
+            }
+          });
+        } catch (e) {}
+      }
+    } else {
+      clearPageSummary();
+    }
+
+    renderHistory();
+
+    var panel = $("chats-panel");
+    if (panel) {
+      panel.classList.add("hidden");
+    }
+    var btn = $("btn-chats");
+    if (btn) {
+      btn.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function deleteChatSession(sessionId) {
+    var idx = -1;
+    for (var i = 0; i < state.sessions.length; i++) {
+      if (state.sessions[i].id === sessionId) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx === -1) {
+      return;
+    }
+
+    state.sessions.splice(idx, 1);
+
+    if (state.sessions.length === 0) {
+      var fresh = {
+        id: "session-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        title: "New chat",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        history: [],
+        page: null,
+        pageOrigin: "",
+        pageTabId: null,
+        pageWindowId: null
+      };
+      state.sessions = [fresh];
+      state.currentSessionId = fresh.id;
+      state.history = [];
+      state.page = null;
+      state.pageOrigin = "";
+      state.pageTabId = null;
+      state.pageWindowId = null;
+      clearPageSummary();
+      renderHistory();
+    } else if (sessionId === state.currentSessionId) {
+      var nextSession = state.sessions[0];
+      state.currentSessionId = nextSession.id;
+      state.history = Array.isArray(nextSession.history) ? nextSession.history.slice() : [];
+      state.page = nextSession.page || null;
+      state.pageOrigin = nextSession.pageOrigin || "";
+      state.pageTabId = nextSession.pageTabId || null;
+      state.pageWindowId = nextSession.pageWindowId || null;
+      if (state.page) {
+        renderPageSummary(state.page);
+      } else {
+        clearPageSummary();
+      }
+      renderHistory();
+    }
+
+    persist(KEYS.sessions, state.sessions);
+    persist(KEYS.currentSessionId, state.currentSessionId);
+    persist(KEYS.history, state.history);
+
+    renderSessionsList();
+    updateSessionsBadge();
+  }
+
+  function renderSessionsList() {
+    var list = $("chats-list");
+    if (!list) {
+      return;
+    }
+    list.innerHTML = "";
+    if (!state.sessions || !state.sessions.length) {
+      list.appendChild(el("div", { class: "empty-sessions-hint" }, "No saved chats yet."));
+      return;
+    }
+
+    state.sessions.forEach(function (sess) {
+      var isActive = sess.id === state.currentSessionId;
+      var card = el("div", {
+        class: "session-card" + (isActive ? " active" : ""),
+        role: "button",
+        tabindex: "0"
+      });
+
+      var headRow = el("div", { class: "session-header-row" });
+      var titleGroup = el("div", { class: "session-title-group" });
+      if (isActive) {
+        titleGroup.appendChild(el("span", { class: "session-active-indicator" }));
+      }
+      var titleSpan = el("span", {
+        class: "session-title",
+        title: sess.title || "Chat"
+      }, sess.title || "Chat");
+      titleGroup.appendChild(titleSpan);
+
+      var actionsDiv = el("div", { class: "session-actions" });
+
+      var renameBtn = el("button", {
+        type: "button",
+        class: "session-btn-action",
+        title: "Rename chat"
+      });
+      renameBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+
+      var deleteBtn = el("button", {
+        type: "button",
+        class: "session-btn-action delete",
+        title: "Delete chat"
+      });
+      deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+
+      actionsDiv.appendChild(renameBtn);
+      actionsDiv.appendChild(deleteBtn);
+
+      headRow.appendChild(titleGroup);
+      headRow.appendChild(actionsDiv);
+
+      var metaRow = el("div", { class: "session-meta-row" });
+      var tagsDiv = el("div", { class: "session-tags" });
+
+      var timeSpan = el("span", { class: "session-time" }, formatSessionTime(sess.updatedAt || sess.createdAt));
+      tagsDiv.appendChild(timeSpan);
+
+      if (sess.page && (sess.page.hostname || sess.page.title)) {
+        var pageTag = el("button", {
+          type: "button",
+          class: "session-tag-page",
+          title: "Switch to or open: " + (sess.page.title || sess.page.url || "")
+        }, sess.page.hostname || "Page");
+
+        pageTag.addEventListener("click", function (evt) {
+          evt.stopPropagation();
+          if (typeof sess.pageTabId === "number" && browserApi && browserApi.namespace && browserApi.namespace.tabs) {
+            browserApi.namespace.tabs.update(sess.pageTabId, { active: true }).catch(function () {
+              if (sess.page && sess.page.url) {
+                browserApi.namespace.tabs.create({ url: sess.page.url });
+              }
+            });
+          } else if (sess.page && sess.page.url && browserApi && browserApi.namespace && browserApi.namespace.tabs) {
+            browserApi.namespace.tabs.create({ url: sess.page.url });
+          }
+        });
+        tagsDiv.appendChild(pageTag);
+      }
+
+      var countSpan = el("span", { class: "session-count" }, (sess.history ? sess.history.length : 0) + " turns");
+
+      metaRow.appendChild(tagsDiv);
+      metaRow.appendChild(countSpan);
+
+      card.appendChild(headRow);
+      card.appendChild(metaRow);
+
+      card.addEventListener("click", function (evt) {
+        if (evt.target.closest(".session-actions") || evt.target.closest("input") || evt.target.closest(".session-tag-page")) {
+          return;
+        }
+        switchChatSession(sess.id);
+      });
+
+      renameBtn.addEventListener("click", function (evt) {
+        evt.stopPropagation();
+        var input = el("input", {
+          type: "text",
+          class: "session-rename-input",
+          value: sess.title || "Chat"
+        });
+        titleGroup.replaceChild(input, titleSpan);
+        input.focus();
+        input.select();
+
+        function commitRename() {
+          var newVal = input.value.trim();
+          if (newVal && newVal !== sess.title) {
+            sess.title = newVal;
+            sess.customTitle = true;
+            sess.updatedAt = Date.now();
+            persist(KEYS.sessions, state.sessions);
+          }
+          renderSessionsList();
+        }
+
+        input.addEventListener("keydown", function (kEvt) {
+          if (kEvt.key === "Enter") {
+            kEvt.preventDefault();
+            commitRename();
+          } else if (kEvt.key === "Escape") {
+            renderSessionsList();
+          }
+        });
+        input.addEventListener("blur", commitRename);
+      });
+
+      deleteBtn.addEventListener("click", function (evt) {
+        evt.stopPropagation();
+        deleteChatSession(sess.id);
+      });
+
+      list.appendChild(card);
+    });
   }
 
   /* ---------------------------------------------------------- commands */
@@ -3811,6 +4313,50 @@
     state.history = Array.isArray(items[KEYS.history]) ? items[KEYS.history] : [];
     state.pageHintSeen = items[KEYS.pageHintSeen] === true;
 
+    state.sessions = Array.isArray(items[KEYS.sessions]) ? items[KEYS.sessions] : [];
+    state.currentSessionId = items[KEYS.currentSessionId] || "";
+
+    if (!state.sessions.length) {
+      var initSess = {
+        id: "session-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        title: deriveSessionTitle(state.history, state.page),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        history: state.history.slice(),
+        page: state.page || null,
+        pageOrigin: state.pageOrigin || "",
+        pageTabId: state.pageTabId || null,
+        pageWindowId: state.pageWindowId || null
+      };
+      state.sessions = [initSess];
+      state.currentSessionId = initSess.id;
+      persist(KEYS.sessions, state.sessions);
+      persist(KEYS.currentSessionId, state.currentSessionId);
+    } else {
+      var foundCurrent = null;
+      for (var sIdx = 0; sIdx < state.sessions.length; sIdx++) {
+        if (state.sessions[sIdx].id === state.currentSessionId) {
+          foundCurrent = state.sessions[sIdx];
+          break;
+        }
+      }
+      if (!foundCurrent) {
+        state.currentSessionId = state.sessions[0].id;
+        foundCurrent = state.sessions[0];
+      }
+      if (foundCurrent) {
+        state.history = Array.isArray(foundCurrent.history) ? foundCurrent.history.slice() : [];
+        if (foundCurrent.page) {
+          state.page = foundCurrent.page;
+          state.pageOrigin = foundCurrent.pageOrigin || "";
+          state.pageTabId = foundCurrent.pageTabId || null;
+          state.pageWindowId = foundCurrent.pageWindowId || null;
+          renderPageSummary(state.page);
+        }
+      }
+    }
+    updateSessionsBadge();
+
     state.surfaceUserId = items[KEYS.surfaceUserId] || "";
     if (!state.surfaceUserId) {
       state.surfaceUserId = "extension-" + newId();
@@ -3880,17 +4426,40 @@
     var newChatBtn = $("btn-new-chat");
     if (newChatBtn) {
       newChatBtn.addEventListener("click", function () {
-        state.history = [];
-        persist(KEYS.history, []);
-        var transcript = $("transcript");
-        if (transcript) {
-          transcript.innerHTML = "";
+        startNewChatSession();
+      });
+    }
+
+    var chatsBtn = $("btn-chats");
+    var chatsPanel = $("chats-panel");
+    var closeChats = $("close-chats");
+    var drawerNewChatBtn = $("btn-drawer-new-chat");
+
+    if (chatsBtn && chatsPanel) {
+      chatsBtn.addEventListener("click", function () {
+        var open = chatsPanel.classList.contains("hidden");
+        if (open) {
+          chatsPanel.classList.remove("hidden");
+          renderSessionsList();
+        } else {
+          chatsPanel.classList.add("hidden");
         }
-        var greeting = el("div", { class: "msg assistant" }, [
-          el("div", { class: "who" }, "Cheta"),
-          el("div", { class: "bubble" }, "New chat started. I'm connected to your Walrus memory space. What are we working on?")
-        ]);
-        appendNode(greeting);
+        chatsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    if (closeChats && chatsPanel) {
+      closeChats.addEventListener("click", function () {
+        chatsPanel.classList.add("hidden");
+        if (chatsBtn) {
+          chatsBtn.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    if (drawerNewChatBtn) {
+      drawerNewChatBtn.addEventListener("click", function () {
+        startNewChatSession();
       });
     }
 

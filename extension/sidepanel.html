@@ -29,6 +29,18 @@
               <span>New</span>
             </button>
             <button
+              id="btn-chats"
+              class="btn btn-quiet btn-pill"
+              type="button"
+              aria-expanded="false"
+              aria-controls="chats-panel"
+              title="Chat History & Sessions"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>Chats</span>
+              <span id="chats-count-badge" class="badge-count hidden">0</span>
+            </button>
+            <button
               id="toggle-profile-panel"
               class="btn btn-quiet btn-pill"
               type="button"
@@ -178,6 +190,27 @@
               <li><code>/sessions</code> &mdash; view all connected devices.</li>
               <li><code>/unpair</code> &mdash; disconnect this device from the shared memory space.</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="chats-panel" class="chats-panel hidden" aria-label="Chat Sessions and History">
+        <div class="panel-head">
+          <div class="panel-title-group">
+            <h2>Chat Sessions</h2>
+            <p class="panel-subtitle">Saved conversations & page contexts</p>
+          </div>
+          <div class="panel-head-actions">
+            <button id="btn-drawer-new-chat" class="btn btn-accent btn-pill" type="button">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>New</span>
+            </button>
+            <button id="close-chats" class="btn btn-quiet" type="button">Close</button>
+          </div>
+        </div>
+        <div class="chats-panel-body">
+          <div id="chats-list" class="chats-list">
+            <!-- Dynamic session cards injected here -->
           </div>
         </div>
       </section>

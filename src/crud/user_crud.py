@@ -2,11 +2,33 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from core.database import Database
 from models.entities.user_model import UserModel
+
+PAIRING_REGISTRY_PATH = Path("artifacts/pairing_registry.json")
+
+
+def _load_pairing_registry() -> dict[str, str]:
+    if not PAIRING_REGISTRY_PATH.exists():
+        return {}
+    try:
+        data = json.loads(PAIRING_REGISTRY_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_pairing_registry(registry: dict[str, str]) -> None:
+    try:
+        PAIRING_REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PAIRING_REGISTRY_PATH.write_text(json.dumps(registry, indent=2), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _now() -> str:
@@ -76,7 +98,18 @@ class UserCrud:
         """
         existing = self.get_by_identity(surface, surface_user_id)
         if existing is None:
-            return self.create(surface, surface_user_id, display_name)
+            user = self.create(surface, surface_user_id, display_name)
+            if self._database.path != ":memory:":
+                reg = _load_pairing_registry()
+                key = f"{surface}:{surface_user_id}"
+                if key in reg:
+                    user = self.set_memory_handle(user.id, reg[key]) or user
+            return user
+        if existing.memory_handle is None and self._database.path != ":memory:":
+            reg = _load_pairing_registry()
+            key = f"{surface}:{surface_user_id}"
+            if key in reg:
+                existing = self.set_memory_handle(existing.id, reg[key]) or existing
         if existing.display_name != display_name:
             return self.update(existing.id, display_name) or existing
         return existing
@@ -106,6 +139,17 @@ class UserCrud:
             "UPDATE users SET memory_handle = ?, linked_at = ? WHERE id = ?",
             (handle, linked_at, user_id),
         )
+        if changed and self._database.path != ":memory:":
+            try:
+                reg = _load_pairing_registry()
+                key = f"{current.surface}:{current.surface_user_id}"
+                if handle is not None:
+                    reg[key] = handle
+                else:
+                    reg.pop(key, None)
+                _save_pairing_registry(reg)
+            except Exception:
+                pass
         return self.get_by_id(user_id) if changed else None
 
     def list_by_memory_handle(self, handle: str) -> list[UserModel]:
