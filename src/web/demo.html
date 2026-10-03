@@ -10,47 +10,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Raleway:ital,wght@0,900;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
     /* ====================================================================
-       ROOT PALETTE - Monochrome obsidian + surgical accent pops only
-       No blue. No cyan. No teal. No neon. Pure ink.
+       ROOT PALETTE - Pure obsidian monochrome with surgical warm gold accent
+       Zero blue, zero cyan, zero neon. Authentic dark themes for each app.
     ==================================================================== */
     :root {
-      --bg:           #080808;
-      --bg2:          #0f0f0f;
-      --surf:         #161616;
-      --surf2:        #1e1e1e;
-      --line:         #252525;
-      --line2:        #333333;
-      --txt:          #f0f0f0;
-      --muted:        #888888;
-      --dim:          #444444;
+      --bg:           #070708;
+      --bg2:          #0e0e10;
+      --surf:         #141416;
+      --surf2:        #1b1b1e;
+      --line:         #232328;
+      --line2:        #2f2f36;
+      --txt:          #f2f2f4;
+      --muted:        #848490;
+      --dim:          #424248;
       --white:        #ffffff;
-      /* ONE accent: warm gold for pinpoint highlights only */
+      /* Warm gold accent pop */
       --gold:         #d4a853;
-      --gold-dim:     rgba(212, 168, 83, 0.15);
+      --gold-dim:     rgba(212, 168, 83, 0.12);
       --gold-line:    rgba(212, 168, 83, 0.35);
-      /* Semantic only - small signal colors */
-      --ok:           #4caf50;
+      /* Semantic status indicators */
+      --ok:           #34d399;
       --warn:         #f59e0b;
-      --err:          #ef4444;
-      /* Terminal: authentic green phosphor */
-      --term-bg:      #0c0c0c;
-      --term-green:   #33ff33;
-      --term-dim-g:   #1a8a1a;
-      --term-prompt:  #39ff14;
-      /* Telegram: authentic dark theme */
+      --err:          #f87171;
+      /* Terminal phosphor */
+      --term-bg:      #0a0a0c;
+      --term-green:   #39ff14;
+      --term-dim-g:   #1b681b;
+      --term-prompt:  #4ade80;
+      /* Telegram authentic dark theme */
       --tg-bg:        #0e1621;
       --tg-header:    #17212b;
       --tg-sent:      #2b5278;
       --tg-recv:      #182533;
       --tg-border:    #0b111a;
       --tg-time:      #8da4be;
-      /* Chrome: authentic dark mode */
+      /* Chrome authentic dark mode */
       --chrome-frame: #202124;
       --chrome-tab:   #35363a;
       --chrome-bar:   #292a2d;
       --chrome-tool:  #3c3c3c;
       --chrome-url:   #303134;
-      /* Fonts */
+      /* Typography */
       --f-display:    'Bebas Neue', 'Syne', sans-serif;
       --f-bubbly:     'Fredoka', sans-serif;
       --f-body:       'Space Grotesk', sans-serif;
@@ -70,37 +70,42 @@
     }
 
     /* ── Canvas background ────────────────────────────────────────────── */
-    #c { position: fixed; inset: 0; z-index: 0; }
+    #c { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
     /* ── Scene container ──────────────────────────────────────────────── */
     #stage {
       position: fixed; inset: 0; z-index: 10;
       display: flex; align-items: stretch;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    /* ── Left MAIN panel (everything except narrator) ─────────────────── */
+    /* ── Left MAIN panel (Centered, generous, proud) ─────────────────── */
     #main-area {
       flex: 1;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px 24px 20px 24px;
+      padding: 16px 20px;
       position: relative;
       min-width: 0;
+      overflow: hidden;
     }
 
     /* ── Right NARRATOR sidebar ───────────────────────────────────────── */
     #narrator {
-      width: 280px;
-      min-width: 280px;
-      max-width: 280px;
+      width: 290px;
+      min-width: 290px;
+      max-width: 290px;
+      height: 100vh;
       background: var(--surf);
       border-left: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      padding: 24px 20px;
-      gap: 16px;
+      padding: 22px 18px;
+      gap: 14px;
       z-index: 20;
     }
 
@@ -108,15 +113,15 @@
       font-family: var(--f-bubbly);
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--gold);
       border-bottom: 1px solid var(--line);
-      padding-bottom: 10px;
+      padding-bottom: 8px;
     }
 
     .narrator-face {
-      width: 56px; height: 56px;
+      width: 52px; height: 52px;
       border-radius: 50%;
       background: var(--surf2);
       border: 2px solid var(--line2);
@@ -124,11 +129,11 @@
       margin: 0 auto;
       overflow: hidden;
       position: relative;
+      flex-shrink: 0;
     }
 
-    .narrator-face svg { width: 34px; height: 34px; }
+    .narrator-face svg { width: 32px; height: 32px; }
 
-    /* Pulsing ring on narrator face */
     .narrator-face::after {
       content: '';
       position: absolute; inset: -4px;
@@ -140,12 +145,12 @@
 
     @keyframes narPulse {
       0%, 100% { opacity: 0; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.08); }
+      50% { opacity: 0.65; transform: scale(1.08); }
     }
 
     .narrator-scene-title {
       font-family: var(--f-bubbly);
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--white);
       line-height: 1.3;
@@ -154,12 +159,13 @@
 
     .narrator-text {
       font-family: var(--f-bubbly);
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 500;
       color: var(--txt);
-      line-height: 1.65;
-      min-height: 80px;
+      line-height: 1.6;
+      min-height: 90px;
       flex: 1;
+      overflow-y: auto;
     }
 
     .narrator-cursor {
@@ -173,9 +179,10 @@
 
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* Scene progress dots */
     .narrator-dots {
       display: flex; gap: 6px; justify-content: center;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
     }
 
     .ndot {
@@ -202,30 +209,31 @@
 
     #flash.on { opacity: 0.08; }
 
-    /* ── Scene visibility ─────────────────────────────────────────────── */
+    /* ── Scene visibility & centering ─────────────────────────────────── */
     .scene {
       width: 100%;
-      max-width: 860px;
+      height: 100%;
+      max-width: 1040px;
       display: none;
+      align-items: center;
+      justify-content: center;
       opacity: 0;
-      transform: translateY(18px) scale(0.97);
-      transition: opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform: scale(0.97);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
     }
 
     .scene.active {
       display: flex;
-      flex-direction: column;
-      align-items: center;
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: scale(1);
     }
 
     /* ====================================================================
        SCENE 0 — CINEMATIC INTRO
     ==================================================================== */
     #s0 {
-      max-width: 720px;
+      flex-direction: column;
+      max-width: 760px;
       text-align: center;
       gap: 0;
       position: relative;
@@ -238,7 +246,7 @@
       letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--gold);
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       opacity: 0;
       animation: fadeUp 0.6s ease 0.3s forwards;
     }
@@ -250,13 +258,13 @@
 
     .intro-hero-title {
       font-family: var(--f-display);
-      font-size: clamp(64px, 9vw, 120px);
+      font-size: clamp(68px, 9.5vw, 126px);
       font-weight: 400;
       line-height: 0.95;
       letter-spacing: 0.02em;
       color: var(--white);
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
     }
 
@@ -268,31 +276,30 @@
 
     .intro-sub {
       font-family: var(--f-impact);
-      font-size: clamp(13px, 1.8vw, 18px);
+      font-size: clamp(14px, 1.8vw, 19px);
       font-weight: 900;
       font-style: italic;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 28px;
+      margin-bottom: 22px;
       min-height: 26px;
     }
 
     .intro-desc {
       font-family: var(--f-bubbly);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
       color: var(--txt);
-      line-height: 1.7;
-      max-width: 560px;
-      margin: 0 auto 30px;
+      line-height: 1.65;
+      max-width: 600px;
+      margin: 0 auto 26px;
       min-height: 48px;
     }
 
-    /* Face cards row */
     .face-cards {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
       margin-top: 4px;
@@ -303,7 +310,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 16px 14px 14px;
-      width: 130px;
+      width: 136px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.25s, transform 0.25s, background 0.25s;
@@ -314,11 +321,11 @@
     .face-card:hover {
       border-color: var(--gold-line);
       background: var(--gold-dim);
-      transform: translateY(-5px);
+      transform: translateY(-4px);
     }
 
     .face-card-icon {
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       border-radius: 10px;
       background: var(--surf2);
       border: 1px solid var(--line2);
@@ -330,7 +337,7 @@
 
     .face-card-name {
       font-family: var(--f-display);
-      font-size: 15px;
+      font-size: 16px;
       letter-spacing: 0.04em;
       color: var(--white);
       margin-bottom: 4px;
@@ -339,33 +346,32 @@
     .face-card-desc {
       font-size: 10px;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.35;
       font-family: var(--f-body);
     }
 
     /* ====================================================================
-       SCENE 1 — TELEGRAM
+       SCENE 1 — TELEGRAM (Centered phone device)
     ==================================================================== */
-    #s1 { gap: 0; }
+    #s1 { display: flex; align-items: center; justify-content: center; }
 
     .tg-device {
-      width: min(340px, 88vw);
-      height: min(600px, calc(100vh - 180px));
+      width: min(350px, 90vw);
+      height: min(640px, calc(100vh - 80px));
       background: var(--tg-bg);
-      border-radius: 36px;
+      border-radius: 38px;
       border: 3px solid #232a38;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.9),
-                  0 0 0 1px rgba(255,255,255,0.04) inset;
+      box-shadow: 0 35px 90px rgba(0,0,0,0.92), 0 0 0 1px rgba(255,255,255,0.04) inset;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       position: relative;
+      margin: auto;
     }
 
-    /* phone notch */
     .tg-notch {
-      width: 90px; height: 16px;
-      background: #1a2333;
+      width: 96px; height: 16px;
+      background: #182230;
       border-bottom-left-radius: 10px;
       border-bottom-right-radius: 10px;
       position: absolute;
@@ -392,26 +398,24 @@
     .tg-av {
       width: 34px; height: 34px;
       border-radius: 50%;
-      background: #3a7bd5;
+      background: #2b5278;
+      border: 1px solid rgba(255,255,255,0.1);
       display: flex; align-items: center; justify-content: center;
       font-family: var(--f-display);
-      font-size: 15px;
+      font-size: 16px;
       color: #fff;
       flex-shrink: 0;
-    }
-
-    .tg-av-online {
       position: relative;
     }
 
-    .tg-av-online::after {
+    .tg-av::after {
       content: '';
       width: 9px; height: 9px;
       background: var(--ok);
       border: 2px solid var(--tg-header);
       border-radius: 50%;
       position: absolute;
-      bottom: 0; right: 0;
+      bottom: -1px; right: -1px;
     }
 
     .tg-meta { flex: 1; overflow: hidden; }
@@ -421,7 +425,7 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-    .tg-status { font-size: 11px; color: #4caf50; }
+    .tg-status { font-size: 11px; color: var(--ok); }
 
     .tg-body {
       flex: 1;
@@ -430,40 +434,39 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
       scroll-behavior: smooth;
     }
 
     .tg-body::-webkit-scrollbar { width: 3px; }
-    .tg-body::-webkit-scrollbar-track { background: transparent; }
-    .tg-body::-webkit-scrollbar-thumb { background: #2a3d55; border-radius: 2px; }
+    .tg-body::-webkit-scrollbar-thumb { background: #243549; border-radius: 2px; }
 
     .tg-bubble {
-      max-width: 84%;
-      padding: 7px 11px 5px;
+      max-width: 86%;
+      padding: 7px 11px 6px;
       border-radius: 12px;
-      font-size: 12.5px;
+      font-size: 12px;
       line-height: 1.45;
       font-family: var(--f-body);
       animation: bpop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
 
     @keyframes bpop {
-      from { opacity: 0; transform: scale(0.88) translateY(6px); }
+      from { opacity: 0; transform: scale(0.9) translateY(6px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .tg-user {
       align-self: flex-end;
       background: var(--tg-sent);
-      color: #edf2f7;
+      color: #f0f4f8;
       border-bottom-right-radius: 3px;
     }
 
     .tg-bot {
       align-self: flex-start;
       background: var(--tg-recv);
-      color: #e8edf3;
+      color: #e5ebf2;
       border: 1px solid #1f2e3d;
       border-bottom-left-radius: 3px;
     }
@@ -473,20 +476,19 @@
       color: var(--tg-time);
       float: right;
       margin-left: 8px;
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
     .tg-tag {
       display: inline-block;
       font-family: var(--f-mono);
       font-size: 9px;
-      padding: 2px 5px;
-      border-radius: 3px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: var(--muted);
-      margin-bottom: 3px;
-      margin-right: 2px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(212,168,83,0.14);
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      margin-bottom: 4px;
     }
 
     .tg-foot {
@@ -503,54 +505,50 @@
       border: 1px solid #243447;
       border-radius: 20px;
       padding: 6px 12px;
-      font-size: 12px;
+      font-size: 11.5px;
       color: #8da4be;
       font-family: var(--f-body);
+      min-height: 28px;
+      display: flex; align-items: center;
     }
 
     .tg-send {
       width: 32px; height: 32px;
       border-radius: 50%;
-      background: #3a7bd5;
+      background: #2b5278;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
     /* ====================================================================
-       SCENE 2 — CLI TERMINAL
+       SCENE 2 — CLI TERMINAL (Full centered window, NO sinking)
     ==================================================================== */
-    #s2 { gap: 0; }
+    #s2 { display: flex; align-items: center; justify-content: center; }
 
     .term-window {
-      width: min(720px, 95vw);
-      height: min(460px, calc(100vh - 180px));
+      width: min(940px, 96%);
+      height: min(580px, calc(100vh - 90px));
       background: var(--term-bg);
       border-radius: 12px;
-      border: 1px solid #1e1e1e;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+      border: 1px solid #222226;
+      box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.06);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       font-family: var(--f-mono);
+      margin: auto;
     }
 
     .term-titlebar {
-      background: #1a1a1a;
-      border-bottom: 1px solid #252525;
+      background: #151518;
+      border-bottom: 1px solid #232328;
       padding: 10px 14px;
       display: flex; align-items: center; gap: 10px;
       flex-shrink: 0;
     }
 
-    .term-dots {
-      display: flex; gap: 6px;
-    }
-
-    .term-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-    }
-
+    .term-dots { display: flex; gap: 6px; }
+    .term-dot { width: 12px; height: 12px; border-radius: 50%; }
     .td-r { background: #ff5f57; }
     .td-y { background: #febc2e; }
     .td-g { background: #28c840; }
@@ -560,7 +558,7 @@
       text-align: center;
       font-family: var(--f-body);
       font-size: 12px;
-      color: var(--dim);
+      color: var(--muted);
     }
 
     .term-body {
@@ -569,7 +567,7 @@
       overflow-y: auto;
       color: var(--term-green);
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.65;
       scroll-behavior: smooth;
     }
 
@@ -579,36 +577,36 @@
     .term-line { display: flex; flex-wrap: wrap; gap: 0; }
     .t-prompt { color: var(--term-prompt); font-weight: 700; }
     .t-cmd { color: var(--term-green); }
-    .t-out { color: #a0c080; }
+    .t-out { color: #a4cca4; }
     .t-out-dim { color: var(--term-dim-g); }
-    .t-out-white { color: #d4d4d4; }
+    .t-out-white { color: #eaeaea; }
     .t-out-gold { color: var(--gold); }
     .t-out-err { color: var(--err); }
     .t-out-ok { color: var(--ok); }
-    .t-comment { color: #4a7a4a; }
+    .t-comment { color: #427542; }
 
     /* ====================================================================
-       SCENE 3 — CHROME EXTENSION
+       SCENE 3 — CHROME MULTI-TAB & WEBMCP (Centered browser window)
     ==================================================================== */
-    #s3 { gap: 0; }
+    #s3 { display: flex; align-items: center; justify-content: center; }
 
     .chrome-window {
-      width: min(760px, 96vw);
-      height: min(500px, calc(100vh - 180px));
+      width: min(980px, 98%);
+      height: min(600px, calc(100vh - 90px));
       background: var(--chrome-bar);
-      border-radius: 10px;
-      border: 1px solid #111;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+      border-radius: 12px;
+      border: 1px solid #1c1c1f;
+      box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.06);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       position: relative;
+      margin: auto;
     }
 
-    /* Chrome title bar (traffic lights + drag area) */
     .chrome-titlebar {
       background: var(--chrome-frame);
-      height: 36px;
+      height: 34px;
       display: flex; align-items: center;
       padding: 0 10px;
       gap: 8px;
@@ -621,42 +619,43 @@
     .cd-y { background: #febc2e; }
     .cd-g { background: #28c840; }
 
-    /* Tab strip */
+    /* Authentic Chrome Tab Strip */
     .chrome-tabs {
       background: var(--chrome-frame);
       display: flex; align-items: flex-end;
       padding: 0 10px 0 10px;
-      gap: 0;
+      gap: 2px;
       flex-shrink: 0;
       border-bottom: 1px solid #111;
     }
 
     .chrome-tab {
-      background: var(--chrome-bar);
-      border: 1px solid #111;
+      background: var(--chrome-frame);
+      border: 1px solid transparent;
       border-bottom: none;
       border-radius: 8px 8px 0 0;
       padding: 8px 14px;
       display: flex; align-items: center; gap: 8px;
       font-family: var(--f-body);
       font-size: 11.5px;
-      color: var(--txt);
+      color: var(--muted);
       min-width: 0;
-      max-width: 200px;
+      max-width: 220px;
+      cursor: pointer;
       position: relative;
       bottom: -1px;
+      transition: background 0.2s, color 0.2s;
     }
 
-    .chrome-tab-inactive {
-      background: var(--chrome-frame);
-      color: var(--dim);
-      border-color: transparent;
+    .chrome-tab.chrome-tab-active {
+      background: var(--chrome-bar);
+      color: var(--txt);
+      border-color: #111;
     }
 
     .chrome-tab-fav {
       width: 14px; height: 14px;
-      border-radius: 3px;
-      background: var(--line2);
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
@@ -670,18 +669,16 @@
     }
 
     .chrome-tab-close {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 9px;
+      font-size: 10px;
       color: var(--muted);
       flex-shrink: 0;
+      padding-left: 2px;
     }
 
-    /* Toolbar (omnibox row) */
+    /* Toolbar / Omnibox */
     .chrome-toolbar {
       background: var(--chrome-bar);
-      padding: 8px 10px;
+      padding: 7px 10px;
       display: flex; align-items: center; gap: 8px;
       border-bottom: 1px solid #111;
       flex-shrink: 0;
@@ -698,17 +695,15 @@
       flex-shrink: 0;
     }
 
-    .chrome-nav-btn:hover { background: rgba(255,255,255,0.06); }
-
     .chrome-omnibox {
       flex: 1;
       background: var(--chrome-url);
       border: 1px solid #404040;
       border-radius: 20px;
-      padding: 5px 14px;
+      padding: 4px 14px;
       display: flex; align-items: center; gap: 8px;
       font-family: var(--f-body);
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--txt);
     }
 
@@ -719,7 +714,7 @@
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
-      color: #e8e8e8;
+      color: #eaeaea;
     }
 
     .chrome-extensions-area {
@@ -734,16 +729,12 @@
       display: flex; align-items: center; justify-content: center;
       color: var(--muted);
       cursor: pointer;
-      position: relative;
     }
 
-    .chrome-ext-btn:hover { background: rgba(255,255,255,0.06); }
-
-    /* Extension icon that gets "clicked" */
     .cheta-ext-icon {
       width: 28px; height: 28px;
       border-radius: 6px;
-      background: #1a1a1a;
+      background: #18181c;
       border: 1px solid var(--line2);
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
@@ -757,109 +748,216 @@
 
     .cheta-ext-icon svg { width: 16px; height: 16px; }
 
-    /* Virtual cursor */
+    /* Virtual Cursor */
     #vcursor {
       position: absolute;
       width: 14px; height: 20px;
       z-index: 80;
       pointer-events: none;
       display: none;
-      transition: top 0.35s cubic-bezier(0.34, 1.2, 0.64, 1),
-                  left 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+      transition: top 0.4s cubic-bezier(0.34, 1.2, 0.64, 1),
+                  left 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
     }
 
     #vcursor svg { width: 14px; height: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
 
-    /* Chrome viewport / content area */
+    /* Chrome Content Viewport */
     .chrome-content {
       flex: 1;
       display: flex;
       overflow: hidden;
+      position: relative;
     }
 
-    /* The page being "browsed" */
-    .chrome-page {
+    /* ── Tab 1: WebMCP Pizza Creator Viewport ── */
+    .pizza-page-view {
       flex: 1;
-      background: #f8f9fa;
+      background: #14151a;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      padding: 16px;
+      overflow-y: auto;
+      gap: 12px;
+      align-items: center;
     }
 
-    /* Fake website shown in browser */
-    .fake-site-bar {
-      background: #fff;
-      border-bottom: 1px solid #e8e8e8;
+    .pizza-app-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #25262f;
+      padding-bottom: 10px;
+    }
+
+    .pizza-app-title {
+      font-family: var(--f-display);
+      font-size: 20px;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+
+    .pizza-app-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--f-mono);
+    }
+
+    .pizza-stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 0;
+    }
+
+    .pizza-crust {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #c88738;
+      border: 8px solid #a26522;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 14px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .pizza-sauce {
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: #96281b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pizza-cheese {
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      background: #f7ca5e;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px #d49a37;
+    }
+
+    /* Animated Toppings */
+    .pepperoni {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #a8271a;
+      border: 1.5px solid #7c1a11;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      animation: popTopping 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .mushroom {
+      position: absolute;
+      width: 18px; height: 14px;
+      background: #6b6357;
+      border-radius: 10px 10px 4px 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      animation: popTopping 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes popTopping {
+      from { transform: scale(0) rotate(-20deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .pizza-tool-banner {
+      width: 100%;
+      background: #1c1d24;
+      border: 1px solid #2c2e3a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-family: var(--f-mono);
+      color: var(--muted);
+    }
+
+    .pizza-tool-banner code {
+      color: var(--gold);
+      background: rgba(212,168,83,0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--gold-line);
+    }
+
+    /* ── Tab 2: Documentation Viewport ── */
+    .doc-page-view {
+      flex: 1;
+      background: #ffffff;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .doc-site-bar {
+      background: #f6f8fa;
+      border-bottom: 1px solid #d0d7de;
       padding: 8px 14px;
       display: flex; align-items: center; gap: 12px;
     }
 
-    .fake-site-logo {
+    .doc-site-logo {
       font-family: var(--f-display);
       font-size: 20px;
       letter-spacing: 0.04em;
-      color: #1a1a1a;
+      color: #24292f;
     }
 
-    .fake-site-nav {
-      display: flex; gap: 16px;
-    }
-
-    .fake-site-nav span {
-      font-size: 12px;
-      color: #666;
-      font-family: var(--f-body);
-    }
-
-    .fake-site-content {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
+    .doc-site-content {
+      padding: 18px;
       background: #fff;
     }
 
-    .fake-article-title {
-      font-family: var(--f-body);
+    .doc-article-title {
       font-size: 18px;
       font-weight: 700;
-      color: #111;
-      margin-bottom: 10px;
-      line-height: 1.3;
+      color: #1f2328;
+      margin-bottom: 8px;
     }
 
-    .fake-article-meta {
+    .doc-article-meta {
       font-size: 11px;
-      color: #888;
+      color: #656d76;
       margin-bottom: 14px;
     }
 
-    .fake-article-body {
+    .doc-article-body {
       font-size: 13px;
-      color: #333;
+      color: #1f2328;
       line-height: 1.7;
-      font-family: var(--f-body);
     }
 
-    .fake-highlight {
-      background: rgba(255, 230, 100, 0.6);
-      border-bottom: 2px solid #f59e0b;
+    .doc-highlight {
+      background: rgba(212, 168, 83, 0.35);
+      border-bottom: 2px solid var(--gold);
       transition: background 0.3s;
     }
 
-    /* Cheta sidepanel (right side of chrome content) */
+    /* Cheta Extension Sidepanel */
     .ext-panel {
-      width: 240px;
-      background: #111;
-      border-left: 1px solid #222;
+      width: 250px;
+      background: #101012;
+      border-left: 1px solid #202024;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
 
     .ext-topbar {
-      background: #0f0f0f;
-      border-bottom: 1px solid #222;
-      padding: 10px 12px;
+      background: #0d0d0f;
+      border-bottom: 1px solid #1e1e22;
+      padding: 9px 12px;
       display: flex; align-items: center; gap: 8px;
       flex-shrink: 0;
     }
@@ -881,14 +979,14 @@
 
     .ext-tabs {
       display: flex;
-      border-bottom: 1px solid #222;
-      background: #0d0d0d;
+      border-bottom: 1px solid #1e1e22;
+      background: #0b0b0d;
       flex-shrink: 0;
     }
 
     .ext-tab {
       flex: 1;
-      padding: 7px 6px;
+      padding: 7px 4px;
       text-align: center;
       font-size: 10px;
       font-family: var(--f-body);
@@ -909,26 +1007,18 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 0;
+      padding: 10px;
+      gap: 6px;
     }
 
     .ext-body::-webkit-scrollbar { width: 3px; }
     .ext-body::-webkit-scrollbar-thumb { background: #222; }
 
-    .ext-chat-area {
-      flex: 1;
-      padding: 10px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto;
-    }
-
     .ext-bubble {
-      max-width: 90%;
-      padding: 7px 10px;
-      border-radius: 10px;
-      font-size: 11.5px;
+      max-width: 92%;
+      padding: 6px 9px;
+      border-radius: 9px;
+      font-size: 11px;
       line-height: 1.4;
       font-family: var(--f-body);
       animation: bpop 0.2s ease both;
@@ -936,15 +1026,15 @@
 
     .ext-user {
       align-self: flex-end;
-      background: #2a2a2a;
+      background: #252528;
       color: #ddd;
       border-bottom-right-radius: 2px;
     }
 
     .ext-bot {
       align-self: flex-start;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
+      background: #161619;
+      border: 1px solid #26262c;
       color: #ccc;
       border-bottom-left-radius: 2px;
     }
@@ -952,161 +1042,149 @@
     .ext-tag {
       display: inline-block;
       font-family: var(--f-mono);
-      font-size: 9px;
-      padding: 2px 5px;
+      font-size: 8.5px;
+      padding: 1px 4px;
       border-radius: 3px;
-      background: rgba(212,168,83,0.12);
-      border: 1px solid rgba(212,168,83,0.3);
+      background: rgba(212,168,83,0.14);
+      border: 1px solid var(--gold-line);
       color: var(--gold);
       margin-bottom: 3px;
     }
 
     .ext-foot {
-      background: #0d0d0d;
-      border-top: 1px solid #1e1e1e;
-      padding: 8px 10px;
+      background: #0d0d0f;
+      border-top: 1px solid #1c1c20;
+      padding: 7px 10px;
       display: flex; align-items: center; gap: 6px;
       flex-shrink: 0;
     }
 
     .ext-inp {
       flex: 1;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
+      background: #18181c;
+      border: 1px solid #26262c;
       border-radius: 14px;
-      padding: 6px 10px;
-      font-size: 11px;
+      padding: 5px 10px;
+      font-size: 10.5px;
       color: var(--muted);
       font-family: var(--f-body);
+      min-height: 24px;
+      display: flex; align-items: center;
     }
 
-    /* memory drawer overlay */
+    /* Memory Drawer */
     .ext-memory-drawer {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #0a0a0a;
+      inset: 0;
+      background: #0c0c0e;
       z-index: 50;
       display: flex;
       flex-direction: column;
       padding: 10px;
-      gap: 8px;
+      gap: 6px;
       overflow-y: auto;
       transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
     }
 
-    .ext-memory-drawer.open {
-      transform: translateX(0);
-    }
+    .ext-memory-drawer.open { transform: translateX(0); }
 
     .mem-drawer-head {
       font-family: var(--f-display);
-      font-size: 16px;
+      font-size: 15px;
       letter-spacing: 0.04em;
       color: var(--white);
-      padding-bottom: 8px;
+      padding-bottom: 6px;
       border-bottom: 1px solid #222;
       flex-shrink: 0;
     }
 
     .mem-card {
-      background: #141414;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 11px;
-      line-height: 1.5;
+      background: #141418;
+      border: 1px solid #222228;
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 10.5px;
+      line-height: 1.45;
       color: #bbb;
-      font-family: var(--f-body);
       animation: fadeUp 0.35s ease both;
     }
 
     .mem-card-tag {
       font-family: var(--f-mono);
-      font-size: 9px;
+      font-size: 8.5px;
       color: var(--gold);
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
-    /* pairing overlay */
+    /* Pairing Overlay */
     .ext-pair-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(8,8,8,0.95);
+      background: rgba(8,8,10,0.96);
       z-index: 60;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      padding: 20px;
+      gap: 12px;
+      padding: 16px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s;
     }
 
-    .ext-pair-overlay.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .ext-pair-overlay.show { opacity: 1; pointer-events: auto; }
 
     .pair-code-title {
       font-family: var(--f-display);
-      font-size: 22px;
+      font-size: 20px;
       letter-spacing: 0.06em;
       color: var(--white);
     }
 
-    .pair-code-grid {
-      display: flex; gap: 8px;
-    }
+    .pair-code-grid { display: flex; gap: 6px; }
 
     .pair-digit {
-      width: 30px; height: 38px;
+      width: 28px; height: 36px;
       background: var(--surf);
       border: 2px solid var(--gold-line);
       border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
       font-family: var(--f-display);
-      font-size: 22px;
+      font-size: 20px;
       color: var(--gold);
-      animation: digitIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-
-    @keyframes digitIn {
-      from { opacity: 0; transform: scale(0.5) translateY(-10px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .pair-desc {
       font-family: var(--f-bubbly);
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
       text-align: center;
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     /* ====================================================================
-       SCENE 4 — WEB PORTAL
+       SCENE 4 — WEB PORTAL (Centered dashboard)
     ==================================================================== */
-    #s4 { gap: 0; }
+    #s4 { display: flex; align-items: center; justify-content: center; }
 
     .portal-window {
-      width: min(720px, 96vw);
-      height: min(460px, calc(100vh - 180px));
-      background: #0d0d0d;
+      width: min(960px, 96%);
+      height: min(580px, calc(100vh - 90px));
+      background: #0c0c0e;
       border-radius: 12px;
-      border: 1px solid #1a1a1a;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+      border: 1px solid #202026;
+      box-shadow: 0 35px 90px rgba(0,0,0,0.95);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      margin: auto;
     }
 
-    /* Browser chrome for portal */
     .portal-browser-bar {
-      background: #111;
-      border-bottom: 1px solid #1e1e1e;
+      background: #141418;
+      border-bottom: 1px solid #202026;
       padding: 8px 12px;
       display: flex; align-items: center; gap: 8px;
       flex-shrink: 0;
@@ -1114,11 +1192,11 @@
 
     .portal-url {
       flex: 1;
-      background: #1a1a1a;
-      border: 1px solid #252525;
+      background: #1c1c22;
+      border: 1px solid #2a2a34;
       border-radius: 16px;
-      padding: 4px 12px;
-      font-size: 11.5px;
+      padding: 3px 12px;
+      font-size: 11px;
       font-family: var(--f-mono);
       color: var(--muted);
     }
@@ -1129,31 +1207,30 @@
       overflow: hidden;
     }
 
-    /* Portal sidebar */
     .portal-sidebar {
-      width: 180px;
-      background: #0a0a0a;
-      border-right: 1px solid #1a1a1a;
+      width: 170px;
+      background: #09090b;
+      border-right: 1px solid #1c1c22;
       display: flex;
       flex-direction: column;
-      padding: 14px 0;
+      padding: 12px 0;
       gap: 2px;
       flex-shrink: 0;
     }
 
     .portal-logo {
       font-family: var(--f-display);
-      font-size: 24px;
+      font-size: 22px;
       letter-spacing: 0.05em;
       color: var(--white);
-      padding: 0 14px 14px;
-      border-bottom: 1px solid #1a1a1a;
-      margin-bottom: 6px;
+      padding: 0 14px 10px;
+      border-bottom: 1px solid #1a1a20;
+      margin-bottom: 4px;
     }
 
     .portal-nav-item {
       padding: 8px 14px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-family: var(--f-body);
       color: var(--muted);
       display: flex; align-items: center; gap: 8px;
@@ -1169,7 +1246,6 @@
 
     .portal-nav-item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-    /* Portal main content */
     .portal-main {
       flex: 1;
       overflow-y: auto;
@@ -1180,11 +1256,11 @@
     }
 
     .portal-main::-webkit-scrollbar { width: 3px; }
-    .portal-main::-webkit-scrollbar-thumb { background: #252525; }
+    .portal-main::-webkit-scrollbar-thumb { background: #25252a; }
 
     .portal-section-head {
       font-family: var(--f-display);
-      font-size: 20px;
+      font-size: 19px;
       letter-spacing: 0.04em;
       color: var(--white);
     }
@@ -1201,7 +1277,7 @@
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 10px 12px;
-      font-size: 12.5px;
+      font-size: 12px;
       line-height: 1.55;
       font-family: var(--f-body);
       color: var(--txt);
@@ -1209,8 +1285,8 @@
     }
 
     .portal-user-bubble {
-      background: #1a1a1a;
-      border-color: #2a2a2a;
+      background: #18181c;
+      border-color: #272730;
     }
 
     .portal-av {
@@ -1235,26 +1311,25 @@
       background: var(--surf);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 11.5px;
-      line-height: 1.5;
+      padding: 9px 11px;
+      font-size: 11px;
+      line-height: 1.45;
       color: var(--muted);
-      font-family: var(--f-body);
       animation: fadeUp 0.3s ease both;
     }
 
     .portal-mem-card-tag {
       font-family: var(--f-mono);
-      font-size: 9px;
+      font-size: 8.5px;
       color: var(--gold);
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .pairing-card {
       background: var(--surf);
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -1262,53 +1337,36 @@
 
     .pair-code-big {
       font-family: var(--f-display);
-      font-size: 32px;
+      font-size: 30px;
       letter-spacing: 0.12em;
       color: var(--gold);
     }
 
     .pair-desc-sm {
-      font-size: 11.5px;
-      font-family: var(--f-body);
+      font-size: 11px;
       color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* ====================================================================
-       GLOBAL UTILITY
-    ==================================================================== */
-    .typing-cursor {
-      display: inline-block;
-      width: 2px; height: 1em;
-      background: currentColor;
-      margin-left: 1px;
-      vertical-align: text-bottom;
-      animation: blink 0.9s step-start infinite;
+      line-height: 1.45;
     }
 
     /* Mobile */
-    @media (max-width: 700px) {
-      #narrator {
-        display: none;
-      }
-
-      #main-area {
-        padding: 12px;
-      }
+    @media (max-width: 768px) {
+      #narrator { display: none; }
+      #main-area { padding: 8px; }
+      .term-window, .chrome-window, .portal-window { width: 100%; height: 100%; }
     }
   </style>
 </head>
 <body>
-  <!-- Three.js particle canvas -->
+  <!-- Three.js background canvas -->
   <canvas id="c"></canvas>
 
   <!-- Transition flash -->
   <div id="flash"></div>
 
-  <!-- Virtual cursor -->
+  <!-- Virtual cursor for extension & tab clicks -->
   <div id="vcursor">
     <svg viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 2L3 28L9.5 21.5L14 31L17 30L12.5 20.5L22 20.5L3 2Z" fill="white" stroke="#333" stroke-width="1"/>
+      <path d="M3 2L3 28L9.5 21.5L14 31L17 30L12.5 20.5L22 20.5L3 2Z" fill="white" stroke="#222" stroke-width="1.2"/>
     </svg>
   </div>
 
@@ -1318,9 +1376,9 @@
 
       <!-- ═══ SCENE 0: INTRO ═══ -->
       <div id="s0" class="scene active">
-        <p class="intro-eyebrow">Igbo for "Remember" &mdash; Built for every surface</p>
+        <p class="intro-eyebrow">Igbo for "Remember" &mdash; One Mind Across Every Device</p>
         <h1 class="intro-hero-title">
-          <span id="c-letter" style="animation: none; opacity: 0;">C</span><span id="h-letter" style="animation: none; opacity: 0;">h</span><span id="e-letter" style="animation: none; opacity: 0;">e</span><span id="t-letter" style="animation: none; opacity: 0;">t</span><span id="a-letter" style="animation: none; opacity: 0;">a</span>
+          <span id="c-letter">C</span><span id="h-letter">h</span><span id="e-letter">e</span><span id="t-letter">t</span><span id="a-letter">a</span>
         </h1>
         <p class="intro-sub" id="intro-sub-text">&nbsp;</p>
         <p class="intro-desc" id="intro-desc-text">&nbsp;</p>
@@ -1335,7 +1393,7 @@
             <div class="tg-back">
               <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M9 1L1 8L9 15" stroke="#8da4be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-            <div class="tg-av tg-av-online">C</div>
+            <div class="tg-av">C</div>
             <div class="tg-meta">
               <div class="tg-title">Cheta</div>
               <div class="tg-status">online</div>
@@ -1367,9 +1425,9 @@
         </div>
       </div>
 
-      <!-- ═══ SCENE 3: CHROME EXTENSION ═══ -->
+      <!-- ═══ SCENE 3: CHROME MULTI-TAB & WEBMCP ═══ -->
       <div id="s3" class="scene">
-        <div class="chrome-window" id="chrome-win" style="position:relative;">
+        <div class="chrome-window" id="chrome-win">
           <div class="chrome-titlebar">
             <div class="chrome-tl">
               <div class="chrome-dot cd-r"></div>
@@ -1378,16 +1436,21 @@
             </div>
           </div>
           <div class="chrome-tabs">
-            <div class="chrome-tab">
+            <!-- Tab 1: WebMCP zaMaker -->
+            <div class="chrome-tab chrome-tab-active" id="tab-pizza">
               <div class="chrome-tab-fav">
-                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill="#555"/><path d="M5 8h6M8 5v6" stroke="#ccc" stroke-width="1.5"/></svg>
+                <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill="#c88738"/><path d="M8 2 L14 13 L2 13 Z" fill="#96281b"/></svg>
               </div>
-              <span class="chrome-tab-text" id="chrome-tab-label">GitHub &mdash; cheta/docs</span>
-              <div class="chrome-tab-close">x</div>
+              <span class="chrome-tab-text">zaMaker! WebMCP Creator</span>
+              <span class="chrome-tab-close">&times;</span>
             </div>
-            <div class="chrome-tab chrome-tab-inactive">
-              <div class="chrome-tab-fav"></div>
-              <span class="chrome-tab-text">New Tab</span>
+            <!-- Tab 2: Documentation -->
+            <div class="chrome-tab" id="tab-doc">
+              <div class="chrome-tab-fav">
+                <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="2" fill="#333"/><line x1="5" y1="5" x2="11" y2="5" stroke="#aaa"/><line x1="5" y1="8" x2="9" y2="8" stroke="#aaa"/></svg>
+              </div>
+              <span class="chrome-tab-text">GitHub &mdash; cheta/agent</span>
+              <span class="chrome-tab-close">&times;</span>
             </div>
           </div>
           <div class="chrome-toolbar">
@@ -1402,15 +1465,15 @@
             </button>
             <div class="chrome-omnibox">
               <svg class="chrome-lock" width="10" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span class="chrome-omnitext" id="chrome-url-text">github.com/cheta/docs</span>
+              <span class="chrome-omnitext" id="chrome-url-text">https://googlechromelabs.github.io/webmcp-pizza/</span>
             </div>
             <div class="chrome-extensions-area">
-              <div class="chrome-ext-btn" title="Extensions">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+              <div class="chrome-ext-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>
               </div>
-              <div class="cheta-ext-icon" id="cheta-ext-btn" title="Cheta">
+              <div class="cheta-ext-icon" id="cheta-ext-btn" title="Cheta Extension">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" fill="#1a1a1a" stroke="#444" stroke-width="1.5"/>
+                  <circle cx="12" cy="12" r="10" fill="#18181c" stroke="#444" stroke-width="1.5"/>
                   <path d="M8 12a4 4 0 0 1 8 0" stroke="#d4a853" stroke-width="2" stroke-linecap="round"/>
                   <circle cx="12" cy="15" r="1.5" fill="#d4a853"/>
                 </svg>
@@ -1421,30 +1484,48 @@
             </div>
           </div>
           <div class="chrome-content">
-            <!-- Fake site (left/main area) -->
-            <div class="chrome-page" id="chrome-page">
-              <div class="fake-site-bar">
-                <div class="fake-site-logo" id="fake-site-logo">GitHub</div>
-                <div class="fake-site-nav">
-                  <span>Explore</span>
-                  <span>Marketplace</span>
-                  <span>Pricing</span>
+            <!-- Viewport 1: WebMCP Pizza Creator -->
+            <div class="pizza-page-view" id="pizza-view">
+              <div class="pizza-app-header">
+                <div>
+                  <div class="pizza-app-title">zaMaker! WebMCP Demo</div>
+                  <div class="pizza-app-sub">googlechromelabs.github.io &bull; in-page DOM automation</div>
                 </div>
               </div>
-              <div class="fake-site-content" id="fake-site-content">
-                <div class="fake-article-title" id="fake-article-title">cheta/agent &mdash; Memory-first agentic AI</div>
-                <div class="fake-article-meta">Updated 2 hours ago &mdash; 24 stars &mdash; Python</div>
-                <div class="fake-article-body" id="fake-article-body">
-                  Cheta keeps a permanent, encrypted memory on Walrus decentralised storage.
-                  Unlike stateless assistants that forget everything between sessions, Cheta
-                  builds a salience-weighted memory index that survives across devices and
-                  surfaces. Memory consolidation prevents stale facts from competing with
-                  fresh information. <span id="hl-span">Every fact is ranked by recency, importance, and origin surface</span>
-                  before being injected into context.
+              <div class="pizza-stage">
+                <div class="pizza-crust">
+                  <div class="pizza-sauce">
+                    <div class="pizza-cheese" id="pizza-cheese">
+                      <!-- Toppings dynamically appear here -->
+                    </div>
+                  </div>
                 </div>
+              </div>
+              <div class="pizza-tool-banner">
+                <span>In-Page Tool:</span>
+                <code>add_topping({ topping: "pepperoni, mushrooms" })</code>
               </div>
             </div>
-            <!-- Extension side panel -->
+
+            <!-- Viewport 2: Documentation Page (Tab 2) -->
+            <div class="doc-page-view" id="doc-view">
+              <div class="doc-site-bar">
+                <div class="doc-site-logo">GitHub</div>
+                <span style="font-size:12px;color:#656d76;">cheta / agent / README.md</span>
+              </div>
+              <div class="doc-site-content">
+                <h2 class="doc-article-title">Cheta: Memory-First Agentic Architecture</h2>
+                <div class="doc-article-meta">Walrus Decentralized Storage &bull; Multi-Surface Protocol &bull; Python / TypeScript</div>
+                <p class="doc-article-body">
+                  Cheta maintains a unified, portable memory space across Telegram, Linux Terminal, Chromium Extension, and Web Portal.
+                  Unlike stateless chatbots that suffer from memory rot or cosine staleness, Cheta executes on-ingest consolidation.
+                  <span id="doc-hl-target">Every memory is ranked by recency, importance, and origin surface before injection into context.</span>
+                  Old facts that are contradicted by newer updates are automatically marked superseded on Walrus.
+                </p>
+              </div>
+            </div>
+
+            <!-- Cheta Sidepanel -->
             <div class="ext-panel" id="ext-panel" style="display:none;">
               <div class="ext-topbar">
                 <div class="ext-brand">Cheta</div>
@@ -1455,21 +1536,19 @@
                 <div class="ext-tab" id="ext-tab-mem">Memories</div>
                 <div class="ext-tab" id="ext-tab-pair">Pair</div>
               </div>
-              <div class="ext-body" id="ext-body">
-                <div class="ext-chat-area" id="ext-chat"></div>
-              </div>
+              <div class="ext-body" id="ext-chat"></div>
               <div class="ext-foot">
                 <div class="ext-inp" id="ext-inp-preview">&nbsp;</div>
               </div>
-              <!-- Memory drawer -->
+              <!-- Slide-out Memories Drawer -->
               <div class="ext-memory-drawer" id="ext-mem-drawer">
-                <div class="mem-drawer-head">MEMORIES</div>
+                <div class="mem-drawer-head">WALRUS MEMORIES</div>
               </div>
-              <!-- Pairing overlay -->
+              <!-- Pairing Overlay -->
               <div class="ext-pair-overlay" id="ext-pair-overlay">
                 <div class="pair-code-title">DEVICE PAIR</div>
                 <div class="pair-code-grid" id="pair-digits"></div>
-                <div class="pair-desc">Enter this 6-digit code in your CLI or web portal to link your browser session to your identity</div>
+                <div class="pair-desc">Enter this 6-digit code in CLI ('cheta pair') or web portal to link your browser session</div>
               </div>
             </div>
           </div>
@@ -1516,21 +1595,17 @@
 
     <!-- ════════════════════════════ NARRATOR ════════════════════════════ -->
     <div id="narrator">
-      <div class="narrator-head">Cheta &mdash; AI Guide</div>
+      <div class="narrator-head">Cheta &mdash; Guide</div>
       <div class="narrator-face">
         <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Body/head -->
-          <circle cx="32" cy="28" r="18" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
-          <!-- Eyes -->
+          <circle cx="32" cy="28" r="18" fill="#18181c" stroke="#333" stroke-width="1.5"/>
           <ellipse cx="25" cy="25" rx="3.5" ry="4" fill="#f0f0f0"/>
           <ellipse cx="39" cy="25" rx="3.5" ry="4" fill="#f0f0f0"/>
           <circle cx="25.8" cy="25.5" r="2" fill="#111"/>
           <circle cx="39.8" cy="25.5" r="2" fill="#111"/>
           <circle cx="26.3" cy="24.5" r="0.8" fill="white"/>
           <circle cx="40.3" cy="24.5" r="0.8" fill="white"/>
-          <!-- Smile -->
-          <path d="M26 33 Q32 38 38 33" stroke="#d4a853" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          <!-- Gold chip/crown motif -->
+          <path d="M26 33 Q32 38 38 33" stroke="#d4a853" stroke-width="1.6" fill="none" stroke-linecap="round"/>
           <rect x="28" y="13" width="8" height="4" rx="2" fill="#d4a853" opacity="0.8"/>
           <circle cx="32" cy="13" r="1.5" fill="#f0e0a0"/>
         </svg>
@@ -1551,19 +1626,18 @@
     'use strict';
 
     /* ================================================================
-       PARTICLE BACKGROUND
+       PARTICLE CANVAS (Three.js background)
     ================================================================ */
     var canvas = document.getElementById('c');
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x080808, 1);
+    renderer.setClearColor(0x070708, 1);
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 60);
 
-    // Particles
-    var pCount = 800;
+    var pCount = 750;
     var pGeo = new THREE.BufferGeometry();
     var pPos = new Float32Array(pCount * 3);
     var pVel = new Float32Array(pCount * 3);
@@ -1572,44 +1646,39 @@
       pPos[i * 3]     = (Math.random() - 0.5) * 200;
       pPos[i * 3 + 1] = (Math.random() - 0.5) * 120;
       pPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      pVel[i * 3]     = (Math.random() - 0.5) * 0.012;
-      pVel[i * 3 + 1] = (Math.random() - 0.5) * 0.008;
+      pVel[i * 3]     = (Math.random() - 0.5) * 0.01;
+      pVel[i * 3 + 1] = (Math.random() - 0.5) * 0.007;
       pVel[i * 3 + 2] = (Math.random() - 0.5) * 0.005;
     }
 
     pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-
     var pMat = new THREE.PointsMaterial({
-      color: 0x444444,
-      size: 0.6,
+      color: 0x383840,
+      size: 0.65,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.65
+      opacity: 0.7
     });
-
     var particles = new THREE.Points(pGeo, pMat);
     scene.add(particles);
 
-    // Gold accent particles (fewer, brighter)
-    var gCount = 60;
+    // Warm gold accent points
+    var gCount = 50;
     var gGeo = new THREE.BufferGeometry();
     var gPos = new Float32Array(gCount * 3);
-
     for (var gi = 0; gi < gCount; gi++) {
       gPos[gi * 3]     = (Math.random() - 0.5) * 160;
       gPos[gi * 3 + 1] = (Math.random() - 0.5) * 90;
       gPos[gi * 3 + 2] = (Math.random() - 0.5) * 60;
     }
-
     gGeo.setAttribute('position', new THREE.BufferAttribute(gPos, 3));
     var gMat = new THREE.PointsMaterial({
       color: 0xd4a853,
-      size: 1.2,
+      size: 1.1,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.55
     });
-
     var goldParticles = new THREE.Points(gGeo, gMat);
     scene.add(goldParticles);
 
@@ -1618,16 +1687,13 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
-
     window.addEventListener('resize', onResize);
     onResize();
 
     var t0 = performance.now();
-
     function animate(now) {
       requestAnimationFrame(animate);
       TWEEN.update(now);
-
       var dt = (now - t0) * 0.001;
       t0 = now;
 
@@ -1636,29 +1702,20 @@
         pos[j * 3]     += pVel[j * 3];
         pos[j * 3 + 1] += pVel[j * 3 + 1];
         pos[j * 3 + 2] += pVel[j * 3 + 2];
-
         if (Math.abs(pos[j * 3])     > 100) pVel[j * 3]     *= -1;
         if (Math.abs(pos[j * 3 + 1]) >  60) pVel[j * 3 + 1] *= -1;
         if (Math.abs(pos[j * 3 + 2]) >  40) pVel[j * 3 + 2] *= -1;
       }
-
       pGeo.attributes.position.needsUpdate = true;
 
-      // Slowly rotate gold particles
       goldParticles.rotation.y += 0.0003;
       particles.rotation.y += 0.00008;
-
-      // Gentle camera drift
-      camera.position.x = Math.sin(dt * 0.05) * 3;
-      camera.position.y = Math.cos(dt * 0.07) * 1.5;
-
       renderer.render(scene, camera);
     }
-
     animate(performance.now());
 
     /* ================================================================
-       CORE UTILITIES
+       STREAMING TYPEWRITER & TIMING ENGINE
     ================================================================ */
     function sleep(ms) {
       return new Promise(function(res) { setTimeout(res, ms); });
@@ -1668,15 +1725,13 @@
       return new Promise(function(resolve) {
         if (!el) { resolve(); return; }
         var i = 0;
-        var sp = speed || 28;
-        // preserve existing cursor spans
-        var cursor = el.querySelector('.narrator-cursor') || el.querySelector('.typing-cursor');
+        var sp = speed || 24;
+        var cursor = el.querySelector('.narrator-cursor');
         if (cursor) cursor.remove();
         el.textContent = '';
 
         function next() {
           if (i >= text.length) {
-            // add blinking cursor back
             var cur = document.createElement('span');
             cur.className = 'narrator-cursor';
             el.appendChild(cur);
@@ -1684,27 +1739,8 @@
             return;
           }
           el.textContent += text[i++];
-          setTimeout(next, sp + Math.random() * (sp * 0.4));
+          setTimeout(next, sp + Math.random() * (sp * 0.3));
         }
-
-        next();
-      });
-    }
-
-    function appendType(el, text, speed) {
-      // appends typed text to existing content
-      return new Promise(function(resolve) {
-        if (!el) { resolve(); return; }
-        var existing = el.textContent;
-        var i = 0;
-        var sp = speed || 22;
-
-        function next() {
-          if (i >= text.length) { resolve(); return; }
-          el.textContent = existing + text.slice(0, ++i);
-          setTimeout(next, sp + Math.random() * (sp * 0.4));
-        }
-
         next();
       });
     }
@@ -1716,20 +1752,19 @@
     }
 
     /* ================================================================
-       SCENES CONFIG
+       SCENE CONTROLLER
     ================================================================ */
     var SCENES = [
       { id: 's0', title: 'One Mind', narTitle: 'What is Cheta?' },
       { id: 's1', title: 'Telegram', narTitle: 'Telegram Face' },
       { id: 's2', title: 'Terminal', narTitle: 'CLI Face' },
-      { id: 's3', title: 'Extension', narTitle: 'Browser Extension' },
-      { id: 's4', title: 'Web Portal', narTitle: 'Web Portal' },
+      { id: 's3', title: 'Extension', narTitle: 'Browser Extension & WebMCP' },
+      { id: 's4', title: 'Web Portal', narTitle: 'Web Portal & Evidence' },
     ];
 
     var currentScene = 0;
     var isTransitioning = false;
 
-    /* Build narrator dots */
     var dotsEl = document.getElementById('nar-dots');
     SCENES.forEach(function(s, i) {
       var d = document.createElement('div');
@@ -1747,7 +1782,7 @@
 
     function narrate(title, text, speed) {
       document.getElementById('nar-title').textContent = title;
-      return typeInto(document.getElementById('nar-text'), text, speed || 24);
+      return typeInto(document.getElementById('nar-text'), text, speed || 22);
     }
 
     function goToScene(idx) {
@@ -1757,9 +1792,8 @@
       flash().then(function() {
         var prev = document.getElementById(SCENES[currentScene].id);
         prev.style.opacity = '0';
-        prev.style.transform = 'translateY(-14px) scale(0.96)';
-
-        return sleep(320);
+        prev.style.transform = 'scale(0.96)';
+        return sleep(280);
       }).then(function() {
         var prev = document.getElementById(SCENES[currentScene].id);
         prev.classList.remove('active');
@@ -1771,17 +1805,13 @@
 
         var next = document.getElementById(SCENES[idx].id);
         next.style.display = 'flex';
-        next.offsetHeight; // reflow
+        next.offsetHeight;
         next.classList.add('active');
 
         isTransitioning = false;
         runScene(idx);
       });
     }
-
-    /* ================================================================
-       SCENE RUNNERS
-    ================================================================ */
 
     function runScene(idx) {
       if (idx === 0) runIntro();
@@ -1791,9 +1821,9 @@
       else if (idx === 4) runPortal();
     }
 
-    /* ─────────────────────────────────────────────
-       SCENE 0: INTRO — kinetic title + face cards
-    ──────────────────────────────────────────────── */
+    /* ================================================================
+       SCENE 0: INTRO
+    ================================================================ */
     var introRan = false;
 
     function runIntro() {
@@ -1802,42 +1832,37 @@
 
       narrate('What is Cheta?', '');
 
-      // Animate each letter of CHETA in
       var letters = ['c-letter','h-letter','e-letter','t-letter','a-letter'];
       letters.forEach(function(id, i) {
         var el = document.getElementById(id);
         el.style.transition = 'opacity 0.4s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-        el.style.transform = 'translateY(80px)';
-
+        el.style.transform = 'translateY(60px)';
         setTimeout(function() {
           el.style.opacity = '1';
           el.style.transform = 'translateY(0)';
-        }, 300 + i * 110);
+        }, 250 + i * 100);
       });
 
-      // Sub text
-      sleep(1000).then(function() {
+      sleep(900).then(function() {
         return typeInto(document.getElementById('intro-sub-text'),
-          'One Mind. Every Surface.', 30);
+          'One Mind. Every Surface.', 28);
       }).then(function() {
-        return sleep(400);
+        return sleep(350);
       }).then(function() {
         return typeInto(document.getElementById('intro-desc-text'),
-          'Cheta is a memory-first AI agent. Unlike stateless chatbots, Cheta builds a permanent, encrypted, salience-weighted memory on Walrus decentralised storage that travels with you across every device and surface you use.', 18);
+          'Cheta is an autonomous memory-first AI agent. It keeps one private, encrypted memory space across Telegram, Linux Terminal, Chromium Extension, and Web Portal using Walrus decentralized storage. Zero memory rot.', 18);
       }).then(function() {
         return sleep(300);
       }).then(function() {
-        // Build face cards
         var faces = [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', name: 'Telegram', desc: 'Send messages, use commands, get AI replies with full memory' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>', name: 'Terminal', desc: 'Full CLI with chat, memory management, reminders and pair' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>', name: 'Extension', desc: 'Browser sidepanel with page reading, highlights, and memory' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>', name: 'Web Portal', desc: 'Full dashboard for memory, pairing, evidence replay' },
+          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', name: 'Telegram', desc: 'Natural fact extraction, slash commands, voice notes & reminders' },
+          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>', name: 'Terminal', desc: 'Interactive chat REPL, salience scoring, pair & passport backup' },
+          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>', name: 'Extension', desc: 'Active tab inspection, in-page WebMCP tool automation & memories' },
+          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>', name: 'Web Portal', desc: 'Full web assistant, memory management, pairing & evidence audit' },
         ];
 
         var container = document.getElementById('face-cards');
         container.innerHTML = '';
-
         faces.forEach(function(f, i) {
           var card = document.createElement('div');
           card.className = 'face-card';
@@ -1851,7 +1876,7 @@
         });
 
         return narrate('What is Cheta?',
-          'Cheta keeps one memory across all four surfaces. Ask it something on Telegram, recall it on the CLI, browse with it in Chrome, and manage everything in the web portal. Zero memory rot.', 22);
+          'Tell Cheta something in Telegram, and your Terminal and Browser immediately know it. Consolidation prevents old facts from competing with fresh updates.', 22);
       }).then(function() {
         return sleep(5000);
       }).then(function() {
@@ -1859,9 +1884,9 @@
       });
     }
 
-    /* ─────────────────────────────────────────────
-       SCENE 1: TELEGRAM
-    ──────────────────────────────────────────────── */
+    /* ================================================================
+       SCENE 1: TELEGRAM (Pure Natural Language Extraction, No /remember!)
+    ================================================================ */
     var tgRan = false;
 
     function tgBubble(type, text, time, tagText) {
@@ -1895,8 +1920,8 @@
 
     function tgTyping(txt) {
       var inp = document.getElementById('tg-input-preview');
-      return typeInto(inp, txt, 60).then(function() {
-        return sleep(300);
+      return typeInto(inp, txt, 55).then(function() {
+        return sleep(250);
       }).then(function() {
         inp.textContent = '';
       });
@@ -1909,46 +1934,47 @@
 
       narrate('Telegram Face', '');
 
-      sleep(400).then(function() {
+      sleep(350).then(function() {
         return narrate('Telegram Face',
-          'Cheta lives in your Telegram. It knows your name, your history, your goals. Ask it anything, and it recalls what matters.', 22);
+          'Cheta learns through natural conversation. No special "/remember" command needed! It mines durable facts automatically on every turn and consolidates them on Walrus.', 21);
       }).then(function() {
-        return sleep(600);
+        return sleep(500);
       }).then(function() {
         return tgTyping('hey cheta');
       }).then(function() {
         return tgBubble('user', 'hey cheta', '12:01');
       }).then(function() {
-        return sleep(700);
-      }).then(function() {
-        return tgBubble('bot', 'Hey Kosi. Ready when you are. What\'s on your mind?', '12:01');
-      }).then(function() {
-        return sleep(1200);
-      }).then(function() {
-        return tgTyping('/remember My primary language this year is Rust');
-      }).then(function() {
-        return tgBubble('user', '/remember My primary language this year is Rust', '12:02');
-      }).then(function() {
         return sleep(600);
       }).then(function() {
-        return tgBubble('bot', 'Noted and stored. I compared this to your existing memory - previously you listed Python as primary. This new fact is marked as superseding it on Walrus.', '12:02', 'memory.write');
+        return tgBubble('bot', 'Hey Kosi! Ready when you are. What\'s on your mind?', '12:01');
       }).then(function() {
         return sleep(1000);
       }).then(function() {
-        return narrate('Telegram Face',
-          'Memory consolidation: when a new fact contradicts an old one, Cheta marks the old record superseded - so stale data never pollutes your context.', 22);
+        // NATURAL CONVERSATION FACT MENTION - NO /remember!
+        return tgTyping('By the way, I switched my main stack from Python to Rust this year, and I work out of Lagos now.');
       }).then(function() {
-        return sleep(1400);
+        return tgBubble('user', 'By the way, I switched my main stack from Python to Rust this year, and I work out of Lagos now.', '12:02');
+      }).then(function() {
+        return sleep(600);
+      }).then(function() {
+        return tgBubble('bot', 'Noted! I extracted and stored your focus on Rust and your location in Lagos. I also checked your existing Walrus memory: your previous Python preference is now marked superseded.', '12:02', 'memory.consolidate');
+      }).then(function() {
+        return sleep(1200);
+      }).then(function() {
+        return narrate('Telegram Face',
+          'Automatic Consolidation: Cheta detects that Rust updates your older Python preference. The old record is superseded on Walrus, preventing memory rot.', 21);
+      }).then(function() {
+        return sleep(1200);
       }).then(function() {
         return tgTyping('what do you know about my stack?');
       }).then(function() {
         return tgBubble('user', 'what do you know about my stack?', '12:03');
       }).then(function() {
-        return sleep(800);
+        return sleep(700);
       }).then(function() {
-        return tgBubble('bot', 'From your memory:\n- Primary language: Rust (updated today)\n- You work on systems programming and async runtimes\n- Preferred editor: Neovim\n- You\'re building a distributed job scheduler', '12:03', 'memory.recall');
+        return tgBubble('bot', 'From your Walrus memory space:\n- Primary stack: Rust (active, superseded Python)\n- Location: Lagos\n- Active project: Distributed job scheduler\n- Preferred editor: Neovim', '12:03', 'salience.recall');
       }).then(function() {
-        return sleep(1200);
+        return sleep(1100);
       }).then(function() {
         return tgTyping('/remind me in 30 mins to review the scheduler PR');
       }).then(function() {
@@ -1956,14 +1982,9 @@
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', 'Done. I\'ll ping you at 12:34 to review the scheduler PR.', '12:04', 'reminder.set');
+        return tgBubble('bot', 'Reminder scheduled for 12:34. I will ping you right here on Telegram.', '12:04', 'reminder.set');
       }).then(function() {
-        return sleep(1100);
-      }).then(function() {
-        return narrate('Telegram Face',
-          'Reminders, memory reads, memory writes, counterfactual replay - all accessible as Telegram commands. Your phone is a full Cheta terminal.', 22);
-      }).then(function() {
-        return sleep(1200);
+        return sleep(1000);
       }).then(function() {
         return tgTyping('/pair');
       }).then(function() {
@@ -1971,9 +1992,9 @@
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', 'Pairing code: 847 391\n\nEnter this in your CLI (`cheta pair`) or web portal to link your browser and terminal to this Telegram identity. Expires in 10 minutes.', '12:05', 'device.pair');
+        return tgBubble('bot', 'Pairing code: 847 391\n\nEnter "pair 847391" on your CLI or enter 847391 in the browser extension to link all surfaces under this identity. Valid for 10 minutes.', '12:05', 'device.pair');
       }).then(function() {
-        return sleep(1200);
+        return sleep(1100);
       }).then(function() {
         return tgTyping('/memories');
       }).then(function() {
@@ -1981,22 +2002,22 @@
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', '14 memories stored on Walrus.\nTop-ranked: Rust as primary language, distributed scheduler project, Neovim preference.\nAll memories are encrypted and portable - export them anytime with /passport', '12:06', 'memory.list');
+        return tgBubble('bot', '14 active memories stored in Walrus decentralized storage. All encrypted and portable across every device.', '12:06', 'memory.list');
       }).then(function() {
-        return sleep(1500);
+        return sleep(1400);
       }).then(function() {
         return narrate('Telegram Face',
-          'Every interaction on Telegram is captured, ranked, and ready to recall on any other surface. Cheta remembers so you don\'t have to.', 22);
+          'Notice how natural it is: no manual tagging, automatic superseding, instant reminders, and cross-surface pairing codes.', 21);
       }).then(function() {
-        return sleep(5000);
+        return sleep(4500);
       }).then(function() {
         goToScene(2);
       });
     }
 
-    /* ─────────────────────────────────────────────
-       SCENE 2: CLI TERMINAL
-    ──────────────────────────────────────────────── */
+    /* ================================================================
+       SCENE 2: CLI TERMINAL (Centered, generous, proud)
+    ================================================================ */
     var cliRan = false;
 
     function termLine(html, delay) {
@@ -2027,7 +2048,7 @@
         body.appendChild(line);
         body.scrollTop = body.scrollHeight;
 
-        return typeInto(cmdSpan, cmd, 50);
+        return typeInto(cmdSpan, cmd, 45);
       });
     }
 
@@ -2050,36 +2071,31 @@
 
       sleep(300).then(function() {
         return narrate('CLI Face',
-          'The Cheta CLI runs on any Linux machine. Full memory management, chat, reminders, device pairing and counterfactual replay from your terminal.', 22);
-      }).then(function() {
-        return termLine('<span class="t-comment"># Cheta CLI - built on clack for beautiful terminal UX</span>', 200);
+          'The Linux Terminal interface: pure developer velocity. Built with clack terminal prompts, real-time Walrus status, salience scoring, and counterfactual replay.', 21);
       }).then(function() {
         return termCmd('cheta status');
       }).then(function() {
         return termOutput([
-          'Cheta v1.0.0',
+          'Cheta v1.0.0 (Memory-First Autonomous Agent)',
           'Identity : Kosi (kosi@arch)',
           'Backend  : https://ranti-gkn7.onrender.com',
-          'Walrus   : connected',
-          'Memories : 14 stored',
-          'Reminders: 1 pending',
-        ], 't-out', 60);
+          'Walrus   : connected (blob namespace: active)',
+          'Memories : 14 stored (salience-ranked)',
+          'Reminders: 1 pending (review scheduler PR at 12:34)',
+        ], 't-out', 50);
       }).then(function() {
-        return sleep(600);
+        return sleep(700);
       }).then(function() {
         return termCmd('cheta chat');
       }).then(function() {
         return termOutput([
-          'Starting Cheta chat session. Type your message. Ctrl+C to exit.',
+          'Connected to Cheta memory REPL. Ingesting Walrus context...',
           '',
-        ], 't-out-dim', 80);
+        ], 't-out-dim', 60);
       }).then(function() {
-        return narrate('CLI Face',
-          'The chat command opens a full interactive REPL. Memory is injected into every turn automatically.', 22);
+        return termLine('<span class="t-prompt">You &gt; </span><span class="t-cmd">what project am I working on?</span>', 250);
       }).then(function() {
-        return termLine('<span class="t-prompt">You &gt; </span><span class="t-cmd">what project am I working on?</span>', 300);
-      }).then(function() {
-        return sleep(700);
+        return sleep(600);
       }).then(function() {
         return termLine('<span class="t-out-gold">Cheta &gt; </span>', 0);
       }).then(function() {
@@ -2089,106 +2105,71 @@
         ans.className = 't-out-white';
         last.appendChild(ans);
         body.scrollTop = body.scrollHeight;
-        return typeInto(ans, 'Based on your memory: you\'re building a distributed job scheduler in Rust. You mentioned async runtimes are a key component, and you have a PR open for review. Want me to surface the latest memory around this project?', 18);
+        return typeInto(ans, 'Recalled from your Walrus memory: you are building a distributed job scheduler in Rust out of Lagos. You have an active PR open for review regarding async runtime execution.', 17);
       }).then(function() {
         return sleep(800);
-      }).then(function() {
-        return termLine('<span class="t-prompt">You &gt; </span><span class="t-cmd">yes</span>', 200);
-      }).then(function() {
-        return sleep(600);
-      }).then(function() {
-        return termLine('<span class="t-out-dim">[memory.recall] top-5 memories for "distributed job scheduler"</span>', 0);
-      }).then(function() {
-        return termOutput([
-          '  [1] Rust is primary language (importance: 0.95, recency: 0.99)',
-          '  [2] Building distributed job scheduler (importance: 0.91, recency: 0.97)',
-          '  [3] PR for scheduler async runtime open (importance: 0.85)',
-          '  [4] Prefer Neovim for editing Rust (importance: 0.72)',
-          '  [5] Interested in Tokio and async-std tradeoffs (importance: 0.68)',
-        ], 't-out-dim', 40);
-      }).then(function() {
-        return sleep(800);
-      }).then(function() {
-        return termCmd('cheta memory list --top 5');
-      }).then(function() {
-        return termOutput([
-          'Walrus Memory - top 5 by salience score:',
-          '',
-          '  1. "Primary language this year: Rust" [origin:telegram] score:0.97',
-          '  2. "Building distributed job scheduler" [origin:cli] score:0.94',
-          '  3. "Scheduler PR open for async review" [origin:telegram] score:0.88',
-          '  4. "Prefer Neovim for Rust editing" [origin:extension] score:0.76',
-          '  5. "Reading: The Pragmatic Programmer" [origin:telegram] score:0.61',
-        ], 't-out', 50);
-      }).then(function() {
-        return sleep(600);
       }).then(function() {
         return narrate('CLI Face',
-          'Salience scoring: each memory gets a combined score from recency, semantic importance, and the surface it came from. The best memories always win context.', 22);
+          'Notice that Cheta in the terminal knows the Rust stack and Lagos location you just told it on Telegram! One memory across all devices.', 21);
       }).then(function() {
-        return termCmd('cheta pair');
+        return sleep(700);
       }).then(function() {
-        return termOutput([
-          '',
-          '  Generating pairing code...',
-        ], 't-out-dim', 80);
-      }).then(function() {
-        return termLine('<span class="t-out-gold">  Code: 8 4 7 3 9 1</span>', 200);
+        return termCmd('cheta memory list --top 4');
       }).then(function() {
         return termOutput([
-          '  Enter this code in the web portal or browser extension to pair.',
-          '  Expires in 10 minutes.',
-          '',
-        ], 't-out-dim', 60);
-      }).then(function() {
-        return sleep(600);
-      }).then(function() {
-        return termCmd('cheta memory replay --turn 3 --no-memory');
-      }).then(function() {
-        return termOutput([
-          'Counterfactual replay: re-running turn 3 with memory disabled...',
-          '',
-          '  Turn 3 original: "you\'re building a distributed job scheduler in Rust..."',
-          '  Turn 3 without memory: "I don\'t have context about your current projects."',
-          '',
-          '  Memory made the difference.',
+          'Walrus Memory Index (top 4 salience scores):',
+          '  [1] "Primary stack this year: Rust" [origin:telegram] salience:0.98 (active)',
+          '  [2] "Location: Lagos" [origin:telegram] salience:0.95 (active)',
+          '  [3] "Building distributed job scheduler" [origin:cli] salience:0.92 (active)',
+          '  [4] "Preferred editor: Neovim" [origin:extension] salience:0.78 (active)',
         ], 't-out', 45);
       }).then(function() {
         return sleep(800);
       }).then(function() {
-        return narrate('CLI Face',
-          'Counterfactual replay is Cheta\'s proof-of-memory feature. Re-run any turn with memory off to see exactly what memory contributed to the answer.', 22);
-      }).then(function() {
-        return termCmd('cheta remind "merge scheduler PR" --in 1h');
-      }).then(function() {
-        return termLine('<span class="t-ok">  Reminder set for 13:06. Will notify via Telegram.</span>', 100);
-      }).then(function() {
-        return sleep(600);
-      }).then(function() {
-        return termCmd('cheta passport export --file cheta_backup.json');
+        // Counterfactual replay
+        return termCmd('cheta memory replay --turn 1 --no-memory');
       }).then(function() {
         return termOutput([
-          'Exporting Memory Passport...',
-          '  Fetching index from Walrus...',
-          '  14 memory records serialised.',
-          '  Written to: cheta_backup.json',
-          '  Import on any device with: cheta passport import cheta_backup.json',
+          'Counterfactual Audit: comparing turn 1 with and without memory...',
+          '  With Memory:    "Building a distributed job scheduler in Rust out of Lagos..."',
+          '  Without Memory: "I do not have enough context about your current projects."',
+          '  Delta: 4 Walrus memories injected. Counterfactual proof verified.',
+        ], 't-out-gold', 45);
+      }).then(function() {
+        return sleep(900);
+      }).then(function() {
+        // Pairing
+        return termCmd('cheta pair 847391');
+      }).then(function() {
+        return termOutput([
+          'Validating pairing code 847391...',
+          '  Pairing successful! Terminal linked to Telegram identity (Kosi).',
+          '  Shared Walrus memory space synced in 140ms.',
+        ], 't-ok', 50);
+      }).then(function() {
+        return sleep(800);
+      }).then(function() {
+        // Memory Passport
+        return termCmd('cheta passport export --file backup.json');
+      }).then(function() {
+        return termOutput([
+          'Generating Memory Passport...',
+          '  Exported 14 Walrus index snapshots to backup.json.',
+          '  Fully encrypted, self-contained, portable to any host.',
         ], 't-out', 50);
       }).then(function() {
-        return sleep(1000);
-      }).then(function() {
         return narrate('CLI Face',
-          'The Memory Passport is a portable export of all your memories. Take your context to a new machine, or back it up. Your intelligence is never locked to one device.', 22);
+          'Counterfactual replay proves that memory changed the answer. The Memory Passport lets you back up and carry your mind anywhere.', 21);
       }).then(function() {
-        return sleep(5000);
+        return sleep(4500);
       }).then(function() {
         goToScene(3);
       });
     }
 
-    /* ─────────────────────────────────────────────
-       SCENE 3: CHROME EXTENSION
-    ──────────────────────────────────────────────── */
+    /* ================================================================
+       SCENE 3: CHROME MULTI-TAB & WEBMCP (Google Chrome Labs Demo + Tab 2)
+    ================================================================ */
     var extRan = false;
 
     function extBubble(type, text, tagText) {
@@ -2209,12 +2190,12 @@
       chat.appendChild(bub);
       chat.scrollTop = chat.scrollHeight;
 
-      return typeInto(span, text, 16).then(function() {
+      return typeInto(span, text, 15).then(function() {
         chat.scrollTop = chat.scrollHeight;
       });
     }
 
-    function moveCursor(targetEl) {
+    function moveCursorTo(targetEl) {
       var cur = document.getElementById('vcursor');
       var winRect = document.getElementById('chrome-win').getBoundingClientRect();
       var tRect = targetEl.getBoundingClientRect();
@@ -2222,32 +2203,56 @@
       var cy = tRect.top + tRect.height / 2 - winRect.top;
 
       cur.style.display = 'block';
-      cur.style.left = (cx - 7) + 'px';
-      cur.style.top = (cy - 5) + 'px';
+      cur.style.left = (cx - 6) + 'px';
+      cur.style.top = (cy - 4) + 'px';
 
-      return sleep(500);
+      return sleep(450);
     }
 
-    function clickEffect(el) {
-      return moveCursor(el).then(function() {
-        el.style.transform = 'scale(0.88)';
+    function clickElement(el) {
+      return moveCursorTo(el).then(function() {
+        el.style.transform = 'scale(0.92)';
         return sleep(120);
       }).then(function() {
         el.style.transform = '';
-        return sleep(200);
+        return sleep(180);
       });
     }
 
-    function showExtPanel() {
-      var panel = document.getElementById('ext-panel');
-      panel.style.display = 'flex';
-      panel.style.opacity = '0';
-      panel.style.transform = 'translateX(20px)';
-      panel.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      setTimeout(function() {
-        panel.style.opacity = '1';
-        panel.style.transform = 'translateX(0)';
-      }, 30);
+    function addPizzaToppings() {
+      var cheese = document.getElementById('pizza-cheese');
+      // Pepperoni slices
+      var coords = [
+        { top: '25%', left: '30%' },
+        { top: '28%', left: '60%' },
+        { top: '60%', left: '26%' },
+        { top: '58%', left: '62%' },
+        { top: '44%', left: '44%' }
+      ];
+      coords.forEach(function(c, i) {
+        var p = document.createElement('div');
+        p.className = 'pepperoni';
+        p.style.top = c.top;
+        p.style.left = c.left;
+        p.style.animationDelay = (i * 0.1) + 's';
+        cheese.appendChild(p);
+      });
+
+      // Mushroom slices
+      var mCoords = [
+        { top: '18%', left: '48%' },
+        { top: '42%', left: '18%' },
+        { top: '46%', left: '72%' },
+        { top: '70%', left: '46%' }
+      ];
+      mCoords.forEach(function(mc, j) {
+        var m = document.createElement('div');
+        m.className = 'mushroom';
+        m.style.top = mc.top;
+        m.style.left = mc.left;
+        m.style.animationDelay = (0.25 + j * 0.1) + 's';
+        cheese.appendChild(m);
+      });
     }
 
     function runExtension() {
@@ -2256,177 +2261,131 @@
 
       document.getElementById('ext-chat').innerHTML = '';
       document.getElementById('ext-panel').style.display = 'none';
-      document.getElementById('ext-mem-drawer').classList.remove('open');
-      document.getElementById('ext-pair-overlay').classList.remove('show');
+      document.getElementById('pizza-cheese').innerHTML = '';
+      document.getElementById('pizza-view').style.display = 'flex';
+      document.getElementById('doc-view').style.display = 'none';
+      document.getElementById('tab-pizza').classList.add('chrome-tab-active');
+      document.getElementById('tab-doc').classList.remove('chrome-tab-active');
+      document.getElementById('chrome-url-text').textContent = 'https://googlechromelabs.github.io/webmcp-pizza/';
 
-      narrate('Browser Extension', '');
+      narrate('Browser Extension & WebMCP', '');
 
-      sleep(400).then(function() {
-        return narrate('Browser Extension',
-          'Cheta lives in Chrome as a sidepanel extension. It can read any page, summarise, highlight text, manage memories, and pair to your identity - all without leaving the browser.', 20);
+      sleep(350).then(function() {
+        return narrate('Browser Extension & WebMCP',
+          'First: WebMCP in-page automation! Cheta probes the active page DOM for tools registered via document.modelContext on Google Chrome Labs.', 21);
       }).then(function() {
-        // Position virtual cursor near ext icon
-        var cur = document.getElementById('vcursor');
-        var winRect = document.getElementById('chrome-win').getBoundingClientRect();
-        cur.style.display = 'block';
-        cur.style.left = '20px';
-        cur.style.top = '20px';
-
-        return sleep(600);
-      }).then(function() {
-        return clickEffect(document.getElementById('cheta-ext-btn'));
+        // Move cursor to extension icon and click
+        return clickElement(document.getElementById('cheta-ext-btn'));
       }).then(function() {
         document.getElementById('cheta-ext-btn').classList.add('active');
-        showExtPanel();
+        document.getElementById('ext-panel').style.display = 'flex';
+        document.getElementById('vcursor').style.display = 'none';
+        return sleep(500);
+      }).then(function() {
+        // User asks to use in-page tool
+        return extBubble('user', 'Add pepperoni and mushrooms to this pizza!', 'action.webmcp');
+      }).then(function() {
+        return sleep(500);
+      }).then(function() {
+        // Cheta detects and runs in-page tool
+        addPizzaToppings();
+        return extBubble('bot', 'Executed in-page WebMCP tool add_topping({"topping": "pepperoni, mushrooms"}) directly on googlechromelabs.github.io. Toppings baked onto the live canvas!', 'tool.executed');
+      }).then(function() {
+        return sleep(1200);
+      }).then(function() {
+        return narrate('Browser Extension & WebMCP',
+          'Now watch: opening Tab 2 to demonstrate tab reading, page summarisation, live text highlighting, and the Walrus Memories drawer!', 21);
+      }).then(function() {
+        // Click Tab 2 (Documentation)
+        return clickElement(document.getElementById('tab-doc'));
+      }).then(function() {
+        // Switch tab display
+        document.getElementById('tab-pizza').classList.remove('chrome-tab-active');
+        document.getElementById('tab-doc').classList.add('chrome-tab-active');
+        document.getElementById('pizza-view').style.display = 'none';
+        document.getElementById('doc-view').style.display = 'flex';
+        document.getElementById('chrome-url-text').textContent = 'https://github.com/cheta/agent';
         document.getElementById('vcursor').style.display = 'none';
         return sleep(600);
       }).then(function() {
-        // Show "Read Page" action
-        return extBubble('user', 'Read this page and summarise', 'action.read_page');
-      }).then(function() {
-        return sleep(700);
-      }).then(function() {
-        return extBubble('bot', 'Reading page: github.com/cheta/agent (1842 chars)\n\nSummary: This is the Cheta AI agent repository. It implements memory-first AI with Walrus permanent storage, salience-ranked recall, and multi-surface support across Telegram, CLI, browser extension, and web portal.', 'page.summarise');
-      }).then(function() {
-        return sleep(1000);
-      }).then(function() {
-        return narrate('Browser Extension',
-          'Page reading is on-demand only. Cheta uses the activeTab grant to read only when you ask. No background snooping, no persistent content scripts.', 20);
-      }).then(function() {
-        // Highlight text on page
-        document.getElementById('hl-span').classList.add('fake-highlight');
-
-        return extBubble('user', 'highlight: "Every fact is ranked by recency, importance, and origin surface"', 'action.highlight');
+        // Demonstrate Read Tab
+        return extBubble('user', 'Read this page and summarize', 'action.read_tab');
       }).then(function() {
         return sleep(600);
       }).then(function() {
-        return extBubble('bot', 'Selection highlighted on page. This fact matches 3 of your stored memories about ranking and salience scoring.', 'memory.match');
+        return extBubble('bot', 'Read active tab: github.com/cheta/agent (2,410 chars).\n\nSummary: Cheta maintains a unified, portable memory space across Telegram, Linux CLI, Chromium Extension, and Web Portal using Walrus decentralized storage. Features salience-aware recall and counterfactual audit.', 'page.summarize');
       }).then(function() {
         return sleep(1000);
       }).then(function() {
-        // Switch to Memories tab
-        return narrate('Browser Extension',
-          'The Memories drawer shows everything Cheta knows about you, fetched live from Walrus decentralised storage.', 20);
+        // Demonstrate Highlight
+        return extBubble('user', 'highlight ranking weights on page', 'action.highlight');
+      }).then(function() {
+        return sleep(500);
+      }).then(function() {
+        document.getElementById('doc-hl-target').classList.add('doc-highlight');
+        return extBubble('bot', 'Highlighted key passage on page. Matches your stored preferences for salience scoring.', 'page.highlight');
+      }).then(function() {
+        return sleep(1000);
+      }).then(function() {
+        // Open Memories Drawer
+        return narrate('Browser Extension & WebMCP',
+          'The Memories drawer fetches your live Walrus memory blobs directly into the browser sidepanel.', 21);
       }).then(function() {
         document.querySelectorAll('.ext-tab').forEach(function(t) { t.classList.remove('sel'); });
         document.getElementById('ext-tab-mem').classList.add('sel');
         var drawer = document.getElementById('ext-mem-drawer');
         drawer.classList.add('open');
-        drawer.innerHTML = '<div class="mem-drawer-head">MEMORIES</div>';
+        drawer.innerHTML = '<div class="mem-drawer-head">WALRUS MEMORIES</div>';
 
         var mems = [
-          { tag: 'importance:0.97', text: 'Primary language this year: Rust' },
-          { tag: 'importance:0.94', text: 'Building a distributed job scheduler' },
-          { tag: 'importance:0.88', text: 'Async runtime PR open for review' },
-          { tag: 'importance:0.76', text: 'Prefers Neovim for Rust editing' },
-          { tag: 'importance:0.61', text: 'Reading: The Pragmatic Programmer' },
+          { tag: 'salience:0.98 | telegram', text: 'Primary stack: Rust (active, superseded Python)' },
+          { tag: 'salience:0.95 | telegram', text: 'Location: Lagos' },
+          { tag: 'salience:0.92 | cli', text: 'Building distributed job scheduler' },
+          { tag: 'salience:0.78 | extension', text: 'Preferred editor: Neovim' },
         ];
 
-        var delay = 0;
-        return mems.reduce(function(chain, m) {
+        return mems.reduce(function(chain, m, i) {
           return chain.then(function() {
             var card = document.createElement('div');
             card.className = 'mem-card';
-            card.style.animationDelay = delay + 'ms';
             card.innerHTML = '<div class="mem-card-tag">' + m.tag + '</div><span></span>';
             drawer.appendChild(card);
-            delay += 200;
-            return typeInto(card.querySelector('span'), m.text, 20);
+            return typeInto(card.querySelector('span'), m.text, 18);
           });
         }, Promise.resolve());
       }).then(function() {
         return sleep(1200);
       }).then(function() {
-        return narrate('Browser Extension',
-          'Now the pairing flow. Generate a code in the browser, enter it in the CLI or portal, and all surfaces share the same memory identity.', 20);
-      }).then(function() {
-        // Switch to Pair tab
+        // Switch to Pair Tab
         document.getElementById('ext-mem-drawer').classList.remove('open');
         document.querySelectorAll('.ext-tab').forEach(function(t) { t.classList.remove('sel'); });
         document.getElementById('ext-tab-pair').classList.add('sel');
 
         var overlay = document.getElementById('ext-pair-overlay');
         overlay.classList.add('show');
-
         var digits = document.getElementById('pair-digits');
         digits.innerHTML = '';
-
         var code = ['8','4','7','3','9','1'];
-        code.forEach(function(d, i) {
+        code.forEach(function(d) {
           var div = document.createElement('div');
           div.className = 'pair-digit';
-          div.style.animationDelay = (i * 0.12) + 's';
           div.textContent = d;
           digits.appendChild(div);
         });
 
-        return sleep(1000);
+        return narrate('Browser Extension & WebMCP',
+          'The browser extension seamlessly links into your identity through a 6-digit device pairing code.', 21);
       }).then(function() {
-        return sleep(2000);
-      }).then(function() {
-        document.getElementById('ext-pair-overlay').classList.remove('show');
-        document.getElementById('ext-mem-drawer').classList.remove('open');
-        document.querySelectorAll('.ext-tab').forEach(function(t) { t.classList.remove('sel'); });
-        document.getElementById('ext-tab-chat').classList.add('sel');
-
-        // MCP / WebMCP feature demo
-        return narrate('Browser Extension',
-          'Cheta also discovers MCP tools on any page. If a site exposes a public Model Context Protocol endpoint, Cheta can call it directly from the sidepanel - securely and with full labelling.', 20);
-      }).then(function() {
-        return extBubble('user', 'what tools does this page expose?', 'action.mcp_probe');
-      }).then(function() {
-        return sleep(700);
-      }).then(function() {
-        return extBubble('bot', 'Probing github.com for MCP tools...\n\nFound 0 HTTP MCP tools.\nFound 0 WebMCP tools.\n\nThis site does not expose public Model Context Protocol tools. On sites that do, I can read, search, or call them directly from this panel.', 'mcp.discovery');
-      }).then(function() {
-        return sleep(1500);
-      }).then(function() {
-        // Switch to a "docs.cheta.ai" page to demo session switching
-        document.getElementById('chrome-url-text').textContent = 'mail.google.com/mail';
-        document.getElementById('chrome-tab-label').textContent = 'Gmail - Inbox';
-        document.getElementById('fake-site-logo').textContent = 'Gmail';
-        document.getElementById('fake-article-title').textContent = 'Inbox (24)';
-        document.getElementById('fake-article-body').textContent = 'Re: Scheduler PR review needed by EOD - Chidi\nRust meetup this Thursday - Lagos Dev Group\nYour Walrus storage usage report - Walrus';
-        document.getElementById('hl-span').classList.remove('fake-highlight');
-
-        return narrate('Browser Extension',
-          'Session switching: start a fresh chat context without losing your memory. Each session is a clean slate while your Walrus memory carries across.', 20);
-      }).then(function() {
-        return extBubble('user', 'new session', 'action.new_session');
-      }).then(function() {
-        return sleep(400);
-      }).then(function() {
-        return extBubble('bot', 'Fresh session started. Your Walrus memory is still intact and will be recalled as needed. This session transcript is now blank.', 'session.new');
-      }).then(function() {
-        return sleep(1500);
-      }).then(function() {
-        return narrate('Browser Extension',
-          'The extension works in both Chrome and Firefox with zero build step - pure vanilla JS. It pairs with any surface through a 6-digit device code.', 20);
-      }).then(function() {
-        return sleep(4000);
+        return sleep(4500);
       }).then(function() {
         goToScene(4);
       });
     }
 
-    /* ─────────────────────────────────────────────
-       SCENE 4: WEB PORTAL
-    ──────────────────────────────────────────────── */
+    /* ================================================================
+       SCENE 4: WEB PORTAL & EVIDENCE REPLAY
+    ================================================================ */
     var portalRan = false;
-
-    function portalSection(title, nodes, delay) {
-      return sleep(delay || 0).then(function() {
-        var main = document.getElementById('portal-main');
-        var head = document.createElement('div');
-        head.className = 'portal-section-head';
-        main.appendChild(head);
-        main.scrollTop = main.scrollHeight;
-
-        return typeInto(head, title, 25).then(function() {
-          nodes.forEach(function(n) { main.appendChild(n); main.scrollTop = main.scrollHeight; });
-        });
-      });
-    }
 
     function portalChatBubble(type, text) {
       var row = document.createElement('div');
@@ -2449,7 +2408,7 @@
       main.appendChild(row);
       main.scrollTop = main.scrollHeight;
 
-      return typeInto(span, text, 18).then(function() {
+      return typeInto(span, text, 17).then(function() {
         main.scrollTop = main.scrollHeight;
       });
     }
@@ -2461,108 +2420,80 @@
       var main = document.getElementById('portal-main');
       main.innerHTML = '';
 
-      narrate('Web Portal', '');
+      narrate('Web Portal & Evidence', '');
 
-      sleep(400).then(function() {
-        return narrate('Web Portal',
-          'The Cheta web portal gives you a full dashboard interface: chat, memory browser, device pairing, and evidence replay. Available from any browser, no install needed.', 20);
+      sleep(350).then(function() {
+        return narrate('Web Portal & Evidence',
+          'The Web Portal at /app/portal.html provides a responsive full dashboard: chat with memory recall, memory index visualizer, pairing manager, and counterfactual evidence audit.', 21);
       }).then(function() {
-        return portalChatBubble('user', 'show me my top memories');
+        return portalChatBubble('user', 'show my active Walrus memories');
       }).then(function() {
-        return sleep(700);
+        return sleep(600);
       }).then(function() {
-        return portalChatBubble('bot', 'Here are your top 5 memories by salience score, recalled from Walrus:');
+        return portalChatBubble('bot', 'Recalled 4 top-ranked memory records from Walrus decentralized storage:');
       }).then(function() {
-        return sleep(400);
+        return sleep(350);
       }).then(function() {
-        // Memory cards
         var mems = [
-          { tag: 'salience:0.97 | telegram', text: 'Primary language this year: Rust' },
-          { tag: 'salience:0.94 | cli', text: 'Building a distributed job scheduler' },
-          { tag: 'salience:0.88 | telegram', text: 'Scheduler PR open for async review' },
-          { tag: 'salience:0.76 | extension', text: 'Prefers Neovim for Rust editing' },
+          { tag: 'salience:0.98 | telegram', text: 'Primary stack: Rust (active, superseded Python)' },
+          { tag: 'salience:0.95 | telegram', text: 'Location: Lagos' },
+          { tag: 'salience:0.92 | cli', text: 'Building distributed job scheduler' },
+          { tag: 'salience:0.78 | extension', text: 'Preferred editor: Neovim' },
         ];
 
         var grid = document.createElement('div');
         grid.className = 'memory-card-row';
-
-        var delay = 0;
         mems.forEach(function(m) {
           var card = document.createElement('div');
           card.className = 'portal-mem-card';
-          card.style.animationDelay = delay + 'ms';
-          card.innerHTML = '<div class="portal-mem-card-tag">' + m.tag + '</div><span></span>';
+          card.innerHTML = '<div class="portal-mem-card-tag">' + m.tag + '</div><span>' + m.text + '</span>';
           grid.appendChild(card);
-          delay += 120;
         });
-
-        var main2 = document.getElementById('portal-main');
-        main2.appendChild(grid);
-        main2.scrollTop = main2.scrollHeight;
-
-        // Type into each card
-        var cards = grid.querySelectorAll('.portal-mem-card');
-        return Array.from(cards).reduce(function(chain, card, i) {
-          return chain.then(function() {
-            return sleep(i * 120);
-          }).then(function() {
-            return typeInto(card.querySelector('span'), mems[i].text, 22);
-          });
-        }, Promise.resolve());
+        main.appendChild(grid);
+        main.scrollTop = main.scrollHeight;
+        return sleep(1200);
       }).then(function() {
-        return sleep(800);
-      }).then(function() {
-        // Switch to Pair Device nav
+        // Nav to Pair
         document.getElementById('pnav-chat').classList.remove('active');
         document.getElementById('pnav-pair').classList.add('active');
 
-        return narrate('Web Portal',
-          'Device pairing in the portal. Generate a code here and enter it in the CLI or browser extension to link all surfaces under one identity.', 20);
-      }).then(function() {
         var pairCard = document.createElement('div');
         pairCard.className = 'pairing-card';
         pairCard.innerHTML =
           '<div>' +
-            '<div style="font-family:var(--f-display);font-size:13px;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">PAIRING CODE</div>' +
+            '<div style="font-family:var(--f-display);font-size:12px;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px;">PAIRING CODE</div>' +
             '<div class="pair-code-big">847 391</div>' +
           '</div>' +
-          '<div class="pair-desc-sm">Enter this code in `cheta pair` on your CLI, or in the browser extension Pair tab. Code expires in 10 minutes. All surfaces will share your Walrus memory identity.</div>';
+          '<div class="pair-desc-sm">Enter this code in CLI ("cheta pair 847391") or in the browser extension to synchronize identity and Walrus memory.</div>';
+        main.appendChild(pairCard);
+        main.scrollTop = main.scrollHeight;
 
-        var main3 = document.getElementById('portal-main');
-        main3.appendChild(pairCard);
-        main3.scrollTop = main3.scrollHeight;
-
-        return sleep(1500);
+        return narrate('Web Portal & Evidence',
+          'Cross-device pairing binds Telegram, CLI, Extension, and Web Portal into one shared mind in seconds.', 21);
       }).then(function() {
-        // Switch to Evidence nav
+        return sleep(1400);
+      }).then(function() {
+        // Nav to Evidence
         document.getElementById('pnav-pair').classList.remove('active');
         document.getElementById('pnav-ev').classList.add('active');
 
-        return narrate('Web Portal',
-          'Evidence replay: view any past conversation turn, see exactly which memories were recalled, and replay it with memory off to see what memory contributed.', 20);
+        return portalChatBubble('user', 'counterfactual replay for turn 2');
       }).then(function() {
-        return portalChatBubble('user', 'replay turn 3 without memory');
+        return sleep(600);
       }).then(function() {
-        return sleep(700);
+        return portalChatBubble('bot', 'Turn 2 Counterfactual Proof:\n- With Memory: "Recalled your focus on Rust and Lagos..."\n- Without Memory: "I do not have enough context about your preferences."\n\nDelta: 4 Walrus memories injected. Counterfactual replay confirms memory was causal.');
       }).then(function() {
-        return portalChatBubble('bot', 'Counterfactual replay for turn 3:\n\nOriginal: "you\'re building a distributed job scheduler in Rust..."\n\nWithout memory: "I don\'t have context about your current projects."\n\nMemory delta: 4 memories injected, 312 tokens. Removing them produces a meaningless generic response. This is proof your memory is working.');
+        return sleep(1500);
       }).then(function() {
-        return sleep(1200);
+        return narrate('Web Portal & Evidence',
+          'Cheta: One Mind Across Every Device. Decentralized Walrus memory, consolidation on ingest, and salience-ranked recall.', 21);
       }).then(function() {
-        return narrate('Web Portal',
-          'The evidence router makes Cheta\'s memory usage auditable. You can always see what it recalled, why, and what the response would have been without it.', 20);
+        return sleep(4500);
       }).then(function() {
-        return sleep(4000);
-      }).then(function() {
-        // Loop back to intro
         goToScene(0);
       });
     }
 
-    /* ================================================================
-       KICK OFF
-    ================================================================ */
-    // Reset intro state so it can re-run on loop
     function resetAndRerun() {
       introRan = false;
       tgRan = false;
@@ -2570,30 +2501,28 @@
       extRan = false;
       portalRan = false;
 
-      // Re-reset DOM
       document.getElementById('tg-body').innerHTML = '';
       document.getElementById('term-body').innerHTML = '';
       document.getElementById('ext-chat').innerHTML = '';
       document.getElementById('portal-main').innerHTML = '';
       document.getElementById('ext-panel').style.display = 'none';
+      document.getElementById('ext-mem-drawer').classList.remove('open');
+      document.getElementById('ext-pair-overlay').classList.remove('show');
 
       var letters = ['c-letter','h-letter','e-letter','t-letter','a-letter'];
       letters.forEach(function(id) {
         var el = document.getElementById(id);
         el.style.opacity = '0';
-        el.style.transform = 'translateY(80px)';
+        el.style.transform = 'translateY(60px)';
       });
 
       document.getElementById('intro-sub-text').textContent = '';
       document.getElementById('intro-desc-text').textContent = '';
       document.getElementById('face-cards').innerHTML = '';
-
-      // Reset narrator
       document.getElementById('nar-title').textContent = '';
       document.getElementById('nar-text').textContent = '';
     }
 
-    // Patch goToScene to reset when looping to 0
     var _goToScene = goToScene;
     goToScene = function(idx) {
       if (idx === 0 && currentScene !== 0) {
