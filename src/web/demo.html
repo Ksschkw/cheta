@@ -4,29 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Cheta: Hyper-Realistic Multi-Surface AI Agent Showcase across Telegram, Linux Terminal, Browser Extension, Web Portal, and Walrus Decentralized Memory.">
-    <title>Cheta: The Multi-Surface AI Agent Showcase</title>
-    <!-- Friendly Bubbly Narration Font + Modern System UI -->
+    <meta name="description" content="Cheta: Hyper-Realistic Multi-Surface AI Agent Showcase across Telegram, Linux Terminal, Google Chrome Extension, Web Portal, and Walrus Decentralized Memory.">
+    <title>Cheta: One Mind Across Every Device</title>
+    <!-- Ultra Bold Futuristic Display (Syne) + Bubbly Disney (Fredoka) + Space Grotesk + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #090a0d;
-        --surface-dark: #0f1117;
-        --surface-glass: rgba(15, 17, 23, 0.92);
-        --line: #1c202a;
-        --line-light: #2a3140;
-        --text: #e6edf3;
-        --muted: #8b949e;
-        --dim: #545d68;
-        --accent: #35d0ba;
-        --accent-gold: #eab308;
-        --accent-blue: #38bdf8;
+        --bg: #09090b; /* Pure Deep Obsidian Black */
+        --surface-dark: #121215;
+        --surface-glass: rgba(18, 18, 21, 0.94);
+        --line: #222227;
+        --line-light: #2e2e36;
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
+        --dim: #52525b;
+        --accent: #e5e7eb; /* Monochrome Primary */
+        --accent-emerald: #10b981;
+        --accent-amber: #f59e0b;
         --accent-red: #ef4444;
-        --accent-green: #22c55e;
-        --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        --bubbly: "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif;
+        --tg-blue: #2b5278; /* Authentic Telegram Bubble Navy */
+        --font-display: "Syne", sans-serif;
+        --font-bubbly: "Fredoka", sans-serif;
+        --font-body: "Space Grotesk", sans-serif;
         --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
       }
 
@@ -42,7 +43,7 @@
         overflow: hidden;
         background: var(--bg);
         color: var(--text);
-        font-family: var(--font);
+        font-family: var(--font-body);
         user-select: none;
       }
 
@@ -64,23 +65,40 @@
         height: 100%;
         z-index: 2;
         pointer-events: none;
-        box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.92);
-        background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(9, 10, 13, 0.75) 100%);
+        box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.95);
+        background: radial-gradient(circle at 50% 50%, transparent 50%, rgba(9, 9, 11, 0.8) 100%);
       }
 
-      /* Dynamic Presentation Stage */
+      /* Dramatic Shutter Transition Flash */
+      .transition-flash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 40;
+        pointer-events: none;
+        background: #fff;
+        opacity: 0;
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .transition-flash.flash {
+        opacity: 0.12;
+      }
+
+      /* Presentation Stage */
       .presentation-stage {
         position: absolute;
-        top: 60px;
-        bottom: 74px;
+        top: 56px;
+        bottom: 68px;
         left: 20px;
-        right: 330px; /* leaves room on right for the bubbly narrator sidebox */
+        right: 340px; /* leaves room for bubbly side narrator */
         z-index: 5;
         pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: right 0.3s ease;
       }
 
       .interactive-surface {
@@ -92,11 +110,11 @@
         width: 100%;
         max-width: 960px;
         height: 100%;
-        max-height: calc(100vh - 150px);
+        max-height: calc(100vh - 145px);
         display: none;
         opacity: 0;
-        transform: scale(0.96) translateY(12px);
-        transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: scale(0.96) translateY(16px);
+        transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
 
       .surface-viewport.active {
@@ -105,108 +123,109 @@
         transform: scale(1) translateY(0);
       }
 
-      /* ------------------------------------------------------------- 0. INTRO CARD */
-      .intro-card {
+      /* ------------------------------------------------------------- SCENE 0: KINETIC 3D INTRO */
+      .intro-stage {
         margin: auto;
         width: 100%;
-        max-width: 720px;
-        background: rgba(15, 17, 23, 0.92);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        max-width: 760px;
+        background: rgba(18, 18, 21, 0.94);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
         border: 1px solid var(--line-light);
-        border-radius: 20px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85);
-        padding: 32px 36px;
+        border-radius: 24px;
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.95);
+        padding: 36px 42px;
         display: flex;
         flex-direction: column;
         gap: 20px;
+        position: relative;
+        overflow: hidden;
       }
 
-      .intro-badge-row {
-        display: flex;
+      .intro-tagline-chip {
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
-      }
-
-      .intro-chip {
+        gap: 6px;
+        font-family: var(--font-display);
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
+        font-weight: 800;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
-        padding: 4px 10px;
+        color: var(--accent-emerald);
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 4px 12px;
         border-radius: 9999px;
-        background: rgba(53, 208, 186, 0.12);
-        color: var(--accent);
-        border: 1px solid rgba(53, 208, 186, 0.3);
+        width: fit-content;
       }
 
-      .intro-title {
-        font-family: var(--bubbly);
-        font-size: 32px;
-        font-weight: 700;
+      .intro-kinetic-title {
+        font-family: var(--font-display);
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
         color: #fff;
-        line-height: 1.2;
+        text-transform: uppercase;
       }
 
-      .intro-desc {
-        font-size: 14px;
-        color: var(--muted);
+      .intro-streaming-sub {
+        font-size: 15px;
         line-height: 1.6;
+        color: var(--muted);
+        min-height: 48px;
       }
 
-      .intro-grid {
+      .intro-cards-row {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 12px;
         margin-top: 6px;
       }
 
-      .intro-feature {
-        background: #13161f;
-        border: 1px solid #1f2533;
-        border-radius: 10px;
-        padding: 12px 14px;
+      .intro-mini-card {
+        background: #141418;
+        border: 1px solid #24242c;
+        border-radius: 12px;
+        padding: 14px 12px;
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
+        flex-direction: column;
+        gap: 8px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
       }
 
-      .intro-icon {
-        font-size: 18px;
-        background: #191e2b;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
+      .intro-mini-card:hover {
+        transform: translateY(-3px);
+        border-color: #3f3f46;
       }
 
-      .intro-feat-text strong {
-        display: block;
-        font-size: 13px;
+      .intro-card-icon {
+        font-size: 20px;
+      }
+
+      .intro-card-name {
+        font-family: var(--font-display);
+        font-size: 12px;
+        font-weight: 800;
         color: #fff;
-        margin-bottom: 2px;
       }
 
-      .intro-feat-text span {
-        font-size: 11px;
+      .intro-card-desc {
+        font-size: 10.5px;
         color: var(--muted);
         line-height: 1.4;
-        display: block;
       }
 
-      /* ------------------------------------------------------------- 1. REALISTIC TELEGRAM PHONE */
+      /* ------------------------------------------------------------- SCENE 1: AUTHENTIC TELEGRAM */
       .phone-wrapper {
         margin: auto;
         width: 340px;
-        height: 570px;
+        height: 560px;
         max-height: calc(100vh - 160px);
-        background: #0e1621; /* Authentic Telegram dark background */
+        background: #0e1621; /* Official Telegram Dark Theme */
         border-radius: 38px;
-        border: 4px solid #232b3c;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 0, 0, 0.5);
+        border: 4px solid #232a38;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -214,9 +233,9 @@
       }
 
       .phone-notch {
-        width: 110px;
+        width: 105px;
         height: 18px;
-        background: #232b3c;
+        background: #232a38;
         border-bottom-left-radius: 12px;
         border-bottom-right-radius: 12px;
         position: absolute;
@@ -226,21 +245,14 @@
         z-index: 20;
       }
 
-      /* Telegram Header */
       .tg-header {
-        background: #17212b; /* Authentic Telegram header color */
-        border-bottom: 1px solid #0f141d;
+        background: #17212b; /* Telegram header */
+        border-bottom: 1px solid #0b111a;
         padding: 22px 12px 10px;
         display: flex;
         align-items: center;
         gap: 10px;
         z-index: 10;
-      }
-
-      .tg-back-arrow {
-        color: #6c7883;
-        font-size: 16px;
-        cursor: pointer;
       }
 
       .tg-avatar {
@@ -256,19 +268,9 @@
         color: #fff;
       }
 
-      .tg-meta {
-        flex: 1;
-      }
-
-      .tg-name-row {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
       .tg-name {
         font-weight: 700;
-        font-size: 14px;
+        font-size: 13.5px;
         color: #fff;
       }
 
@@ -290,7 +292,6 @@
         color: #708499;
       }
 
-      /* Telegram Chat Canvas */
       .tg-body {
         flex: 1;
         background: #0e1621;
@@ -299,6 +300,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        scroll-behavior: smooth;
       }
 
       .tg-bubble {
@@ -312,22 +314,20 @@
       }
 
       @keyframes bubblePop {
-        from { opacity: 0; transform: translateY(6px) scale(0.97); }
+        from { opacity: 0; transform: translateY(8px) scale(0.96); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
-      /* Telegram authentic user bubble */
       .tg-user {
         align-self: flex-end;
-        background: #2b5278; /* Authentic Telegram sent bubble */
+        background: var(--tg-blue);
         color: #fff;
         border-bottom-right-radius: 2px;
       }
 
-      /* Telegram authentic bot/incoming bubble */
       .tg-bot {
         align-self: flex-start;
-        background: #182533; /* Authentic Telegram incoming bubble */
+        background: #182533;
         color: #f5f5f5;
         border-bottom-left-radius: 2px;
         border: 1px solid #1f2e3d;
@@ -454,7 +454,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        border-top: 1px solid #0f141d;
+        border-top: 1px solid #0b111a;
       }
 
       .tg-input-field {
@@ -468,25 +468,25 @@
         outline: none;
       }
 
-      /* ------------------------------------------------------------- 2. AUTHENTIC LINUX TERMINAL */
+      /* ------------------------------------------------------------- SCENE 2: AUTHENTIC LINUX TERMINAL */
       .terminal-window {
         margin: auto;
         width: 100%;
         max-width: 820px;
         height: 520px;
         max-height: calc(100vh - 160px);
-        background: #0c0d10; /* Pure deep charcoal terminal */
-        border: 1px solid #1f232d;
+        background: #09090b; /* Pure Slate Charcoal */
+        border: 1px solid #1e1e24;
         border-radius: 8px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
 
       .terminal-titlebar {
-        background: #16181f;
-        border-bottom: 1px solid #1f232d;
+        background: #141418;
+        border-bottom: 1px solid #1e1e24;
         padding: 8px 12px;
         display: flex;
         align-items: center;
@@ -505,14 +505,14 @@
         border-radius: 50%;
       }
 
-      .term-btn.red { background: #ff5f56; }
-      .term-btn.yellow { background: #ffbd2e; }
-      .term-btn.green { background: #27c93f; }
+      .term-btn.red { background: #ef4444; }
+      .term-btn.yellow { background: #f59e0b; }
+      .term-btn.green { background: #10b981; }
 
       .term-title {
         font-family: var(--mono);
         font-size: 11px;
-        color: #8b949e;
+        color: #71717a;
       }
 
       .terminal-body {
@@ -522,21 +522,21 @@
         font-family: var(--mono);
         font-size: 12px;
         line-height: 1.55;
-        color: #d1d5db;
+        color: #d4d4d8;
+        scroll-behavior: smooth;
       }
 
-      /* Realistic Bash Prompt */
-      .term-user { color: #22c55e; font-weight: 700; }
-      .term-colon { color: #8b949e; }
+      .term-user { color: #10b981; font-weight: 700; }
+      .term-colon { color: #71717a; }
       .term-path { color: #38bdf8; font-weight: 600; }
       .term-dollar { color: #fff; }
-      .term-cmd { color: #f3f4f6; font-weight: 600; }
+      .term-cmd { color: #f4f4f5; font-weight: 600; }
 
       .term-cursor {
         display: inline-block;
         width: 7px;
         height: 13px;
-        background: #e2e8f0;
+        background: #fff;
         vertical-align: middle;
         margin-left: 2px;
         animation: cursorBlink 0.8s infinite;
@@ -551,133 +551,39 @@
         margin: 6px 0;
         border-collapse: collapse;
         width: 100%;
-        color: #9ca3af;
+        color: #a1a1aa;
         font-size: 11px;
       }
 
       .term-table th {
         text-align: left;
-        color: #e5e7eb;
-        border-bottom: 1px solid #272d3b;
+        color: #f4f4f5;
+        border-bottom: 1px solid #27272a;
         padding: 4px 6px;
       }
 
       .term-table td {
         padding: 4px 6px;
-        border-bottom: 1px solid #1a1e28;
+        border-bottom: 1px solid #18181b;
       }
 
-      .badge-synced {
-        color: #22c55e;
-        font-weight: 700;
-      }
-
-      /* ------------------------------------------------------------- 3. REALISTIC DESKTOP BROWSER */
+      /* ------------------------------------------------------------- SCENE 3: AUTHENTIC GOOGLE CHROME */
       .browser-window {
         margin: auto;
         width: 100%;
         max-width: 920px;
         height: 540px;
         max-height: calc(100vh - 160px);
-        background: #13161f;
-        border: 1px solid #222736;
+        background: #202124; /* Official Chrome Dark Slate */
+        border: 1px solid #3c4043;
         border-radius: 8px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
         display: flex;
         flex-direction: column;
         overflow: hidden;
         position: relative;
       }
 
-      /* Real Chrome/Firefox Tabs */
-      .browser-tabs-bar {
-        background: #191c26;
-        padding: 6px 8px 0;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        border-bottom: 1px solid #222736;
-      }
-
-      .browser-tab {
-        padding: 5px 12px;
-        border-radius: 6px 6px 0 0;
-        background: #13161f;
-        border: 1px solid #222736;
-        border-bottom: 0;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .browser-tab.inactive {
-        background: transparent;
-        border: 0;
-        color: #717d91;
-      }
-
-      .tab-close {
-        color: #556275;
-        font-size: 10px;
-        margin-left: 4px;
-      }
-
-      /* Omnibox & Toolbar */
-      .browser-nav-bar {
-        background: #13161f;
-        padding: 6px 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border-bottom: 1px solid #222736;
-      }
-
-      .browser-nav-btns {
-        display: flex;
-        gap: 6px;
-        color: #6b778d;
-        font-size: 12px;
-      }
-
-      .browser-omnibox {
-        flex: 1;
-        background: #0a0b0e;
-        border: 1px solid #222736;
-        border-radius: 14px;
-        padding: 4px 12px;
-        font-family: var(--mono);
-        font-size: 11px;
-        color: #8b949e;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .browser-toolbar-ext {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .ext-icon-btn {
-        width: 26px;
-        height: 26px;
-        border-radius: 5px;
-        background: linear-gradient(135deg, #35d0ba, #0284c7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        font-size: 11.5px;
-        color: #07090e;
-        cursor: pointer;
-        box-shadow: 0 0 8px rgba(53, 208, 186, 0.3);
-      }
-
-      /* Animated Cursor for Browser Extension Opening */
       .virtual-cursor {
         position: absolute;
         width: 16px;
@@ -692,6 +598,101 @@
         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
       }
 
+      /* Real Chrome Tabs */
+      .chrome-tab-strip {
+        background: #202124;
+        padding: 6px 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        border-bottom: 1px solid #292a2d;
+      }
+
+      .chrome-tab {
+        padding: 6px 14px;
+        border-radius: 8px 8px 0 0;
+        background: #35363a; /* Chrome active tab */
+        color: #e8eaed;
+        font-size: 11px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 200px;
+      }
+
+      .chrome-tab.inactive {
+        background: transparent;
+        color: #9aa0a6;
+      }
+
+      .chrome-tab-close {
+        color: #9aa0a6;
+        font-size: 10px;
+        margin-left: 4px;
+      }
+
+      /* Chrome Omnibox Bar */
+      .chrome-omnibar {
+        background: #292a2d;
+        padding: 6px 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #3c4043;
+      }
+
+      .chrome-nav-btn {
+        color: #9aa0a6;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .chrome-url-box {
+        flex: 1;
+        background: #202124;
+        border-radius: 14px;
+        padding: 4px 12px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #9aa0a6;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .chrome-ext-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 5px;
+        background: #35363a;
+        border: 1px solid #5f6368;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 12px;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .chrome-ext-btn.active {
+        background: #10b981;
+        color: #09090b;
+        border-color: #10b981;
+      }
+
+      /* Chrome Bookmarks Bar */
+      .chrome-bookmarks-bar {
+        background: #292a2d;
+        padding: 3px 12px;
+        display: flex;
+        gap: 14px;
+        font-size: 10.5px;
+        color: #bdc1c6;
+        border-bottom: 1px solid #3c4043;
+      }
+
       /* Split Viewport */
       .browser-viewport {
         flex: 1;
@@ -701,20 +702,20 @@
 
       .browser-page {
         flex: 6;
-        background: #0f121a;
-        padding: 18px;
+        background: #18191c;
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        border-right: 1px solid #202636;
+        border-right: 1px solid #3c4043;
         overflow-y: auto;
       }
 
       .pizza-plate {
-        width: 180px;
-        height: 180px;
+        width: 170px;
+        height: 170px;
         border-radius: 50%;
         background: #df974b;
-        margin: 10px auto;
+        margin: 8px auto;
         position: relative;
         border: 8px solid #ba7730;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
@@ -724,8 +725,8 @@
       }
 
       .pizza-cheese {
-        width: 140px;
-        height: 140px;
+        width: 130px;
+        height: 130px;
         border-radius: 50%;
         background: #fcd34d;
         position: relative;
@@ -733,8 +734,8 @@
 
       .topping-pep {
         position: absolute;
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
         background: #dc2626;
         border: 2px solid #991b1b;
@@ -743,8 +744,8 @@
 
       .topping-mush {
         position: absolute;
-        width: 20px;
-        height: 14px;
+        width: 18px;
+        height: 13px;
         background: #d6d3d1;
         border-radius: 8px 8px 3px 3px;
         border: 2px solid #78716c;
@@ -756,35 +757,46 @@
         to { transform: translateY(0) scale(1); opacity: 1; }
       }
 
-      /* Sliding Sidepanel Extension */
-      .browser-sidepanel {
+      .page-highlight-box {
+        background: rgba(245, 158, 11, 0.3);
+        border: 1px solid #f59e0b;
+        border-radius: 3px;
+        padding: 2px 4px;
+        color: #fff;
+        font-weight: 700;
+      }
+
+      /* Sliding Chrome Side Panel */
+      .chrome-sidepanel {
         flex: 0;
         width: 0;
-        background: #0a0b0e;
+        background: #202124;
         display: flex;
         flex-direction: column;
-        border-left: 1px solid #1c2230;
+        border-left: 1px solid #3c4043;
         overflow: hidden;
         transition: flex 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
-      .browser-sidepanel.open {
+      .chrome-sidepanel.open {
         flex: 4;
       }
 
-      .sp-header {
+      .sp-top-bar {
         padding: 8px 10px;
-        background: #11141c;
-        border-bottom: 1px solid #1c2230;
+        background: #292a2d;
+        border-bottom: 1px solid #3c4043;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        font-size: 11px;
+        color: #e8eaed;
       }
 
       .sp-tab-badge {
         padding: 6px 10px;
-        background: #141722;
-        border-bottom: 1px solid #1c2230;
+        background: #202124;
+        border-bottom: 1px solid #3c4043;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -792,8 +804,8 @@
       }
 
       .sp-read-btn {
-        background: var(--accent);
-        color: #07090e;
+        background: #fff;
+        color: #09090b;
         border: 0;
         border-radius: 4px;
         padding: 3px 7px;
@@ -810,11 +822,12 @@
         flex-direction: column;
         gap: 8px;
         font-size: 11px;
+        scroll-behavior: smooth;
       }
 
       .sp-memories-drawer {
-        background: #10131a;
-        border-top: 1px solid #1c2230;
+        background: #18191c;
+        border-top: 1px solid #3c4043;
         padding: 8px;
         display: none;
         flex-direction: column;
@@ -825,45 +838,25 @@
         display: flex;
       }
 
-      .sp-memory-card {
-        background: #151924;
-        border: 1px solid #232a3d;
-        border-radius: 5px;
-        padding: 6px 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-
-      .sp-mini-btn {
-        font-size: 9px;
-        padding: 2px 5px;
-        border-radius: 3px;
-        background: #202638;
-        color: var(--muted);
-        border: 0;
-        cursor: pointer;
-      }
-
-      /* ------------------------------------------------------------- 4. WEB PORTAL & WIDGET */
+      /* ------------------------------------------------------------- SCENE 4: WEB PORTAL & PAIRING */
       .portal-window {
         margin: auto;
         width: 100%;
-        max-width: 880px;
+        max-width: 860px;
         height: 520px;
         max-height: calc(100vh - 160px);
-        background: #0c0e14;
-        border: 1px solid #1c212e;
-        border-radius: 10px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
+        background: #0f1013;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
 
       .portal-navbar {
-        background: #121520;
-        border-bottom: 1px solid #1c212e;
+        background: #14151a;
+        border-bottom: 1px solid var(--line);
         padding: 10px 16px;
         display: flex;
         align-items: center;
@@ -878,8 +871,8 @@
       }
 
       .portal-sidebar {
-        background: #0f121a;
-        border-right: 1px solid #1a1e2b;
+        background: #121317;
+        border-right: 1px solid var(--line);
         padding: 12px;
         display: flex;
         flex-direction: column;
@@ -893,43 +886,13 @@
         gap: 10px;
         overflow-y: auto;
         position: relative;
-      }
-
-      .portal-slash-menu {
-        position: absolute;
-        bottom: 58px;
-        left: 14px;
-        right: 14px;
-        background: #141824;
-        border: 1px solid #232b3d;
-        border-radius: 6px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-        padding: 4px;
-        display: none;
-        flex-direction: column;
-        gap: 2px;
-        z-index: 30;
-      }
-
-      .slash-item {
-        padding: 5px 8px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        color: #e2e8f0;
-      }
-
-      .slash-item.selected {
-        background: rgba(53, 208, 186, 0.15);
-        color: var(--accent);
+        scroll-behavior: smooth;
       }
 
       .pairing-card {
-        background: #141824;
-        border: 1px solid #22293b;
-        border-radius: 7px;
+        background: #181920;
+        border: 1px solid #272832;
+        border-radius: 8px;
         padding: 10px;
         display: flex;
         flex-direction: column;
@@ -945,8 +908,8 @@
       .code-digit {
         width: 28px;
         height: 38px;
-        background: #0a0b0e;
-        border: 1px solid var(--accent);
+        background: #09090b;
+        border: 1px solid #3f3f46;
         border-radius: 5px;
         font-size: 16px;
         font-weight: 800;
@@ -957,23 +920,23 @@
         font-family: var(--mono);
       }
 
-      /* ------------------------------------------------------------- 5. WALRUS MEMORY FABRIC */
+      /* ------------------------------------------------------------- SCENE 5: WALRUS MEMORY FABRIC */
       .walrus-overview-window {
         margin: auto;
         width: 100%;
-        max-width: 920px;
+        max-width: 900px;
         height: 520px;
         max-height: calc(100vh - 160px);
-        background: rgba(14, 17, 24, 0.9);
+        background: rgba(18, 18, 22, 0.92);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid #222736;
-        border-radius: 12px;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85);
+        border: 1px solid var(--line-light);
+        border-radius: 14px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95);
         display: flex;
         flex-direction: column;
-        padding: 18px;
-        gap: 12px;
+        padding: 20px;
+        gap: 14px;
       }
 
       .surfaces-grid {
@@ -984,8 +947,8 @@
       }
 
       .surface-card-mini {
-        background: #10131c;
-        border: 1px solid #1a202c;
+        background: #121318;
+        border: 1px solid #22232a;
         border-radius: 8px;
         padding: 12px;
         display: flex;
@@ -994,27 +957,27 @@
       }
 
       .surface-card-mini.synced {
-        border-color: var(--accent);
-        box-shadow: 0 0 14px rgba(53, 208, 186, 0.12);
+        border-color: #3f3f46;
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.05);
       }
 
       /* ------------------------------------------------------------- BUBBLY DISNEY NARRATOR SIDEBOX */
       .bubbly-narrator-panel {
         position: absolute;
-        top: 60px;
+        top: 56px;
         right: 20px;
-        width: 290px;
+        width: 300px;
         z-index: 15;
-        background: rgba(15, 18, 25, 0.94);
+        background: rgba(18, 18, 22, 0.96);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1.5px solid #262e40;
-        border-radius: 18px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-        padding: 16px;
+        border: 1.5px solid var(--line-light);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+        padding: 18px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
         pointer-events: none;
       }
 
@@ -1028,15 +991,15 @@
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #35d0ba, #0284c7);
+        background: linear-gradient(135deg, #f4f4f5, #a1a1aa);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: var(--bubbly);
+        font-family: var(--font-bubbly);
         font-weight: 700;
         font-size: 20px;
-        color: #07090e;
-        box-shadow: 0 4px 14px rgba(53, 208, 186, 0.4);
+        color: #09090b;
+        box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
         animation: floatAvatar 2.5s infinite ease-in-out;
       }
 
@@ -1045,56 +1008,45 @@
         50% { transform: translateY(-4px); }
       }
 
-      .narrator-speaker-meta {
-        flex: 1;
-      }
-
       .narrator-speaker-name {
-        font-family: var(--bubbly);
-        font-size: 15px;
+        font-family: var(--font-bubbly);
+        font-size: 16px;
         font-weight: 700;
         color: #fff;
       }
 
       .narrator-badge {
         font-size: 10px;
-        color: var(--accent);
+        color: var(--accent-emerald);
         font-weight: 600;
       }
 
       .narrator-speech-bubble {
-        background: #141824;
-        border: 1px solid #202738;
-        border-radius: 12px;
+        background: #14151a;
+        border: 1px solid #272832;
+        border-radius: 14px;
         padding: 12px 14px;
-        font-family: var(--bubbly);
-        font-size: 13.5px;
+        font-family: var(--font-bubbly);
+        font-size: 14px;
         font-weight: 500;
-        line-height: 1.5;
-        color: #f1f5f9;
-        position: relative;
-        animation: speechBubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      @keyframes speechBubblePop {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
+        line-height: 1.55;
+        color: #f4f4f5;
+        min-height: 80px;
       }
 
       .narrator-speech-bubble strong {
-        color: var(--accent);
+        color: #fff;
+        text-decoration: underline;
       }
 
-      .narrator-active-tools {
-        background: #0d1017;
-        border: 1px solid #1a202c;
-        border-radius: 8px;
-        padding: 8px 10px;
-        font-size: 10px;
-        color: #8b949e;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      .narrator-streaming-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 14px;
+        background: #fff;
+        vertical-align: middle;
+        margin-left: 2px;
+        animation: cursorBlink 0.7s infinite;
       }
 
       .tools-tag-row {
@@ -1104,8 +1056,8 @@
       }
 
       .tool-tag {
-        background: #181d29;
-        color: #94a3b8;
+        background: #181920;
+        color: #71717a;
         padding: 2px 6px;
         border-radius: 4px;
         font-family: var(--mono);
@@ -1113,12 +1065,12 @@
       }
 
       .tool-tag.active {
-        background: rgba(53, 208, 186, 0.15);
-        color: var(--accent);
-        border: 1px solid rgba(53, 208, 186, 0.35);
+        background: #27272a;
+        color: #fff;
+        border: 1px solid #52525b;
       }
 
-      /* ------------------------------------------------------------- TOP HUD */
+      /* ------------------------------------------------------------- TOP NAVIGATION HUD */
       .hud-header {
         position: absolute;
         top: 10px;
@@ -1140,20 +1092,14 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line-light);
         border-radius: 9999px;
-        padding: 6px 14px 6px 10px;
-      }
-
-      .brand-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--accent);
+        padding: 5px 14px 5px 10px;
       }
 
       .brand-name {
+        font-family: var(--font-display);
         font-size: 13px;
         font-weight: 800;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #fff;
       }
@@ -1161,7 +1107,7 @@
       .surface-nav-bar {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
@@ -1187,8 +1133,8 @@
       }
 
       .surface-tab-btn.active {
-        background: var(--accent);
-        color: #07090e;
+        background: #fff;
+        color: #09090b;
         font-weight: 700;
       }
 
@@ -1204,7 +1150,7 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line-light);
         color: var(--text);
-        padding: 6px 12px;
+        padding: 5px 12px;
         border-radius: 9999px;
         font-size: 11px;
         font-weight: 600;
@@ -1213,24 +1159,18 @@
         align-items: center;
         gap: 5px;
         text-decoration: none;
-        transition: all 0.15s ease;
       }
 
-      .action-pill-btn:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      /* ------------------------------------------------------------- BOTTOM CONTROLLER */
+      /* ------------------------------------------------------------- BOTTOM TIMELINE HUD */
       .hud-footer {
         position: absolute;
-        bottom: 10px;
+        bottom: 8px;
         left: 16px;
         right: 16px;
         z-index: 20;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
         pointer-events: none;
       }
 
@@ -1244,14 +1184,14 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line-light);
         border-radius: 9999px;
-        padding: 6px 14px;
+        padding: 5px 14px;
       }
 
       .time-counter {
         font-family: var(--mono);
         font-size: 11px;
         font-weight: 700;
-        color: var(--accent);
+        color: #fff;
         min-width: 85px;
       }
 
@@ -1270,7 +1210,7 @@
         left: 0;
         height: 100%;
         width: 0%;
-        background: var(--accent);
+        background: #fff;
         border-radius: 9999px;
       }
 
@@ -1311,7 +1251,6 @@
         cursor: pointer;
       }
 
-      /* Responsive Adjustments */
       @media (max-width: 980px) {
         .presentation-stage {
           right: 20px;
@@ -1326,65 +1265,54 @@
     </style>
   </head>
   <body>
-    <!-- 3D Studio Background Canvas -->
+    <!-- 3D Studio Canvas -->
     <canvas id="webgl-canvas"></canvas>
 
-    <!-- Subtle Ambient Vignette -->
+    <!-- Ambient Vignette -->
     <div class="ambient-overlay"></div>
+
+    <!-- Cinematic Flash Transition Overlay -->
+    <div id="transition-flash" class="transition-flash"></div>
 
     <!-- Presentation Stage -->
     <main class="presentation-stage">
 
-      <!-- SCENE 0: INTRO CARD -->
+      <!-- SCENE 0: KINETIC 3D INTRO -->
       <section id="surface-intro" class="surface-viewport active interactive-surface">
-        <div class="intro-card">
-          <div class="intro-badge-row">
-            <span class="intro-chip">Decentralized AI Agent</span>
-            <span class="intro-chip" style="color: var(--accent-gold); border-color: rgba(234, 179, 8, 0.3);">Walrus Protocol</span>
-          </div>
+        <div class="intro-stage">
+          <div class="intro-tagline-chip">&#9679; MULTI-SURFACE DECENTRALIZED AGENT</div>
+          <h1 class="intro-kinetic-title">ONE DECENTRALIZED MIND.<br>EVERY SURFACE.</h1>
+          <p id="intro-stream-text" class="intro-streaming-sub"></p>
 
-          <h1 class="intro-title">Meet Cheta: One Mind Across Every Device.</h1>
-          <p class="intro-desc">
-            Most AI assistants forget who you are the second you switch apps. Cheta gives you a unified, permanent memory space committed to decentralized Walrus storage. Everything you say in Telegram is instantly recalled in your Linux terminal, browser extension, and web portal.
-          </p>
-
-          <div class="intro-grid">
-            <div class="intro-feature">
-              <div class="intro-icon">&#128241;</div>
-              <div class="intro-feat-text">
-                <strong>Telegram Bot</strong>
-                <span>Voice notes, documents, calendar scheduling &amp; natural language memory extraction.</span>
-              </div>
+          <div class="intro-cards-row">
+            <div class="intro-mini-card">
+              <div class="intro-card-icon">&#128241;</div>
+              <div class="intro-card-name">Telegram Bot</div>
+              <div class="intro-card-desc">Voice notes, PDFs, CalDAV scheduling &amp; proactive memory extraction.</div>
             </div>
 
-            <div class="intro-feature">
-              <div class="intro-icon">&#128187;</div>
-              <div class="intro-feat-text">
-                <strong>Linux Terminal</strong>
-                <span>Developer CLI, instant token streaming, offline caching &amp; one-time pairing.</span>
-              </div>
+            <div class="intro-mini-card">
+              <div class="intro-card-icon">&#128187;</div>
+              <div class="intro-card-name">Linux Terminal</div>
+              <div class="intro-card-desc">Streaming tokens, local caching, offline fallbacks &amp; one-time pairing.</div>
             </div>
 
-            <div class="intro-feature">
-              <div class="intro-icon">&#127760;</div>
-              <div class="intro-feat-text">
-                <strong>Browser Extension</strong>
-                <span>Active tab inspection, in-page WebMCP automation &amp; memory drawer.</span>
-              </div>
+            <div class="intro-mini-card">
+              <div class="intro-card-icon">&#127760;</div>
+              <div class="intro-card-name">Chrome Extension</div>
+              <div class="intro-card-desc">Active DOM context, in-page WebMCP actions &amp; memories drawer.</div>
             </div>
 
-            <div class="intro-feature">
-              <div class="intro-icon">&#128172;</div>
-              <div class="intro-feat-text">
-                <strong>Web Portal &amp; Widget</strong>
-                <span>Slash command suggestions, device linking &amp; full-text Walrus search.</span>
-              </div>
+            <div class="intro-mini-card">
+              <div class="intro-card-icon">&#128172;</div>
+              <div class="intro-card-name">Web Portal</div>
+              <div class="intro-card-desc">Slash commands, device pairing &amp; instant full-text Walrus query.</div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SCENE 1: TELEGRAM BOT INTERFACE -->
+      <!-- SCENE 1: AUTHENTIC TELEGRAM MOBILE PHONE -->
       <section id="surface-telegram" class="surface-viewport interactive-surface">
         <div class="phone-wrapper">
           <div class="phone-notch"></div>
@@ -1393,7 +1321,7 @@
             <span class="tg-back-arrow">&#8592;</span>
             <div class="tg-avatar">C</div>
             <div class="tg-meta">
-              <div class="tg-name-row">
+              <div style="display: flex; align-items: center; gap: 4px;">
                 <span class="tg-name">Cheta</span>
                 <span class="tg-badge">&#10003;</span>
               </div>
@@ -1430,8 +1358,7 @@
             <!-- 2. Cheta Bot Confirmation -->
             <div id="tg-reply-1" class="tg-bubble tg-bot" style="display: none;">
               <div class="tg-tool-pill">&#9881; Tool: set_reminder({"time": "09:00", "task": "Check node status"})</div>
-              <div>Reminder scheduled for <strong>9:00 AM tomorrow</strong>!</div>
-              <div style="margin-top: 4px; font-size: 11px; color: #35d0ba;">&#129504; Committed durable fact to Walrus storage: <em>"Builds with Solana &amp; Rust"</em> (Blob 0x9f82b1).</div>
+              <div id="tg-reply-text"></div>
               <div class="tg-inline-btn-group">
                 <div id="tg-btn-cal" class="tg-inline-btn">&#128197; View in Calendar</div>
                 <div id="tg-btn-blobs" class="tg-inline-btn">&#129504; Walrus Blobs (14)</div>
@@ -1441,8 +1368,8 @@
             </div>
 
             <!-- 3. Calendar Event Card -->
-            <div id="tg-cal-card" class="tg-bubble tg-bot" style="display: none; border-left: 3px solid #eab308;">
-              <div style="font-size: 10.5px; color: #eab308; font-weight: 700;">&#128197; CALENDAR EVENT CREATED</div>
+            <div id="tg-cal-card" class="tg-bubble tg-bot" style="display: none; border-left: 3px solid #f59e0b;">
+              <div style="font-size: 10.5px; color: #f59e0b; font-weight: 700;">&#128197; CALENDAR EVENT CREATED</div>
               <div style="font-size: 11.5px; font-weight: 700; color: #fff; margin-top: 2px;">Node Deployment Check</div>
               <div style="font-size: 10.5px; color: #8b949e;">Tomorrow &bull; 09:00 AM - 09:30 AM &bull; Added to CalDAV</div>
               <span class="tg-time">15:42</span>
@@ -1462,7 +1389,7 @@
 
             <div id="tg-doc-reply" class="tg-bubble tg-bot" style="display: none;">
               <div class="tg-tool-pill">&#128269; Tool: parse_attachment("architecture_spec.pdf")</div>
-              <div>Extracted 14 pages. Key constraints found: <em>SQLite local caching, Walrus blob proofs, and pure ASCII compliance</em>. Indexed to memory!</div>
+              <div id="tg-doc-reply-text"></div>
               <span class="tg-time">15:43</span>
             </div>
           </div>
@@ -1473,7 +1400,7 @@
         </div>
       </section>
 
-      <!-- SCENE 2: REALISTIC LINUX CLI TERMINAL -->
+      <!-- SCENE 2: AUTHENTIC LINUX TERMINAL -->
       <section id="surface-cli" class="surface-viewport interactive-surface">
         <div class="terminal-window">
           <div class="terminal-titlebar">
@@ -1483,14 +1410,14 @@
               <div class="term-btn green"></div>
             </div>
             <div class="term-title">kss@cheta-box: ~/workspace (bash)</div>
-            <div style="font-size: 10.5px; color: #35d0ba; font-family: var(--mono);">&#9679; WALRUS CONNECTED</div>
+            <div style="font-size: 10.5px; color: #10b981; font-family: var(--mono);">&#9679; WALRUS CONNECTED</div>
           </div>
 
           <div id="term-content" class="terminal-body">
             <div>
               <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta status</span>
             </div>
-            <div style="color: #9ca3af; margin: 3px 0 8px;">
+            <div style="color: #a1a1aa; margin: 3px 0 8px;">
               [+] Cheta CLI v2.4.0 (Linux x86_64)<br>
               [+] Walrus Network: CONNECTED (epoch 42, latency 32ms)<br>
               [+] Storage Provider: Sui Testnet Decentralized Blob Network<br>
@@ -1516,19 +1443,19 @@
                     <td>blob_wal_0x9f82b1...</td>
                     <td>Builds with Solana &amp; Rust</td>
                     <td>Telegram</td>
-                    <td><span class="badge-synced">COMMITTED</span></td>
+                    <td><span style="color: #10b981; font-weight: 700;">COMMITTED</span></td>
                   </tr>
                   <tr>
                     <td>blob_wal_0x4e18ac...</td>
                     <td>AWS Certified GenAI Developer - Professional</td>
                     <td>Web</td>
-                    <td><span class="badge-synced">COMMITTED</span></td>
+                    <td><span style="color: #10b981; font-weight: 700;">COMMITTED</span></td>
                   </tr>
                   <tr>
                     <td>blob_wal_0x77d019...</td>
                     <td>Working on Gigr services platform</td>
                     <td>Extension</td>
-                    <td><span class="badge-synced">COMMITTED</span></td>
+                    <td><span style="color: #10b981; font-weight: 700;">COMMITTED</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -1538,20 +1465,20 @@
               <div>
                 <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta chat</span>
               </div>
-              <div style="color: #6b7280;">Starting zero-latency streaming REPL session...</div>
-              <div style="color: #38bdf8; margin-top: 3px;">Cheta CLI&gt; What tools do you have available right now?</div>
-              <div id="term-stream-text" style="color: #e5e7eb; margin-top: 2px;"></div>
+              <div style="color: #71717a;">Starting zero-latency streaming REPL session...</div>
+              <div style="color: #fff; margin-top: 3px;">Cheta CLI&gt; What tools do you have available right now?</div>
+              <div id="term-stream-text" style="color: #e4e4e7; margin-top: 2px;"></div>
             </div>
 
             <div id="term-step-pair" style="display: none; margin-top: 8px;">
               <div>
                 <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta pairing code</span>
               </div>
-              <div style="background: #141722; border: 1px solid #232a3d; padding: 7px 10px; border-radius: 5px; margin-top: 4px;">
-                <span style="color: #eab308; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
-                <span style="color: #8b949e; font-size: 10.5px;">Enter this code on your Web Portal or Mobile to link your Walrus memory realm.</span>
+              <div style="background: #141418; border: 1px solid #24242c; padding: 7px 10px; border-radius: 5px; margin-top: 4px;">
+                <span style="color: #f59e0b; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
+                <span style="color: #a1a1aa; font-size: 10.5px;">Enter this code on your Web Portal or Mobile to link your Walrus memory realm.</span>
               </div>
-              <div id="term-paired-toast" style="color: #22c55e; font-weight: 700; margin-top: 4px; display: none;">
+              <div id="term-paired-toast" style="color: #10b981; font-weight: 700; margin-top: 4px; display: none;">
                 [+] CONNECTED: Browser Extension &amp; Web Portal authenticated successfully!
               </div>
             </div>
@@ -1563,85 +1490,98 @@
         </div>
       </section>
 
-      <!-- SCENE 3: REALISTIC BROWSER + CHETA EXTENSION SIDEPANEL -->
+      <!-- SCENE 3: AUTHENTIC GOOGLE CHROME EXTENSION SIDEPANEL -->
       <section id="surface-extension" class="surface-viewport interactive-surface">
         <div class="browser-window">
-          <!-- Animated Virtual Cursor to demonstrate clicking the extension icon -->
+          <!-- Animated Mouse Cursor Clicking Extension Icon -->
           <div id="virtual-cursor" class="virtual-cursor">
             <svg width="18" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M3 3l7 18 3-7 7-3L3 3z" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
             </svg>
           </div>
 
-          <div class="browser-tabs-bar">
-            <div class="browser-tab">
+          <!-- Chrome Tabs -->
+          <div class="chrome-tab-strip">
+            <div class="chrome-tab">
               <span>&#127829; zaMaker! - Pizza Creator</span>
-              <span class="tab-close">&#10005;</span>
+              <span class="chrome-tab-close">&#10005;</span>
             </div>
-            <div class="browser-tab inactive">
+            <div class="chrome-tab inactive">
               <span>GitHub</span>
-              <span class="tab-close">&#10005;</span>
+              <span class="chrome-tab-close">&#10005;</span>
             </div>
-            <div class="browser-tab inactive">
+            <div class="chrome-tab inactive">
               <span>Sui Explorer</span>
-              <span class="tab-close">&#10005;</span>
+              <span class="chrome-tab-close">&#10005;</span>
             </div>
           </div>
 
-          <div class="browser-nav-bar">
-            <div class="browser-nav-btns">
-              <span>&#8592;</span><span>&#8594;</span><span>&#8635;</span>
-            </div>
-            <div class="browser-omnibox">
+          <!-- Chrome Omnibar -->
+          <div class="chrome-omnibar">
+            <span class="chrome-nav-btn">&#8592;</span>
+            <span class="chrome-nav-btn">&#8594;</span>
+            <span class="chrome-nav-btn">&#8635;</span>
+            <div class="chrome-url-box">
               <span>&#128274;</span>
               <span>https://<strong style="color: #fff;">googlechromelabs.github.io</strong>/webmcp-pizza/</span>
             </div>
-            <div class="browser-toolbar-ext">
-              <div id="ext-toolbar-icon" class="ext-icon-btn" title="Cheta Extension">C</div>
-            </div>
+            <div id="ext-toolbar-icon" class="chrome-ext-btn" title="Cheta Extension">C</div>
           </div>
 
+          <!-- Chrome Bookmarks Bar -->
+          <div class="chrome-bookmarks-bar">
+            <span>&#9733; GitHub Repo</span>
+            <span>&#9733; Sui Testnet Explorer</span>
+            <span>&#9733; Walrus Decentralized Docs</span>
+          </div>
+
+          <!-- Split Viewport -->
           <div class="browser-viewport">
-            <!-- Left: Active Web Page -->
+            <!-- Left: Active Webpage with Highlights & zaMaker pizza -->
             <div class="browser-page">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <div>
                   <h3 style="font-size: 15px; color: #fff;">zaMaker! WebMCP Pizza Maker</h3>
-                  <div style="font-size: 11px; color: #8b949e;">Demonstrating in-page DOM tools registered via WebMCP</div>
+                  <div style="font-size: 11px; color: #9aa0a6;">In-page DOM tools registered directly via WebMCP</div>
                 </div>
-                <div style="font-size: 10px; background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 6px; border-radius: 4px; font-weight: 700;">
+                <div style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 6px; border-radius: 4px; font-weight: 700;">
                   &#9889; 7 Page Tools
                 </div>
+              </div>
+
+              <!-- Page In-DOM Text Highlight Tool Demo -->
+              <div id="page-highlight-area" style="font-size: 11px; color: #bdc1c6; background: #202124; padding: 6px 10px; border-radius: 4px; margin-bottom: 6px;">
+                Cheta agent tool <span id="tool-hl-target">page_highlight_text</span> active: Searching and highlighting in-page context on the fly.
               </div>
 
               <div class="pizza-plate">
                 <div id="pizza-cheese" class="pizza-cheese"></div>
               </div>
 
-              <div style="background: #090b10; border: 1px solid #1a202c; border-radius: 6px; padding: 8px; margin-top: auto;">
-                <div style="font-size: 10.5px; color: #35d0ba; font-weight: 700;">WEBMCP EVENT BUS</div>
-                <div id="page-tool-status" style="font-size: 10.5px; font-family: var(--mono); color: #9ca3af;">Awaiting agent tool invocation...</div>
+              <div style="background: #202124; border: 1px solid #3c4043; border-radius: 6px; padding: 6px 10px; margin-top: auto;">
+                <div style="font-size: 10px; color: #10b981; font-weight: 700;">WEBMCP EVENT BUS</div>
+                <div id="page-tool-status" style="font-size: 10.5px; font-family: var(--mono); color: #9aa0a6;">Awaiting agent tool invocation...</div>
               </div>
             </div>
 
-            <!-- Right: Sliding Cheta Sidepanel Extension -->
-            <div id="browser-sidepanel" class="browser-sidepanel">
-              <div class="sp-header">
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: #fff;">
-                  <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent);"></span>
-                  <span>Cheta Extension</span>
+            <!-- Right: Sliding Chrome Side Panel Extension -->
+            <div id="browser-sidepanel" class="chrome-sidepanel">
+              <div class="sp-top-bar">
+                <div style="display: flex; align-items: center; gap: 5px; font-weight: 700;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span>
+                  <span>Side panel &bull; Cheta</span>
                 </div>
-                <div style="display: flex; gap: 4px;">
-                  <span class="sp-mini-btn">+ New</span>
-                  <span class="sp-mini-btn">Chats 3</span>
-                  <span id="sp-btn-memories" class="sp-mini-btn" style="color: var(--accent);">Memories 14</span>
+                <div style="display: flex; gap: 3px;">
+                  <button class="sp-read-btn" id="sp-btn-newchat">+ New</button>
+                  <button class="sp-read-btn" id="sp-btn-chats">Chats 3</button>
+                  <button class="sp-read-btn" id="sp-btn-memories">Memories 14</button>
                 </div>
               </div>
 
               <div class="sp-tab-badge">
                 <div>
                   <strong style="color: #fff;">WebMCP zaMaker!</strong>
-                  <div style="color: #717d91;">googlechromelabs.github.io</div>
+                  <div style="color: #9aa0a6;">googlechromelabs.github.io</div>
                 </div>
                 <button id="sp-read-tab-btn" class="sp-read-btn">Read Tab</button>
               </div>
@@ -1656,20 +1596,20 @@
                 </div>
 
                 <div id="sp-bot-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11px;">
-                  Baked onto the active pizza via WebMCP!
+                  <div id="sp-stream-reply-text"></div>
                 </div>
 
                 <!-- Slide-out Memories Drawer -->
                 <div id="sp-drawer" class="sp-memories-drawer">
-                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--accent);">
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: #fff;">
                     <strong>Decentralized Memories</strong>
                     <span>14 stored</span>
                   </div>
-                  <div class="sp-memory-card">
-                    <span style="font-size: 10px; color: #e5e7eb;">Builds with Solana &amp; Rust</span>
+                  <div style="background: #202124; border: 1px solid #3c4043; border-radius: 4px; padding: 5px 8px;">
+                    <span style="font-size: 10px; color: #e8eaed;">Builds with Solana &amp; Rust</span>
                     <div style="display: flex; gap: 4px; margin-top: 2px;">
-                      <button class="sp-mini-btn">Forget this one</button>
-                      <button class="sp-mini-btn" style="color: var(--accent);">Correct this one</button>
+                      <button style="font-size: 9px; padding: 1px 4px; border: 0; background: #35363a; color: #9aa0a6; border-radius: 3px;">Forget this one</button>
+                      <button style="font-size: 9px; padding: 1px 4px; border: 0; background: #35363a; color: #10b981; border-radius: 3px;">Correct this one</button>
                     </div>
                   </div>
                 </div>
@@ -1684,11 +1624,11 @@
         <div class="portal-window">
           <div class="portal-navbar">
             <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #fff;">
-              <span class="brand-dot"></span>
+              <span class="brand-dot" style="background: #fff;"></span>
               <span>Cheta Web Portal</span>
             </div>
-            <div style="display: flex; gap: 14px; font-size: 11.5px; color: #8b949e;">
-              <span style="color: var(--accent); font-weight: 600;">Chat &amp; Widget</span>
+            <div style="display: flex; gap: 14px; font-size: 11.5px; color: #a1a1aa;">
+              <span style="color: #fff; font-weight: 600;">Chat &amp; Widget</span>
               <span>Walrus Memories</span>
               <span>Device Pairing</span>
               <span>Documentation</span>
@@ -1697,17 +1637,17 @@
 
           <div class="portal-body">
             <div class="portal-sidebar">
-              <div style="font-size: 10px; font-weight: 700; color: #8b949e; text-transform: uppercase;">Chat Sessions</div>
-              <div style="background: #141824; border: 1px solid #232b3d; padding: 6px 8px; border-radius: 4px; font-size: 11px; color: #fff;">
+              <div style="font-size: 10px; font-weight: 700; color: #a1a1aa; text-transform: uppercase;">Chat Sessions</div>
+              <div style="background: #181920; border: 1px solid #272832; padding: 6px 8px; border-radius: 4px; font-size: 11px; color: #fff;">
                 &#128172; Web Research &amp; Rust Stack
               </div>
-              <div style="padding: 6px 8px; font-size: 11px; color: #6b7280;">
+              <div style="padding: 6px 8px; font-size: 11px; color: #71717a;">
                 &#128172; zaMaker Pizza Automation
               </div>
 
               <div style="margin-top: auto;" class="pairing-card">
-                <div style="font-size: 10.5px; font-weight: 700; color: #35d0ba;">DEVICE PAIRING</div>
-                <div style="font-size: 10px; color: #8b949e;">Linking Linux CLI via 6-digit code:</div>
+                <div style="font-size: 10.5px; font-weight: 700; color: #fff;">DEVICE PAIRING</div>
+                <div style="font-size: 10px; color: #a1a1aa;">Linking Linux CLI via 6-digit code:</div>
                 <div class="pairing-code-box">
                   <div class="code-digit">8</div>
                   <div class="code-digit">4</div>
@@ -1716,7 +1656,7 @@
                   <div class="code-digit">9</div>
                   <div class="code-digit">5</div>
                 </div>
-                <div style="font-size: 10px; color: #22c55e;">&#10003; Terminal kss@cheta-box authenticated &amp; linked</div>
+                <div style="font-size: 10px; color: #10b981;">&#10003; Terminal kss@cheta-box authenticated &amp; linked</div>
               </div>
             </div>
 
@@ -1731,7 +1671,7 @@
 
               <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 11.5px; max-width: 90%;">
                 <div class="tg-tool-pill">&#129504; Walrus Put: Commit durable fact blob</div>
-                <div>Memory committed to Walrus decentralized storage (Blob <code>blob_wal_0x3a91...</code>). Immediately accessible to your CLI and Extension!</div>
+                <div id="portal-stream-msg1"></div>
               </div>
 
               <div id="portal-query-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 11.5px;">
@@ -1740,23 +1680,11 @@
 
               <div id="portal-query-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11.5px; max-width: 90%;">
                 <div class="tg-tool-pill">&#129504; Walrus Query: Cross-surface memory recall</div>
-                <div>On Telegram, you told me that you prefer building with Solana and Rust, and deploy to Sui testnet. (Blob 0x9f82b1 verified from Walrus decentralized storage).</div>
-              </div>
-
-              <!-- Slash command menu popup -->
-              <div id="slash-popup" class="portal-slash-menu">
-                <div class="slash-item selected">
-                  <code>/remember &lt;fact&gt;</code>
-                  <span>Store permanent durable fact to Walrus</span>
-                </div>
-                <div class="slash-item">
-                  <code>/pair &lt;code&gt;</code>
-                  <span>Link another device using a 6-digit code</span>
-                </div>
+                <div id="portal-stream-msg2"></div>
               </div>
 
               <div style="margin-top: auto; display: flex; gap: 6px;">
-                <input id="portal-input" type="text" style="flex: 1; background: #10131a; border: 1px solid #1f2533; border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 11.5px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
+                <input id="portal-input" type="text" style="flex: 1; background: #121317; border: 1px solid #272832; border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 11.5px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
               </div>
             </div>
           </div>
@@ -1768,12 +1696,12 @@
         <div class="walrus-overview-window">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Walrus Decentralized Memory Fabric</h2>
-              <p style="font-size: 11.5px; color: #8b949e;">One unified cryptographic memory state shared instantaneously across all user surfaces.</p>
+              <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #fff;">WALRUS DECENTRALIZED MEMORY FABRIC</h2>
+              <p style="font-size: 11.5px; color: #a1a1aa;">One unified cryptographic memory state shared instantaneously across all user surfaces.</p>
             </div>
             <div style="display: flex; gap: 6px;">
-              <span style="font-size: 10px; background: rgba(53, 208, 186, 0.15); color: #35d0ba; border: 1px solid rgba(53, 208, 186, 0.35); padding: 2px 7px; border-radius: 4px; font-weight: 700;">&#9679; Sui Epoch 42 Verified</span>
-              <span style="font-size: 10px; background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 7px; border-radius: 4px; font-weight: 700;">14 Blobs Stored</span>
+              <span style="font-size: 10px; background: #181920; color: #fff; border: 1px solid #3f3f46; padding: 2px 7px; border-radius: 4px; font-weight: 700;">&#9679; Sui Epoch 42 Verified</span>
+              <span style="font-size: 10px; background: #181920; color: #f59e0b; border: 1px solid #3f3f46; padding: 2px 7px; border-radius: 4px; font-weight: 700;">14 Blobs Stored</span>
             </div>
           </div>
 
@@ -1781,44 +1709,44 @@
             <div class="surface-card-mini synced">
               <div style="font-size: 16px;">&#128241;</div>
               <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Telegram Bot</div>
-              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Voice notes, PDF documents, calendar events &amp; reminders on mobile.</div>
-              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Memory written: Rust on Sui</div>
+              <div style="font-size: 11px; color: #a1a1aa; line-height: 1.4;">Voice notes, PDF documents, calendar events &amp; reminders on mobile.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #10b981;">&#10003; Memory written: Rust on Sui</div>
             </div>
 
             <div class="surface-card-mini synced">
               <div style="font-size: 16px;">&#128187;</div>
               <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Linux Terminal</div>
-              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Streaming tokens, formatted ASCII tables &amp; one-time pairing codes.</div>
-              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Synced from Walrus: 32ms</div>
+              <div style="font-size: 11px; color: #a1a1aa; line-height: 1.4;">Streaming tokens, formatted ASCII tables &amp; one-time pairing codes.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #10b981;">&#10003; Synced from Walrus: 32ms</div>
             </div>
 
             <div class="surface-card-mini synced">
               <div style="font-size: 16px;">&#127760;</div>
-              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Browser Extension</div>
-              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Reads active tab DOM, executes in-page WebMCP tools &amp; memory drawer.</div>
-              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; In-page WebMCP executed</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Chrome Extension</div>
+              <div style="font-size: 11px; color: #a1a1aa; line-height: 1.4;">Reads active tab DOM, executes in-page WebMCP tools &amp; memory drawer.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #10b981;">&#10003; In-page WebMCP executed</div>
             </div>
 
             <div class="surface-card-mini synced">
               <div style="font-size: 16px;">&#128172;</div>
               <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Web Portal &amp; Widget</div>
-              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Slash command suggestions, device pairing &amp; full-text search.</div>
-              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Real-time sync verified</div>
+              <div style="font-size: 11px; color: #a1a1aa; line-height: 1.4;">Slash command suggestions, device pairing &amp; full-text search.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #10b981;">&#10003; Real-time sync verified</div>
             </div>
           </div>
 
-          <div style="background: #090b10; border: 1px solid #1a202c; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-size: 11px; color: #8b949e;">
-              <strong style="color: #35d0ba;">Zero Fragmentation:</strong> Cheta gives you One Decentralized Mind that lives with you anywhere.
+          <div style="background: #14151a; border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 11px; color: #a1a1aa;">
+              <strong style="color: #fff;">Zero Fragmentation:</strong> Cheta gives you One Decentralized Mind that lives with you anywhere.
             </div>
-            <a href="/app/portal.html" class="action-pill-btn" style="background: var(--accent); color: #07090e; font-weight: 700;">Open Portal</a>
+            <a href="/app/portal.html" class="action-pill-btn" style="background: #fff; color: #09090b; font-weight: 700;">Open Portal</a>
           </div>
         </div>
       </section>
 
     </main>
 
-    <!-- Bubbly Disney-Style Narrator Sidebox (Positioned on the Right Side) -->
+    <!-- Bubbly Disney-Style Narrator Sidebox -->
     <aside class="bubbly-narrator-panel">
       <div class="narrator-header">
         <div class="narrator-mascot-avatar">C</div>
@@ -1828,19 +1756,21 @@
         </div>
       </div>
 
-      <div id="bubbly-speech" class="narrator-speech-bubble">
-        Welcome! I am Cheta. I connect all your devices into one durable decentralized memory space!
+      <div class="narrator-speech-bubble">
+        <span id="bubbly-speech-text"></span>
+        <span class="narrator-streaming-cursor"></span>
       </div>
 
-      <div class="narrator-active-tools">
-        <span style="font-weight: 700; color: #cbd5e1;">NATIVE AGENT TOOLS (13 ACTIVE)</span>
-        <div id="tool-pills-row" class="tools-tag-row">
+      <div style="background: #121318; border: 1px solid #22232a; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 9.5px; font-weight: 700; color: #a1a1aa;">NATIVE AGENT TOOLS (13 ACTIVE)</span>
+        <div class="tools-tag-row">
           <span class="tool-tag" data-tool="walrus_put">walrus_put</span>
           <span class="tool-tag" data-tool="walrus_query">walrus_query</span>
           <span class="tool-tag" data-tool="set_reminder">set_reminder</span>
           <span class="tool-tag" data-tool="create_calendar_event">create_calendar_event</span>
           <span class="tool-tag" data-tool="parse_attachment">parse_attachment</span>
           <span class="tool-tag" data-tool="add_topping">add_topping</span>
+          <span class="tool-tag" data-tool="page_highlight_text">page_highlight_text</span>
         </div>
       </div>
     </aside>
@@ -1848,7 +1778,6 @@
     <!-- Top Navigation HUD -->
     <header class="hud-header">
       <div class="hud-brand interactive-surface">
-        <div class="brand-dot"></div>
         <span class="brand-name">Cheta</span>
       </div>
 
@@ -1863,13 +1792,13 @@
 
       <div class="hud-actions interactive-surface">
         <button id="btn-camera-mode" class="action-pill-btn" type="button">Cam: Auto Director</button>
-        <button id="btn-sound-toggle" class="action-pill-btn" type="button"><span id="sound-label">Sound: ON</span></button>
+        <button id="btn-sound-toggle" class="action-pill-btn" type="button"><span id="sound-label">Sound: OFF</span></button>
         <button id="btn-record-video" class="action-pill-btn" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.4);">&#9679; Record Video</button>
         <a class="action-pill-btn" href="/app/portal.html">Portal</a>
       </div>
     </header>
 
-    <!-- Bottom Controller HUD -->
+    <!-- Bottom Timeline HUD -->
     <footer class="hud-footer">
       <div class="progress-track-wrap interactive-surface">
         <span id="time-display" class="time-counter">00:00 / 02:40</span>
@@ -1897,12 +1826,12 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <!-- Motion Engine -->
+    <!-- Core Motion & Streaming Script -->
     <script>
       (function () {
         "use strict";
 
-        // Total duration: 160 seconds (2 mins 40 secs)
+        // Total duration: 160 seconds
         var TOTAL_DURATION = 160;
 
         var SCENES = [
@@ -1911,7 +1840,7 @@
             key: "intro",
             name: "World Intro",
             startTime: 0,
-            endTime: 20,
+            endTime: 22,
             speaker: "Cheta (AI Agent)",
             speech: "Hi there! I am Cheta. Most AI assistants forget everything when you switch tabs. I give you One Unified Mind across all your devices, backed by Walrus decentralized storage!",
             activeTool: "walrus_query",
@@ -1923,8 +1852,8 @@
             id: 1,
             key: "telegram",
             name: "Telegram Bot",
-            startTime: 20,
-            endTime: 55,
+            startTime: 22,
+            endTime: 58,
             speaker: "Cheta (Telegram)",
             speech: "On Telegram, speak to me with voice notes or drop files. I transcribe audio waveforms, parse attachments, schedule calendar events, and commit durable fact blobs to Walrus.",
             activeTool: "set_reminder",
@@ -1936,8 +1865,8 @@
             id: 2,
             key: "cli",
             name: "Linux Terminal",
-            startTime: 55,
-            endTime: 90,
+            startTime: 58,
+            endTime: 94,
             speaker: "Cheta (Linux CLI)",
             speech: "Inside any Linux terminal, 'cheta chat' streams zero-latency tokens, queries Walrus embeddings offline or online, and issues one-time pairing codes.",
             activeTool: "walrus_query",
@@ -1948,11 +1877,11 @@
           {
             id: 3,
             key: "extension",
-            name: "Browser Extension",
-            startTime: 90,
-            endTime: 125,
-            speaker: "Cheta (Web Extension)",
-            speech: "In Chrome & Firefox, click my toolbar icon to open the sidepanel. I read the active tab DOM and execute in-page WebMCP tools directly without scraping, like adding pizza toppings!",
+            name: "Chrome Extension",
+            startTime: 94,
+            endTime: 132,
+            speaker: "Cheta (Chrome Extension)",
+            speech: "In Chrome, click my toolbar icon to open the sidepanel. I read the active tab DOM, highlight words in the page, and execute in-page WebMCP tools without scraping!",
             activeTool: "add_topping",
             camPos: { x: 0, y: 2.3, z: 6.2 },
             camTarget: { x: 0, y: 0.9, z: 0 },
@@ -1962,8 +1891,8 @@
             id: 4,
             key: "portal",
             name: "Web Portal & Pairing",
-            startTime: 125,
-            endTime: 145,
+            startTime: 132,
+            endTime: 152,
             speaker: "Cheta (Web Portal)",
             speech: "The Web Portal links your devices using a 6-digit code. Notice how asking about what you said on Telegram recalls the exact memory instantly across surfaces!",
             activeTool: "walrus_put",
@@ -1975,7 +1904,7 @@
             id: 5,
             key: "walrus",
             name: "Walrus Memory Fabric",
-            startTime: 145,
+            startTime: 152,
             endTime: 160,
             speaker: "Cheta (Walrus Fabric)",
             speech: "One immutable, decentralized cryptographic memory layer connecting all your surfaces with zero vendor lock-in. Your memory, truly yours!",
@@ -1986,41 +1915,54 @@
           }
         ];
 
-        // Web Audio Synthesizer
+        // ------------------------------------------------------------- Subtle High-End Sound Engine
         var audioCtx = null;
-        var soundEnabled = true;
+        var soundEnabled = false; // Default OFF so it never annoys
 
         function getAudioContext() {
           if (!audioCtx) {
-            var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) audioCtx = new AudioContextClass();
+            var AudioClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioClass) audioCtx = new AudioClass();
           }
           if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           return audioCtx;
         }
 
-        function playChirp(freq, type, duration) {
+        // Realistic subtle mechanical keyboard thock
+        function playKeyClick() {
           if (!soundEnabled) return;
           try {
             var ctx = getAudioContext();
             if (!ctx) return;
-            var osc = ctx.createOscillator();
+            var bufferSize = ctx.sampleRate * 0.025;
+            var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            var data = buffer.getChannelData(0);
+            for (var i = 0; i < bufferSize; i++) {
+              data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
+            }
+            var noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            var filter = ctx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 850 + Math.random() * 200;
+            filter.Q.value = 3;
+
             var gain = ctx.createGain();
-            osc.type = type || "sine";
-            osc.frequency.setValueAtTime(freq || 520, ctx.currentTime);
-            gain.gain.setValueAtTime(0.04, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (duration || 0.08));
-            osc.connect(gain);
+            gain.gain.setValueAtTime(0.03, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.025);
+
+            noise.connect(filter);
+            filter.connect(gain);
             gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + (duration || 0.08));
+            noise.start();
           } catch (e) {}
         }
 
         // 3D Scene Setup
         var canvas = document.getElementById("webgl-canvas");
         var scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x090a0d, 0.04);
+        scene.fog = new THREE.FogExp2(0x09090b, 0.05);
 
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(0, 2.2, 6.8);
@@ -2028,21 +1970,21 @@
         var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x090a0d, 1);
+        renderer.setClearColor(0x09090b, 1);
 
         var controls = new THREE.OrbitControls(camera, canvas);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.enabled = false;
 
-        var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        var ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
         scene.add(ambientLight);
 
-        var dirLight1 = new THREE.DirectionalLight(0x35d0ba, 1.0);
+        var dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight1.position.set(5, 10, 7);
         scene.add(dirLight1);
 
-        var grid = new THREE.GridHelper(30, 30, 0x1f2533, 0x121520);
+        var grid = new THREE.GridHelper(30, 30, 0x1f1f23, 0x111114);
         grid.position.y = -1.2;
         scene.add(grid);
 
@@ -2053,18 +1995,18 @@
 
         var octMesh = new THREE.Mesh(
           new THREE.OctahedronGeometry(1.1, 0),
-          new THREE.MeshStandardMaterial({ color: 0x35d0ba, emissive: 0x072b25, roughness: 0.3, metalness: 0.7, wireframe: true })
+          new THREE.MeshStandardMaterial({ color: 0xe5e7eb, emissive: 0x18181b, roughness: 0.3, metalness: 0.8, wireframe: true })
         );
         coreGroup.add(octMesh);
 
-        var ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.025, 16, 64), new THREE.MeshBasicMaterial({ color: 0x2a364f }));
+        var ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.02, 16, 64), new THREE.MeshBasicMaterial({ color: 0x3f3f46 }));
         coreGroup.add(ring1);
 
-        var ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.025, 16, 64), new THREE.MeshBasicMaterial({ color: 0x3f4d6b }));
+        var ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.02, 16, 64), new THREE.MeshBasicMaterial({ color: 0x27272a }));
         ring2.rotation.x = Math.PI / 2;
         coreGroup.add(ring2);
 
-        // State & DOM
+        // State & Handles
         var isPlaying = true;
         var playbackSpeed = 1.0;
         var currentTime = 0;
@@ -2077,7 +2019,8 @@
         var timelineHandle = document.getElementById("timeline-handle");
         var timelineTrack = document.getElementById("timeline-track");
         var narratorSpeaker = document.getElementById("narrator-speaker");
-        var bubblySpeech = document.getElementById("bubbly-speech");
+        var bubblySpeechText = document.getElementById("bubbly-speech-text");
+        var transitionFlash = document.getElementById("transition-flash");
         var surfaceButtons = document.querySelectorAll(".surface-tab-btn");
         var surfaceViews = document.querySelectorAll(".surface-viewport");
         var btnPlayPause = document.getElementById("btn-play-pause");
@@ -2088,16 +2031,43 @@
         var soundLabel = document.getElementById("sound-label");
         var toolTags = document.querySelectorAll(".tool-tag");
 
+        // Telegram handles
+        var tgMessages = document.getElementById("tg-messages");
+        var tgReplyText = document.getElementById("tg-reply-text");
+        var tgDocReplyText = document.getElementById("tg-doc-reply-text");
+
+        // Intro handle
+        var introStreamText = document.getElementById("intro-stream-text");
+
+        // Terminal stream handle
+        var termStreamText = document.getElementById("term-stream-text");
+
+        // Browser handle
+        var spStreamReplyText = document.getElementById("sp-stream-reply-text");
+
+        // Portal stream handles
+        var portalStreamMsg1 = document.getElementById("portal-stream-msg1");
+        var portalStreamMsg2 = document.getElementById("portal-stream-msg2");
+
         function formatTime(sec) {
           var m = Math.floor(sec / 60);
           var s = Math.floor(sec % 60);
           return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
         }
 
+        function triggerFlash() {
+          transitionFlash.classList.add("flash");
+          setTimeout(function () {
+            transitionFlash.classList.remove("flash");
+          }, 250);
+        }
+
         function activateScene(index) {
           if (index < 0 || index >= SCENES.length) return;
           currentSceneIndex = index;
           var sc = SCENES[index];
+
+          triggerFlash();
 
           for (var i = 0; i < surfaceButtons.length; i++) {
             if (i === index) surfaceButtons[i].classList.add("active");
@@ -2109,11 +2079,8 @@
             else surfaceViews[j].classList.remove("active");
           }
 
-          // Bubbly Narrator update
           narratorSpeaker.textContent = sc.speaker;
-          bubblySpeech.textContent = sc.speech;
 
-          // Highlight tool tag
           for (var k = 0; k < toolTags.length; k++) {
             if (toolTags[k].getAttribute("data-tool") === sc.activeTool) {
               toolTags[k].classList.add("active");
@@ -2126,8 +2093,6 @@
             new TWEEN.Tween(camera.position).to(sc.camPos, 800).easing(TWEEN.Easing.Cubic.Out).start();
             new TWEEN.Tween(controls.target).to(sc.camTarget, 800).easing(TWEEN.Easing.Cubic.Out).start();
           }
-
-          playChirp(460 + index * 50, "sine", 0.1);
         }
 
         for (var b = 0; b < surfaceButtons.length; b++) {
@@ -2139,11 +2104,27 @@
           })(b);
         }
 
-        // Live Dynamic Actions Every 2-3 Seconds
+        // ------------------------------------------------------------- Continuous Action & Streaming Text Engine
         function updateSceneActions(time) {
-          // ================= Scene 1: Telegram (20 - 55s) =================
-          if (time >= 20 && time < 55) {
-            var tgRel = time - 20;
+          // Streaming text for Bubbly Narrator Sidebox
+          var curScene = SCENES[currentSceneIndex];
+          if (curScene) {
+            var relSceneTime = Math.max(0, time - curScene.startTime);
+            var speechFull = curScene.speech;
+            var charsToShow = Math.min(speechFull.length, Math.floor(relSceneTime * 28));
+            bubblySpeechText.textContent = speechFull.slice(0, charsToShow);
+          }
+
+          // ================= Scene 0: Intro (0 - 22s) =================
+          if (time >= 0 && time < 22) {
+            var introFull = "Most AI assistants forget who you are the second you switch tabs. Cheta gives you One Unified Mind across your Telegram, Linux Terminal, Google Chrome Extension, and Web Portal, backed by cryptographic Walrus decentralized storage.";
+            var introChars = Math.min(introFull.length, Math.floor(time * 35));
+            introStreamText.textContent = introFull.slice(0, introChars);
+          }
+
+          // ================= Scene 1: Telegram (22 - 58s) =================
+          if (time >= 22 && time < 58) {
+            var tgRel = time - 22;
             var tgTyping = document.getElementById("tg-typing");
             var tgReply1 = document.getElementById("tg-reply-1");
             var tgBtnCal = document.getElementById("tg-btn-cal");
@@ -2160,31 +2141,54 @@
               tgStatusText.textContent = "bot • 13 tools active • online";
             }
 
-            if (tgRel >= 5.5) tgReply1.style.display = "block";
-            else tgReply1.style.display = "none";
+            if (tgRel >= 5.5) {
+              tgReply1.style.display = "block";
+              var replyFull = "Reminder scheduled for 9:00 AM tomorrow! Also committed durable memory blob to Walrus storage: 'Builds with Solana & Rust' (Blob 0x9f82b1).";
+              var replyChars = Math.min(replyFull.length, Math.floor((tgRel - 5.5) * 32));
+              tgReplyText.textContent = replyFull.slice(0, replyChars);
+              // Auto-scroll chat down
+              tgMessages.scrollTo({ top: tgMessages.scrollHeight, behavior: 'smooth' });
+            } else {
+              tgReply1.style.display = "none";
+            }
 
-            if (tgRel >= 9 && tgRel < 12) tgBtnCal.classList.add("clicked");
+            if (tgRel >= 10 && tgRel < 13) tgBtnCal.classList.add("clicked");
             else tgBtnCal.classList.remove("clicked");
 
-            if (tgRel >= 11) tgCalCard.style.display = "block";
-            else tgCalCard.style.display = "none";
+            if (tgRel >= 12) {
+              tgCalCard.style.display = "block";
+              tgMessages.scrollTo({ top: tgMessages.scrollHeight, behavior: 'smooth' });
+            } else {
+              tgCalCard.style.display = "none";
+            }
 
-            if (tgRel >= 16) tgDocBubble.style.display = "block";
-            else tgDocBubble.style.display = "none";
+            if (tgRel >= 18) {
+              tgDocBubble.style.display = "block";
+              tgMessages.scrollTo({ top: tgMessages.scrollHeight, behavior: 'smooth' });
+            } else {
+              tgDocBubble.style.display = "none";
+            }
 
-            if (tgRel >= 20) tgDocReply.style.display = "block";
-            else tgDocReply.style.display = "none";
+            if (tgRel >= 22) {
+              tgDocReply.style.display = "block";
+              var docReplyFull = "Extracted 14 pages from architecture_spec.pdf. Key constraints found: SQLite local caching, pure ASCII compliance, and Walrus blob verification. Saved to memory index!";
+              var docChars = Math.min(docReplyFull.length, Math.floor((tgRel - 22) * 32));
+              tgDocReplyText.textContent = docReplyFull.slice(0, docChars);
+              tgMessages.scrollTo({ top: tgMessages.scrollHeight, behavior: 'smooth' });
+            } else {
+              tgDocReply.style.display = "none";
+            }
           }
 
-          // ================= Scene 2: Linux CLI (55 - 90s) =================
-          if (time >= 55 && time < 90) {
-            var cliRel = time - 55;
+          // ================= Scene 2: Linux CLI (58 - 94s) =================
+          if (time >= 58 && time < 94) {
+            var cliRel = time - 58;
             var termStepTable = document.getElementById("term-step-table");
             var termStepChat = document.getElementById("term-step-chat");
             var termStepPair = document.getElementById("term-step-pair");
             var termPairedToast = document.getElementById("term-paired-toast");
-            var termStreamText = document.getElementById("term-stream-text");
             var termTypedCmd = document.getElementById("term-typed-cmd");
+            var termContent = document.getElementById("term-content");
 
             if (cliRel < 4) {
               termTypedCmd.textContent = "cheta memory list --recent 3".slice(0, Math.floor(cliRel * 7));
@@ -2192,28 +2196,41 @@
               termTypedCmd.textContent = "";
             }
 
-            if (cliRel >= 4) termStepTable.style.display = "block";
-            else termStepTable.style.display = "none";
+            if (cliRel >= 4) {
+              termStepTable.style.display = "block";
+              termContent.scrollTo({ top: termContent.scrollHeight, behavior: 'smooth' });
+            } else {
+              termStepTable.style.display = "none";
+            }
 
             if (cliRel >= 12) {
               termStepChat.style.display = "block";
               var fullTokens = "I have 13 active agent tools (Wikipedia, Web Search, Weather, Calculator, Calendar, Reminders, Walrus Query, Walrus Put, Page Inspect...). Everything you share is instantly synchronized with your Telegram & Browser Extension via Walrus decentralized blobs.";
-              var tokenCount = Math.min(fullTokens.length, Math.floor((cliRel - 12) * 18));
+              var tokenCount = Math.min(fullTokens.length, Math.floor((cliRel - 12) * 22));
               termStreamText.textContent = fullTokens.slice(0, tokenCount);
+              termContent.scrollTo({ top: termContent.scrollHeight, behavior: 'smooth' });
             } else {
               termStepChat.style.display = "none";
             }
 
-            if (cliRel >= 22) termStepPair.style.display = "block";
-            else termStepPair.style.display = "none";
+            if (cliRel >= 24) {
+              termStepPair.style.display = "block";
+              termContent.scrollTo({ top: termContent.scrollHeight, behavior: 'smooth' });
+            } else {
+              termStepPair.style.display = "none";
+            }
 
-            if (cliRel >= 28) termPairedToast.style.display = "block";
-            else termPairedToast.style.display = "none";
+            if (cliRel >= 30) {
+              termPairedToast.style.display = "block";
+              termContent.scrollTo({ top: termContent.scrollHeight, behavior: 'smooth' });
+            } else {
+              termPairedToast.style.display = "none";
+            }
           }
 
-          // ================= Scene 3: Browser Extension (90 - 125s) =================
-          if (time >= 90 && time < 125) {
-            var extRel = time - 90;
+          // ================= Scene 3: Google Chrome Extension (94 - 132s) =================
+          if (time >= 94 && time < 132) {
+            var extRel = time - 94;
             var vCursor = document.getElementById("virtual-cursor");
             var sidepanel = document.getElementById("browser-sidepanel");
             var extToolbarIcon = document.getElementById("ext-toolbar-icon");
@@ -2222,30 +2239,39 @@
             var spDrawer = document.getElementById("sp-drawer");
             var pizzaCheese = document.getElementById("pizza-cheese");
             var pageToolStatus = document.getElementById("page-tool-status");
+            var toolHlTarget = document.getElementById("tool-hl-target");
+            var spChatStream = document.getElementById("sp-chat-stream");
 
-            // 0 - 3s: Cursor glides up to extension icon and clicks it
+            // Cursor moves to extension icon and clicks it
             if (extRel < 4) {
               vCursor.style.opacity = "1";
               if (extRel < 2.5) {
-                vCursor.style.transform = "translate(200px, 200px)";
+                vCursor.style.transform = "translate(180px, 180px)";
               } else {
-                vCursor.style.transform = "translate(860px, 32px)";
+                vCursor.style.transform = "translate(860px, 48px)";
               }
             } else {
               vCursor.style.opacity = "0";
             }
 
-            // 3s: Extension sidepanel slides open!
+            // Sidepanel slides open
             if (extRel >= 3) {
               sidepanel.classList.add("open");
-              extToolbarIcon.style.boxShadow = "0 0 10px var(--accent)";
+              extToolbarIcon.classList.add("active");
             } else {
               sidepanel.classList.remove("open");
-              extToolbarIcon.style.boxShadow = "none";
+              extToolbarIcon.classList.remove("active");
             }
 
-            // 7s: In-page WebMCP tool fires
-            if (extRel >= 7) {
+            // In-page highlight demo
+            if (extRel >= 6 && extRel < 12) {
+              toolHlTarget.className = "page-highlight-box";
+            } else {
+              toolHlTarget.className = "";
+            }
+
+            // In-page WebMCP tool executes
+            if (extRel >= 8) {
               spToolBadge.style.display = "inline-flex";
               pageToolStatus.textContent = "[WebMCP] add_topping({'topping': ['pepperoni', 'mushrooms']}) executed";
             } else {
@@ -2253,30 +2279,36 @@
               pageToolStatus.textContent = "Awaiting agent tool invocation...";
             }
 
-            // 9s: Pepperoni and mushrooms fall onto pizza
-            if (extRel >= 9 && pizzaCheese.children.length === 0) {
+            // Animated toppings fall onto pizza
+            if (extRel >= 10 && pizzaCheese.children.length === 0) {
               var p1 = document.createElement("div"); p1.className = "topping-pep"; p1.style.top = "20px"; p1.style.left = "30px"; pizzaCheese.appendChild(p1);
               var p2 = document.createElement("div"); p2.className = "topping-pep"; p2.style.top = "60px"; p2.style.left = "60px"; pizzaCheese.appendChild(p2);
-              var p3 = document.createElement("div"); p3.className = "topping-pep"; p3.style.top = "25px"; p3.style.left = "90px"; pizzaCheese.appendChild(p3);
-              var m1 = document.createElement("div"); m1.className = "topping-mush"; m1.style.top = "85px"; m1.style.left = "25px"; pizzaCheese.appendChild(m1);
-              var m2 = document.createElement("div"); m2.className = "topping-mush"; m2.style.top = "90px"; m2.style.left = "90px"; pizzaCheese.appendChild(m2);
-              playChirp(700, "triangle", 0.15);
-            } else if (extRel < 9 && pizzaCheese.children.length > 0) {
+              var p3 = document.createElement("div"); p3.className = "topping-pep"; p3.style.top = "25px"; p3.style.left = "80px"; pizzaCheese.appendChild(p3);
+              var m1 = document.createElement("div"); m1.className = "topping-mush"; m1.style.top = "80px"; m1.style.left = "25px"; pizzaCheese.appendChild(m1);
+              var m2 = document.createElement("div"); m2.className = "topping-mush"; m2.style.top = "85px"; m2.style.left = "85px"; pizzaCheese.appendChild(m2);
+              playKeyClick();
+            } else if (extRel < 10 && pizzaCheese.children.length > 0) {
               pizzaCheese.innerHTML = "";
             }
 
-            if (extRel >= 10) spBotReply.style.display = "block";
-            else spBotReply.style.display = "none";
+            if (extRel >= 11) {
+              spBotReply.style.display = "block";
+              var spReply = "Action executed! Pepperoni and mushrooms baked directly into the active page DOM.";
+              var spChars = Math.min(spReply.length, Math.floor((extRel - 11) * 32));
+              spStreamReplyText.textContent = spReply.slice(0, spChars);
+              spChatStream.scrollTo({ top: spChatStream.scrollHeight, behavior: 'smooth' });
+            } else {
+              spBotReply.style.display = "none";
+            }
 
-            // 18s: Memories drawer slides open
-            if (extRel >= 18) spDrawer.classList.add("open");
+            // Slide out memories drawer
+            if (extRel >= 20) spDrawer.classList.add("open");
             else spDrawer.classList.remove("open");
           }
 
-          // ================= Scene 4: Web Portal (125 - 145s) =================
-          if (time >= 125 && time < 145) {
-            var portRel = time - 125;
-            var slashPopup = document.getElementById("slash-popup");
+          // ================= Scene 4: Web Portal (132 - 152s) =================
+          if (time >= 132 && time < 152) {
+            var portRel = time - 132;
             var portalUserMsg = document.getElementById("portal-user-msg");
             var portalBotMsg = document.getElementById("portal-bot-msg");
             var portalQueryMsg = document.getElementById("portal-query-msg");
@@ -2284,27 +2316,40 @@
             var portalInput = document.getElementById("portal-input");
 
             if (portRel >= 2 && portRel < 5) {
-              slashPopup.style.display = "flex";
               portalInput.value = "/rem";
             } else {
-              slashPopup.style.display = "none";
+              portalInput.value = "";
             }
 
             if (portRel >= 5) {
               portalUserMsg.style.display = "block";
-              portalInput.value = "";
             } else {
               portalUserMsg.style.display = "none";
             }
 
-            if (portRel >= 8) portalBotMsg.style.display = "block";
-            else portalBotMsg.style.display = "none";
+            if (portRel >= 7) {
+              portalBotMsg.style.display = "block";
+              var pMsg1 = "Memory committed to Walrus decentralized storage (Blob blob_wal_0x3a91...). Immediately accessible to your CLI and Extension!";
+              var pChars1 = Math.min(pMsg1.length, Math.floor((portRel - 7) * 30));
+              portalStreamMsg1.textContent = pMsg1.slice(0, pChars1);
+            } else {
+              portalBotMsg.style.display = "none";
+            }
 
-            if (portRel >= 12) portalQueryMsg.style.display = "block";
-            else portalQueryMsg.style.display = "none";
+            if (portRel >= 12) {
+              portalQueryMsg.style.display = "block";
+            } else {
+              portalQueryMsg.style.display = "none";
+            }
 
-            if (portRel >= 15) portalQueryReply.style.display = "block";
-            else portalQueryReply.style.display = "none";
+            if (portRel >= 15) {
+              portalQueryReply.style.display = "block";
+              var pMsg2 = "On Telegram, you told me that you prefer building with Solana and Rust, and deploy to Sui testnet. (Blob 0x9f82b1 verified from Walrus decentralized storage).";
+              var pChars2 = Math.min(pMsg2.length, Math.floor((portRel - 15) * 30));
+              portalStreamMsg2.textContent = pMsg2.slice(0, pChars2);
+            } else {
+              portalQueryReply.style.display = "none";
+            }
           }
         }
 
@@ -2337,8 +2382,8 @@
 
         btnSoundToggle.addEventListener("click", function () {
           soundEnabled = !soundEnabled;
-          soundLabel.textContent = soundEnabled ? "Sound: ON" : "Sound: Muted";
-          if (soundEnabled) playChirp(600, "sine", 0.08);
+          soundLabel.textContent = soundEnabled ? "Sound: ON" : "Sound: OFF";
+          if (soundEnabled) playKeyClick();
         });
 
         timelineTrack.addEventListener("click", function (e) {
@@ -2372,7 +2417,7 @@
           }
         });
 
-        // Main Loop
+        // Main Render Loop
         activateScene(0);
 
         function animate(timestamp) {
@@ -2406,11 +2451,11 @@
 
           var t = timestamp * 0.001;
           if (octMesh) {
-            octMesh.rotation.x = t * 0.3;
-            octMesh.rotation.y = t * 0.5;
+            octMesh.rotation.x = t * 0.25;
+            octMesh.rotation.y = t * 0.4;
           }
-          if (ring1) ring1.rotation.z = -t * 0.4;
-          if (ring2) ring2.rotation.y = t * 0.3;
+          if (ring1) ring1.rotation.z = -t * 0.3;
+          if (ring2) ring2.rotation.y = t * 0.2;
 
           if (controls && controls.enabled) controls.update();
           renderer.render(scene, camera);
