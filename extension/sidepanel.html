@@ -215,6 +215,25 @@
         </div>
       </section>
 
+      <section id="memory-panel" class="memory-panel hidden" aria-label="Stored memories">
+        <div class="panel-head">
+          <div class="panel-title-group">
+            <h2>Stored memories</h2>
+            <p class="panel-subtitle">Durable facts committed to Walrus decentralized storage</p>
+          </div>
+          <div class="panel-head-actions">
+            <button id="refresh-memories" class="btn btn-quiet" type="button">Refresh</button>
+            <button id="close-memory-panel" class="btn btn-quiet" type="button">Close</button>
+          </div>
+        </div>
+        <label class="check" for="mem-include-inactive">
+          <input id="mem-include-inactive" type="checkbox">
+          <span>Include superseded and contradicted</span>
+        </label>
+        <p id="memory-status" class="hint" aria-live="polite"></p>
+        <div id="memory-list" class="memory-list"></div>
+      </section>
+
       <section id="page-context" class="page-context" aria-label="The page in the active tab">
         <div class="page-row">
           <button id="use-page" class="btn btn-quiet page-use" type="button">
@@ -244,19 +263,6 @@
           aria-label="Tools on this page"
         ></div>
         <div id="mcp-args" class="mcp-args hidden"></div>
-      </section>
-
-      <section id="memory-panel" class="memory-panel hidden" aria-label="Stored memories">
-        <div class="panel-head">
-          <h2>Stored memories</h2>
-          <button id="refresh-memories" class="btn btn-quiet" type="button">Refresh</button>
-        </div>
-        <label class="check" for="mem-include-inactive">
-          <input id="mem-include-inactive" type="checkbox">
-          <span>Include superseded and contradicted</span>
-        </label>
-        <p id="memory-status" class="hint" aria-live="polite"></p>
-        <div id="memory-list" class="memory-list"></div>
       </section>
 
       <main id="transcript" class="transcript" aria-live="polite">

@@ -20,8 +20,38 @@
     surfaceUserId: "ranti.surface_user_id",
     userId: "ranti.user_id",
     memoryEnabled: "ranti.memory_enabled",
-    onboarded: "ranti.onboarded"
+    onboarded: "ranti.onboarded",
+    sessions: "ranti.web.sessions",
+    currentSessionId: "ranti.web.current_session_id"
   };
+
+  var COMMAND_SUGGESTIONS = [
+    { command: "/start", description: "greet, and show what I already remember" },
+    { command: "/memories", description: "show every note I have stored about you" },
+    {
+      command: "/forget",
+      hint: "/forget <number>",
+      description: "retire a note so I stop bringing it up"
+    },
+    { command: "/pair", description: "get a one-time code to add another client" },
+    { command: "/sessions", description: "list the clients sharing your memory space" },
+    {
+      command: "/unpair",
+      hint: "/unpair [number]",
+      description: "leave the shared space, or remove a listed client"
+    },
+    {
+      command: "/name",
+      hint: "/name <name>",
+      description: "set or update your display name across sessions"
+    },
+    {
+      command: "/crawl",
+      hint: "/crawl <url>",
+      description: "crawl public website and extract key links"
+    },
+    { command: "/help", description: "this full reference" }
+  ];
 
   /* --------------------------------------------------------------- dom */
 
@@ -566,12 +596,59 @@
     var sendButton = $("send-button");
     var banner = $("degraded-banner");
 
+    function loadSavedSessions() {
+      var raw = storeGet(KEYS.sessions, "[]");
+      try {
+        var list = JSON.parse(raw);
+        return Array.isArray(list) ? list : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveSessions(list) {
+      storeSet(KEYS.sessions, JSON.stringify(list || []));
+    }
+
     var state = {
       surfaceUserId: getSurfaceUserId(),
       userId: storeGet(KEYS.userId, ""),
       displayName: storeGet(KEYS.displayName, ""),
-      busy: false
+      busy: false,
+      sessions: loadSavedSessions(),
+      currentSessionId: storeGet(KEYS.currentSessionId, ""),
+      history: []
     };
+
+    function getCurrentSession() {
+      for (var i = 0; i < state.sessions.length; i++) {
+        if (state.sessions[i].id === state.currentSessionId) {
+          return state.sessions[i];
+        }
+      }
+      return null;
+    }
+
+    function saveCurrentSession() {
+      var sess = getCurrentSession();
+      if (sess) {
+        sess.history = state.history.slice();
+        sess.updatedAt = Date.now();
+        saveSessions(state.sessions);
+      }
+    }
+
+    function maybeAutoName(val) {
+      var sess = getCurrentSession();
+      if (sess && (!sess.title || sess.title === "New chat")) {
+        var clean = val.replace(/^[\/\s]+/, "").trim();
+        if (clean) {
+          sess.title = clean.slice(0, 30) + (clean.length > 30 ? "..." : "");
+          saveSessions(state.sessions);
+          renderSessionsList();
+        }
+      }
+    }
 
     if (nameInput) {
       nameInput.value = state.displayName;
@@ -681,23 +758,31 @@
       }
     }
 
-    function appendUser(value) {
+    function appendUser(value, skipRecord) {
       transcript.appendChild(
         el("div", { class: "turn user" }, [
           el("span", { class: "who" }, "You"),
           el("div", { class: "bubble" }, value)
         ])
       );
+      if (!skipRecord && state.history) {
+        state.history.push({ role: "user", text: value });
+        saveCurrentSession();
+      }
       scrollToEnd();
     }
 
-    function appendError(message) {
+    function appendError(message, skipRecord) {
       transcript.appendChild(
         el("div", { class: "turn error" }, [
           el("span", { class: "who" }, "Cheta"),
           el("div", { class: "bubble" }, message)
         ])
       );
+      if (!skipRecord && state.history) {
+        state.history.push({ role: "error", text: message });
+        saveCurrentSession();
+      }
       scrollToEnd();
     }
 
@@ -750,7 +835,7 @@
         });
     }
 
-    function appendAssistant(turn, usedMemory) {
+    function appendAssistant(turn, usedMemory, skipRecord) {
       var recalled = asArray(turn.recalled);
       var toolsUsed = asArray(turn.tool_activity);
       var isCommand = Boolean(turn.command) || !turn.turn_id;
@@ -801,6 +886,10 @@
         bubble
       ]);
       transcript.appendChild(wrap);
+      if (!skipRecord && state.history) {
+        state.history.push({ role: "assistant", turn: turn, usedMemory: usedMemory });
+        saveCurrentSession();
+      }
       scrollToEnd();
     }
 
@@ -920,6 +1009,7 @@
       storeSet(KEYS.memoryEnabled, usedMemory ? "1" : "0");
 
       var displayMsg = attachment ? value + " [File: " + attachment.filename + "]" : value;
+      maybeAutoName(value);
       appendUser(displayMsg);
       input.value = "";
       input.style.height = "";
@@ -944,12 +1034,12 @@
       ]);
       var pillWrap = el("div", { class: "turn assistant reasoning-turn" }, [pill]);
       transcript.appendChild(pillWrap);
-      scrollDown();
+      scrollToEnd();
 
       function updatePill(msg) {
         if (pillText) {
           pillText.textContent = msg;
-          scrollDown();
+          scrollToEnd();
         }
       }
 
@@ -1025,28 +1115,281 @@
       input.style.height = Math.min(input.scrollHeight, 180) + "px";
     }
 
-    form.addEventListener("submit", sendTurn);
-    input.addEventListener("input", autoGrow);
+    function updateSessionsBadge() {
+      var badge = $("web-chats-badge");
+      if (badge) {
+        var count = state.sessions.length;
+        badge.textContent = String(count);
+        if (count > 0) {
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+    }
+
+    function renderSessionsList() {
+      var list = $("web-chats-list");
+      if (!list) return;
+      clear(list);
+      if (!state.sessions.length) {
+        list.appendChild(el("div", { class: "muted", text: "No saved chats yet." }));
+        return;
+      }
+      state.sessions.forEach(function (sess) {
+        var isActive = sess.id === state.currentSessionId;
+        var turnsCount = (sess.history || []).length;
+        var dateStr = new Date(sess.updatedAt || sess.createdAt || Date.now()).toLocaleDateString();
+
+        var titleSpan = el("span", { class: "web-session-title", text: sess.title || "Chat" });
+        var metaSpan = el("span", { class: "web-session-meta", text: dateStr + " - " + turnsCount + " turns" });
+        var infoDiv = el("div", { class: "web-session-info" }, [titleSpan, metaSpan]);
+
+        var renameBtn = el("button", { class: "web-session-btn", type: "button", text: "Rename" });
+        renameBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var newTitle = window.prompt("Rename chat:", sess.title || "Chat");
+          if (newTitle && newTitle.trim()) {
+            sess.title = newTitle.trim();
+            saveSessions(state.sessions);
+            renderSessionsList();
+          }
+        });
+
+        var deleteBtn = el("button", { class: "web-session-btn delete", type: "button", text: "Delete" });
+        deleteBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          deleteSession(sess.id);
+        });
+
+        var actionsDiv = el("div", { class: "web-session-actions" }, [renameBtn, deleteBtn]);
+
+        var card = el("div", { class: "web-session-card" + (isActive ? " active" : "") }, [infoDiv, actionsDiv]);
+        card.addEventListener("click", function () {
+          switchSession(sess.id);
+          var drawer = $("chats-drawer");
+          if (drawer) drawer.classList.add("hidden");
+        });
+
+        list.appendChild(card);
+      });
+      updateSessionsBadge();
+    }
+
+    function deleteSession(id) {
+      state.sessions = state.sessions.filter(function (s) { return s.id !== id; });
+      if (!state.sessions.length) {
+        startNewSession();
+      } else if (state.currentSessionId === id) {
+        switchSession(state.sessions[0].id);
+      } else {
+        saveSessions(state.sessions);
+        renderSessionsList();
+      }
+    }
+
+    function switchSession(id) {
+      saveCurrentSession();
+      state.currentSessionId = id;
+      storeSet(KEYS.currentSessionId, id);
+      var sess = getCurrentSession();
+      state.history = sess && Array.isArray(sess.history) ? sess.history.slice() : [];
+      renderSessionTranscript(state.history);
+      renderSessionsList();
+    }
+
+    function startNewSession() {
+      saveCurrentSession();
+      var fresh = {
+        id: "sess-" + Date.now() + "-" + newId().slice(0, 6),
+        title: "New chat",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        history: []
+      };
+      state.sessions.unshift(fresh);
+      state.currentSessionId = fresh.id;
+      state.history = [];
+      saveSessions(state.sessions);
+      storeSet(KEYS.currentSessionId, fresh.id);
+      renderSessionTranscript([]);
+      renderSessionsList();
+      var drawer = $("chats-drawer");
+      if (drawer) drawer.classList.add("hidden");
+    }
+
+    function renderIntro() {
+      clear(transcript);
+      transcript.appendChild(
+        el("div", { id: "intro-turn", class: "turn assistant is-intro" }, [
+          el("span", { class: "who" }, "Cheta"),
+          el(
+            "div",
+            { class: "bubble" },
+            "Hi, I am Cheta. I keep what matters and bring it back on later turns. " +
+              "Tell me something worth remembering, such as a preference or a fact " +
+              "about your work. Commands are typed as normal messages: /help shows " +
+              "the reference and /memories shows everything I have stored about you."
+          )
+        ])
+      );
+      scrollToEnd();
+    }
+
+    function renderSessionTranscript(hist) {
+      clear(transcript);
+      if (!hist || !hist.length) {
+        renderIntro();
+        return;
+      }
+      hist.forEach(function (item) {
+        if (item.role === "user") {
+          appendUser(item.text, true);
+        } else if (item.role === "assistant" && item.turn) {
+          appendAssistant(item.turn, item.usedMemory !== false, true);
+        } else if (item.role === "error") {
+          appendError(item.text, true);
+        }
+      });
+      scrollToEnd();
+    }
+
+    /* Suggestions */
+    var suggestionsBox = $("web-suggestions");
+    var suggestionIndex = -1;
+    var suggestionItems = [];
+
+    function hideSuggestions() {
+      if (suggestionsBox) {
+        suggestionsBox.classList.add("hidden");
+        clear(suggestionsBox);
+      }
+      suggestionItems = [];
+      suggestionIndex = -1;
+    }
+
+    function renderSuggestions() {
+      if (!suggestionsBox || !input) return;
+      var val = input.value || "";
+      if (!val.startsWith("/") || /\s/.test(val)) {
+        hideSuggestions();
+        return;
+      }
+      var needle = val.toLowerCase();
+      suggestionItems = COMMAND_SUGGESTIONS.filter(function (s) {
+        return s.command.toLowerCase().indexOf(needle) === 0;
+      });
+      if (!suggestionItems.length) {
+        hideSuggestions();
+        return;
+      }
+      clear(suggestionsBox);
+      suggestionItems.forEach(function (s, idx) {
+        var opt = el("div", { class: "suggestion" + (idx === suggestionIndex ? " is-active" : "") }, [
+          el("span", { class: "suggestion-cmd", text: s.hint || s.command }),
+          el("span", { class: "suggestion-desc", text: s.description })
+        ]);
+        opt.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          input.value = s.command + " ";
+          hideSuggestions();
+          input.focus();
+        });
+        suggestionsBox.appendChild(opt);
+      });
+      suggestionsBox.classList.remove("hidden");
+    }
+
+    form.addEventListener("submit", function (e) {
+      hideSuggestions();
+      sendTurn(e);
+    });
+
+    input.addEventListener("input", function () {
+      autoGrow();
+      renderSuggestions();
+    });
+
     input.addEventListener("keydown", function (event) {
+      if (suggestionsBox && !suggestionsBox.classList.contains("hidden") && suggestionItems.length) {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          suggestionIndex = (suggestionIndex + 1) % suggestionItems.length;
+          renderSuggestions();
+          return;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          suggestionIndex = (suggestionIndex - 1 + suggestionItems.length) % suggestionItems.length;
+          renderSuggestions();
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          hideSuggestions();
+          return;
+        }
+        if (event.key === "Enter" && !event.shiftKey && suggestionIndex >= 0) {
+          event.preventDefault();
+          var chosen = suggestionItems[suggestionIndex];
+          if (chosen) {
+            input.value = chosen.command + " ";
+            hideSuggestions();
+            input.focus();
+            return;
+          }
+        }
+      }
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
+        hideSuggestions();
         sendTurn(event);
       }
     });
 
-    transcript.appendChild(
-      el("div", { id: "intro-turn", class: "turn assistant is-intro" }, [
-        el("span", { class: "who" }, "Cheta"),
-        el(
-          "div",
-          { class: "bubble" },
-          "Hi, I am Cheta. I keep what matters and bring it back on later turns. " +
-            "Tell me something worth remembering, such as a preference or a fact " +
-            "about your work. Commands are typed as normal messages: /help shows " +
-            "the reference and /memories shows everything I have stored about you."
-        )
-      ])
-    );
+    var btnWebNew = $("btn-web-new-chat");
+    var btnWebChats = $("btn-web-chats");
+    var chatsDrawer = $("chats-drawer");
+    var btnDrawerNew = $("btn-drawer-new");
+    var chatsClose = $("chats-drawer-close");
+
+    if (btnWebNew) {
+      btnWebNew.addEventListener("click", startNewSession);
+    }
+    if (btnDrawerNew) {
+      btnDrawerNew.addEventListener("click", startNewSession);
+    }
+    if (btnWebChats && chatsDrawer) {
+      btnWebChats.addEventListener("click", function () {
+        chatsDrawer.classList.toggle("hidden");
+        renderSessionsList();
+      });
+    }
+    if (chatsClose && chatsDrawer) {
+      chatsClose.addEventListener("click", function () {
+        chatsDrawer.classList.add("hidden");
+      });
+    }
+
+    if (state.sessions.length > 0) {
+      var foundCurrent = null;
+      for (var sIdx = 0; sIdx < state.sessions.length; sIdx++) {
+        if (state.sessions[sIdx].id === state.currentSessionId) {
+          foundCurrent = state.sessions[sIdx];
+          break;
+        }
+      }
+      if (!foundCurrent) {
+        foundCurrent = state.sessions[0];
+        state.currentSessionId = foundCurrent.id;
+        storeSet(KEYS.currentSessionId, foundCurrent.id);
+      }
+      state.history = Array.isArray(foundCurrent.history) ? foundCurrent.history.slice() : [];
+      renderSessionTranscript(state.history);
+      renderSessionsList();
+    } else {
+      startNewSession();
+    }
 
     if (storeGet(KEYS.onboarded, "") !== "1" && tour) {
       tour.start();

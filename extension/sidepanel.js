@@ -652,6 +652,10 @@
 
       var cleanArgs = (args && typeof args === "object") ? Object.assign({}, args) : {};
       try {
+        var rawTopping = cleanArgs.topping || cleanArgs.toppings || cleanArgs.item || cleanArgs.ingredient || cleanArgs.name || cleanArgs.query || "";
+        if (rawTopping && typeof rawTopping === "string") {
+          cleanArgs.topping = rawTopping;
+        }
         var schema = found.inputSchema;
         if (schema && schema.properties) {
           if (schema.properties.topping && Array.isArray(schema.properties.topping.enum)) {
@@ -659,23 +663,31 @@
             var tVal = String(cleanArgs.topping || "").toLowerCase().trim();
             var emojiMap = {
               "pepperoni": "🍕",
+              "peperoni": "🍕",
+              "pep": "🍕",
+              "meat": "🍕",
               "pizza": "🍕",
               "mushroom": "🍄",
               "mushrooms": "🍄",
               "basil": "🌿",
               "herb": "🌿",
+              "herbs": "🌿",
               "pineapple": "🍍",
+              "pineapples": "🍍",
               "pepper": "🫑",
               "peppers": "🫑",
               "bell pepper": "🫑",
+              "bell peppers": "🫑",
               "bacon": "🥓",
               "onion": "🧅",
               "onions": "🧅",
               "olive": "🫒",
               "olives": "🫒",
+              "black olive": "🫒",
               "corn": "🌽",
               "hot pepper": "🌶️",
               "chili": "🌶️",
+              "spicy": "🌶️",
               "lamb": "🐑"
             };
             if (emojiMap[tVal] && validEnums.indexOf(emojiMap[tVal]) !== -1) {
@@ -686,6 +698,32 @@
           }
         }
       } catch (normErr) {}
+
+      // Direct fallback to page window functions if exposed (e.g. zaMaker demo)
+      if (typeof window.addTopping === "function" && name === "add_topping") {
+        try {
+          var em = cleanArgs.topping || "🍕";
+          window.addTopping(em, cleanArgs.size || "Medium", cleanArgs.count || 5);
+        } catch (e) {}
+      } else if (typeof window.setPizzaStyle === "function" && name === "set_pizza_style") {
+        try {
+          window.setPizzaStyle(cleanArgs.style || "Classic");
+        } catch (e) {}
+      } else if (typeof window.changeSize === "function" && name === "set_pizza_size") {
+        try {
+          var sz = cleanArgs.size || "Medium";
+          var scaleMap = { "Small": 0.8, "Medium": 1.0, "Large": 1.2, "Extra Large": 1.8 };
+          window.changeSize(scaleMap[sz] || 1.0, sz);
+        } catch (e) {}
+      } else if (typeof window.toggleLayer === "function" && name === "toggle_layer") {
+        try {
+          window.toggleLayer(cleanArgs.layer || "sauce-layer", cleanArgs.action || "toggle");
+        } catch (e) {}
+      } else if (typeof window.removeLastTopping === "function" && (name === "manage_pizza" || name === "remove_topping")) {
+        try {
+          window.removeLastTopping();
+        } catch (e) {}
+      }
 
       var execPromise;
       if (typeof found.execute === "function") {
@@ -3368,10 +3406,26 @@
     var status = $("memory-status");
     var includeInactive = $("mem-include-inactive") && $("mem-include-inactive").checked;
     if (!state.userId) {
+      for (var s = 0; s < (state.sessions || []).length; s++) {
+        var sess = state.sessions[s];
+        if (sess && Array.isArray(sess.history)) {
+          for (var h = sess.history.length - 1; h >= 0; h--) {
+            var item = sess.history[h];
+            if (item && item.turn && item.turn.user_id) {
+              state.userId = item.turn.user_id;
+              persist(KEYS.userId, state.userId);
+              break;
+            }
+          }
+        }
+        if (state.userId) break;
+      }
+    }
+    if (!state.userId) {
       renderMemoryList([]);
       setText(
         status,
-        "Nothing stored yet. Send a message that tells Cheta something durable " +
+        "Nothing stored yet. Send a message to tell Cheta something durable " +
           "about yourself and it will appear here."
       );
       return;
@@ -3621,27 +3675,57 @@
         target: { tabId: state.pageTabId },
         func: function (target) {
           var t = String(target || "").toLowerCase().trim();
-          if (t === "top") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
+          function performScroll(y) {
+            window.scrollTo({ top: y, behavior: "smooth" });
+            if (document.documentElement) document.documentElement.scrollTo({ top: y, behavior: "smooth" });
+            if (document.body) document.body.scrollTo({ top: y, behavior: "smooth" });
+            var scrollables = Array.from(document.querySelectorAll("div, main, section, article, [role='main']")).filter(function (n) {
+              var s = window.getComputedStyle(n);
+              return (s.overflowY === "auto" || s.overflowY === "scroll") && n.scrollHeight > n.clientHeight;
+            });
+            scrollables.forEach(function (el) {
+              el.scrollTo({ top: y, behavior: "smooth" });
+            });
+          }
+          if (t === "top" || t === "up" || t === "start") {
+            performScroll(0);
             return "Scrolled to top of the page.";
           }
-          if (t === "bottom") {
+          if (t === "bottom" || t === "end") {
             var scrollHeight = Math.max(
               document.body ? document.body.scrollHeight : 0,
-              document.documentElement ? document.documentElement.scrollHeight : 0
+              document.documentElement ? document.documentElement.scrollHeight : 0,
+              window.innerHeight * 4
             );
-            window.scrollTo({ top: scrollHeight, behavior: "smooth" });
+            performScroll(scrollHeight);
             return "Scrolled to bottom of the page.";
           }
-          var headers = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6, p, a, button, section"));
+          if (t === "down" || t === "page" || t === "half") {
+            var delta = window.innerHeight * 0.75;
+            window.scrollBy({ top: delta, behavior: "smooth" });
+            if (document.documentElement) document.documentElement.scrollBy({ top: delta, behavior: "smooth" });
+            if (document.body) document.body.scrollBy({ top: delta, behavior: "smooth" });
+            var scrollables = Array.from(document.querySelectorAll("div, main, section, article, [role='main']")).filter(function (n) {
+              var s = window.getComputedStyle(n);
+              return (s.overflowY === "auto" || s.overflowY === "scroll") && n.scrollHeight > n.clientHeight;
+            });
+            scrollables.forEach(function (el) {
+              el.scrollBy({ top: delta, behavior: "smooth" });
+            });
+            return "Scrolled down the page.";
+          }
+          var headers = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6, p, a, button, section, div, span"));
           var match = headers.find(function (el) {
-            return el.innerText && el.innerText.toLowerCase().indexOf(t) !== -1;
+            var txt = (el.innerText || "").trim().toLowerCase();
+            return txt.length > 2 && txt.indexOf(t) !== -1;
           });
           if (match) {
             match.scrollIntoView({ behavior: "smooth", block: "center" });
             return "Scrolled to section: '" + match.innerText.trim().slice(0, 80) + "'";
           }
-          return "Could not find target section '" + t + "' on page.";
+          var deltaFallback = window.innerHeight * 0.75;
+          window.scrollBy({ top: deltaFallback, behavior: "smooth" });
+          return "Scrolled page to locate '" + t + "'.";
         },
         args: [params.target || params.query || "top"]
       }).then(function (results) {
@@ -4036,22 +4120,24 @@
   }
 
   /* The /chat/stream call itself, streaming live reasoning steps and typing out replies. */
-  function sendStreamingTurn(wireText) {
+  function sendStreamingTurn(wireText, streamContext) {
     var toggle = $("memory-toggle");
     var usedMemory = toggle ? toggle.checked : true;
     state.memoryEnabled = usedMemory;
     persist(KEYS.memoryEnabled, usedMemory);
     var name = (state.displayName || "").trim() || DEFAULT_DISPLAY_NAME;
 
-    var reasoning = createReasoningWidget();
-    var bubbleNode = el("div", { class: "bubble hidden" });
-    var streamWrap = el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
+    var reasoning = streamContext ? streamContext.reasoning : createReasoningWidget();
+    var bubbleNode = streamContext ? streamContext.bubbleNode : el("div", { class: "bubble hidden" });
+    var streamWrap = streamContext ? streamContext.streamWrap : el("div", { class: "msg assistant" + (usedMemory ? "" : " no-memory") }, [
       el("div", { class: "who" }, "Cheta"),
       reasoning.element,
       bubbleNode
     ]);
-    appendNode(streamWrap);
-    scrollToEnd();
+    if (!streamContext) {
+      appendNode(streamWrap);
+      scrollToEnd();
+    }
 
     function updateStep(msg) {
       reasoning.addStep(msg);
@@ -4263,6 +4349,23 @@
       return;
     }
 
+    var immediateReasoning = createReasoningWidget();
+    var immediateBubble = el("div", { class: "bubble hidden" });
+    var streamWrap = el("div", { class: "msg assistant" + (state.memoryEnabled ? "" : " no-memory") }, [
+      el("div", { class: "who" }, "Cheta"),
+      immediateReasoning.element,
+      immediateBubble
+    ]);
+    appendNode(streamWrap);
+    scrollToEnd();
+
+    var hasPageTools = Boolean(currentPageTools().length);
+    if (opts.planPageTools !== false && hasPageTools) {
+      immediateReasoning.addStep("Checking active page for tools & actions...");
+    } else {
+      immediateReasoning.addStep("Accessing Walrus memory network & planning turn...");
+    }
+
     var planning =
       opts.planPageTools === false
         ? Promise.resolve(null)
@@ -4274,11 +4377,21 @@
     planning
       .then(function (plan) {
         if (plan && (plan.tool || (Array.isArray(plan.steps) && plan.steps.length > 0))) {
+          if (streamWrap.parentNode) {
+            streamWrap.parentNode.removeChild(streamWrap);
+          }
           return handlePlannedPageTool(plan, wireText);
         }
-        return sendStreamingTurn(wireText);
+        return sendStreamingTurn(wireText, {
+          reasoning: immediateReasoning,
+          bubbleNode: immediateBubble,
+          streamWrap: streamWrap
+        });
       })
       .catch(function (err) {
+        if (streamWrap.parentNode) {
+          streamWrap.parentNode.removeChild(streamWrap);
+        }
         var message =
           "Could not complete the turn. " +
           err.message +
@@ -4647,6 +4760,16 @@
           panel.classList.add("hidden");
         }
         panelButton.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    var closeMemories = $("close-memory-panel");
+    if (closeMemories && panel) {
+      closeMemories.addEventListener("click", function () {
+        panel.classList.add("hidden");
+        if (panelButton) {
+          panelButton.setAttribute("aria-expanded", "false");
+        }
       });
     }
 
