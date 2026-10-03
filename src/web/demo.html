@@ -4,27 +4,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Cheta 3D Motion-Design Masterpiece - 5-Minute Cinematic Animated Showcase & Video Studio.">
-    <title>Cheta 3D Masterpiece Demo - 5-Minute Animated Showcase</title>
+    <meta name="description" content="Cheta - Continuous Multi-Surface AI Agent Motion Showcase. Demonstrating Telegram, Linux CLI, Browser Extension, Web Portal, and Decentralized Walrus Memory.">
+    <title>Cheta: The Multi-Surface AI Agent Showcase</title>
     <style>
       :root {
         --bg: #07090e;
-        --surface: #10131d;
-        --surface-glass: rgba(16, 19, 29, 0.88);
-        --line: #222738;
-        --line-glow: rgba(53, 208, 186, 0.5);
-        --text: #f3f6fa;
-        --muted: #8c94a8;
+        --surface: #0e121b;
+        --surface-card: #131824;
+        --surface-glass: rgba(14, 18, 27, 0.92);
+        --line: #1e2536;
+        --line-active: #35d0ba;
+        --text: #f1f5f9;
+        --muted: #8b95a5;
+        --dim: #556075;
         --accent: #35d0ba;
-        --accent-glow: rgba(53, 208, 186, 0.35);
+        --accent-glow: rgba(53, 208, 186, 0.4);
         --accent-gold: #ffbe3b;
         --accent-gold-glow: rgba(255, 190, 59, 0.35);
+        --accent-blue: #38bdf8;
         --accent-purple: #a855f7;
-        --accent-cyan: #38bdf8;
         --accent-red: #f43f5e;
-        --radius: 10px;
-        --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --accent-green: #22c55e;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+        --mono: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
       }
 
       * {
@@ -43,6 +45,7 @@
         user-select: none;
       }
 
+      /* 3D Background Canvas */
       #webgl-canvas {
         position: absolute;
         top: 0;
@@ -53,8 +56,8 @@
         outline: none;
       }
 
-      /* Screen FX Overlays */
-      .screen-fx-overlay {
+      /* Ambient Vignette & Scanline */
+      .ambient-overlay {
         position: absolute;
         top: 0;
         left: 0;
@@ -62,59 +65,982 @@
         height: 100%;
         z-index: 2;
         pointer-events: none;
-        box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
+        box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
+        background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(7, 9, 14, 0.6) 100%);
       }
 
-      .speedlines-canvas {
+      /* Dynamic UI Presentation Stage */
+      .presentation-stage {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 3;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-
-      /* ------------------------------------------------------------- HUD Layer */
-      .hud-layer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 10;
+        top: 68px;
+        bottom: 84px;
+        left: 24px;
+        right: 24px;
+        z-index: 5;
         pointer-events: none;
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 20px 24px;
-        transition: opacity 0.2s ease;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.35s ease, transform 0.35s ease;
       }
 
-      .interactive-element {
+      .interactive-surface {
         pointer-events: auto;
       }
 
-      /* Header */
-      .hud-header {
+      /* Surface Frames Common */
+      .surface-viewport {
+        position: absolute;
+        width: 100%;
+        max-width: 1100px;
+        height: 100%;
+        max-height: 680px;
+        display: none;
+        opacity: 0;
+        transform: scale(0.96) translateY(12px);
+        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .surface-viewport.active {
+        display: flex;
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+
+      /* ------------------------------------------------------------- 1. TELEGRAM MOBILE PHONE */
+      .phone-wrapper {
+        margin: auto;
+        width: 380px;
+        height: 640px;
+        background: #0f141c;
+        border-radius: 42px;
+        border: 4px solid #232b3c;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(53, 208, 186, 0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .phone-notch {
+        width: 130px;
+        height: 20px;
+        background: #232b3c;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+      }
+
+      .tg-header {
+        background: #17212b;
+        border-bottom: 1px solid #232e3c;
+        padding: 28px 16px 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 10;
+      }
+
+      .tg-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #35d0ba, #0284c7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 18px;
+        color: #07090e;
+        box-shadow: 0 0 12px rgba(53, 208, 186, 0.4);
+      }
+
+      .tg-meta {
+        flex: 1;
+      }
+
+      .tg-name-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tg-name {
+        font-weight: 700;
+        font-size: 15px;
+        color: #fff;
+      }
+
+      .tg-badge {
+        background: #38bdf8;
+        color: #07090e;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        font-weight: 900;
+      }
+
+      .tg-status {
+        font-size: 11px;
+        color: var(--accent);
+      }
+
+      .tg-body {
+        flex: 1;
+        background: #0e1621;
+        padding: 16px 12px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
+
+      .tg-bubble {
+        max-width: 82%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 13px;
+        line-height: 1.45;
+        position: relative;
+        animation: bubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes bubblePop {
+        from { opacity: 0; transform: translateY(10px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .tg-user {
+        align-self: flex-end;
+        background: #2b5278;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+      }
+
+      .tg-bot {
+        align-self: flex-start;
+        background: #182533;
+        color: #e5ecf5;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #283747;
+      }
+
+      .tg-voice-note {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 0;
+      }
+
+      .tg-play-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #07090e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .tg-waveform {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        height: 24px;
+      }
+
+      .tg-wave-bar {
+        width: 3px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 2px;
+        animation: waveAnim 1.2s infinite ease-in-out;
+      }
+
+      @keyframes waveAnim {
+        0%, 100% { height: 6px; }
+        50% { height: 22px; background: var(--accent); }
+      }
+
+      .tg-tool-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(53, 208, 186, 0.15);
+        border: 1px solid rgba(53, 208, 186, 0.4);
+        color: var(--accent);
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-family: var(--mono);
+        margin-bottom: 6px;
+      }
+
+      .tg-inline-btn-group {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .tg-inline-btn {
+        flex: 1;
+        background: #243447;
+        border: 1px solid #334458;
+        color: var(--accent-blue);
+        padding: 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .tg-inline-btn:hover {
+        background: #2e435c;
+      }
+
+      .tg-typing-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        font-style: italic;
+      }
+
+      .tg-dot-pulse {
+        display: inline-flex;
+        gap: 3px;
+      }
+
+      .tg-dot-pulse span {
+        width: 4px;
+        height: 4px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: dotPulse 1.2s infinite;
+      }
+
+      .tg-dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+      .tg-dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes dotPulse {
+        0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+        40% { transform: scale(1.2); opacity: 1; }
+      }
+
+      .tg-input-bar {
+        background: #17212b;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-top: 1px solid #232e3c;
+      }
+
+      .tg-input-field {
+        flex: 1;
+        background: #242f3d;
+        border: 0;
+        border-radius: 18px;
+        padding: 8px 14px;
+        color: #fff;
+        font-size: 13px;
+        outline: none;
+      }
+
+      /* ------------------------------------------------------------- 2. LINUX CLI TERMINAL */
+      .terminal-window {
+        margin: auto;
+        width: 860px;
+        height: 560px;
+        background: #0d1117;
+        border: 1px solid #262c36;
+        border-radius: 12px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .terminal-titlebar {
+        background: #161b22;
+        border-bottom: 1px solid #21262d;
+        padding: 10px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+      }
+
+      .term-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .term-btn {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .term-btn.red { background: #ff5f56; }
+      .term-btn.yellow { background: #ffbd2e; }
+      .term-btn.green { background: #27c93f; }
+
+      .term-title {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+
+      .terminal-body {
+        flex: 1;
+        padding: 18px 22px;
+        overflow-y: auto;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.6;
+        color: #e6edf3;
+      }
+
+      .term-prompt {
+        color: #38bdf8;
+        font-weight: 700;
+      }
+
+      .term-prompt-dir {
+        color: #ffbe3b;
+      }
+
+      .term-cmd {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .term-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 15px;
+        background: var(--accent);
+        vertical-align: middle;
+        margin-left: 4px;
+        animation: cursorBlink 0.9s infinite;
+      }
+
+      @keyframes cursorBlink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+
+      .term-table {
+        margin: 10px 0;
+        border-collapse: collapse;
+        width: 100%;
+        color: #cbd5e1;
+        font-size: 12px;
+      }
+
+      .term-table th {
+        text-align: left;
+        color: var(--accent);
+        border-bottom: 1px solid #30363d;
+        padding: 5px 8px;
+      }
+
+      .term-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .badge-synced {
+        color: #22c55e;
+        font-weight: 700;
+      }
+
+      .badge-walrus {
+        color: #ffbe3b;
+        font-weight: 700;
+      }
+
+      /* ------------------------------------------------------------- 3. BROWSER EXTENSION & WEBMCP */
+      .browser-window {
+        margin: auto;
+        width: 980px;
+        height: 600px;
+        background: #0f141d;
+        border: 1px solid #252e42;
+        border-radius: 12px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(53, 208, 186, 0.12);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .browser-topbar {
+        background: #141a26;
+        border-bottom: 1px solid #20283b;
+        padding: 8px 12px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .browser-tab-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .browser-tab {
+        padding: 6px 14px;
+        border-radius: 8px 8px 0 0;
+        background: #0f141d;
+        border: 1px solid #20283b;
+        border-bottom: 0;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .browser-tab.inactive {
+        background: transparent;
+        border: 0;
+        color: var(--muted);
+      }
+
+      .browser-nav-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 8px;
+      }
+
+      .browser-nav-arrows {
+        display: flex;
+        gap: 6px;
+        color: var(--muted);
+      }
+
+      .browser-url-bar {
+        flex: 1;
+        background: #090c12;
+        border: 1px solid #20283b;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .browser-url-bar span.active-domain {
+        color: #38bdf8;
+        font-weight: 600;
+      }
+
+      .browser-ext-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #35d0ba, #0284c7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 13px;
+        color: #07090e;
+        box-shadow: 0 0 12px var(--accent-glow);
+      }
+
+      .browser-content-area {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* Left: In-Page zaMaker interactive pizza */
+      .browser-page-view {
+        flex: 6;
+        background: #111723;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #20283b;
+        overflow-y: auto;
+      }
+
+      .page-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .page-banner h3 {
+        font-size: 18px;
+        color: #fff;
+      }
+
+      .page-pill {
+        font-size: 11px;
+        background: rgba(255, 190, 59, 0.15);
+        color: var(--accent-gold);
+        border: 1px solid rgba(255, 190, 59, 0.4);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+      }
+
+      .pizza-plate {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: #e2a053;
+        margin: 12px auto;
+        position: relative;
+        border: 10px solid #c27f33;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pizza-cheese {
+        width: 170px;
+        height: 170px;
+        border-radius: 50%;
+        background: #ffd966;
+        position: relative;
+      }
+
+      .topping-pep {
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #dc2626;
+        border: 2px solid #991b1b;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        animation: dropTopping 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .topping-mush {
+        position: absolute;
+        width: 24px;
+        height: 18px;
+        background: #d6d3d1;
+        border-radius: 12px 12px 4px 4px;
+        border: 2px solid #78716c;
+        animation: dropTopping 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes dropTopping {
+        from { transform: translateY(-40px) scale(0.4); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+
+      /* Right: Actual Cheta Extension Sidepanel */
+      .browser-sidepanel {
+        flex: 4;
+        background: #0b0f16;
+        display: flex;
+        flex-direction: column;
+        border-left: 1px solid #1a2233;
+      }
+
+      .sp-header {
+        padding: 10px 14px;
+        background: #101520;
+        border-bottom: 1px solid #1a2233;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .sp-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .sp-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+      }
+
+      .sp-actions-row {
+        display: flex;
+        gap: 6px;
+      }
+
+      .sp-chip {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #182030;
+        color: var(--muted);
+        border: 1px solid #232d42;
+        cursor: pointer;
+      }
+
+      .sp-chip.active {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .sp-tab-badge {
+        padding: 8px 12px;
+        background: #131a26;
+        border-bottom: 1px solid #1a2233;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+      }
+
+      .sp-read-btn {
+        background: var(--accent);
+        color: #07090e;
+        border: 0;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .sp-chat-body {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 12px;
+      }
+
+      .sp-memories-drawer {
+        background: #111824;
+        border-top: 1px solid #1f293d;
+        padding: 10px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sp-memories-drawer.open {
+        display: flex;
+      }
+
+      .sp-memory-card {
+        background: #182232;
+        border: 1px solid #26344d;
+        border-radius: 6px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .sp-card-fact {
+        font-size: 11px;
+        color: #e2e8f0;
+      }
+
+      .sp-card-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .sp-mini-btn {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #233047;
+        color: var(--muted);
+        border: 0;
+        cursor: pointer;
+      }
+
+      /* ------------------------------------------------------------- 4. WEB PORTAL & WIDGET */
+      .portal-window {
+        margin: auto;
+        width: 940px;
+        height: 580px;
+        background: #0d111a;
+        border: 1px solid #222a3d;
+        border-radius: 14px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 40px rgba(168, 85, 247, 0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .portal-navbar {
+        background: #131926;
+        border-bottom: 1px solid #20293d;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .portal-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 15px;
+        color: #fff;
+      }
+
+      .portal-links {
+        display: flex;
+        gap: 18px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .portal-links span.active {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .portal-body {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        overflow: hidden;
+      }
+
+      .portal-sidebar {
+        background: #0f1420;
+        border-right: 1px solid #1e2638;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .portal-main-panel {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .portal-slash-menu {
+        position: absolute;
+        bottom: 74px;
+        left: 20px;
+        right: 20px;
+        background: #141c2b;
+        border: 1px solid #28354d;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 30;
+      }
+
+      .slash-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #e2e8f0;
+        cursor: pointer;
+      }
+
+      .slash-item.selected {
+        background: rgba(53, 208, 186, 0.15);
+        color: var(--accent);
+      }
+
+      .slash-item code {
+        font-family: var(--mono);
+        color: var(--accent-gold);
+      }
+
+      .pairing-card {
+        background: #131a26;
+        border: 1px solid #232d42;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .pairing-code-box {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0;
+      }
+
+      .code-digit {
+        width: 38px;
+        height: 48px;
+        background: #090c12;
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-family: var(--mono);
+      }
+
+      /* ------------------------------------------------------------- 5. WALRUS NETWORK FABRIC OVERVIEW */
+      .walrus-overview-window {
+        margin: auto;
+        width: 1040px;
+        height: 600px;
+        background: rgba(14, 18, 27, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid #232d42;
+        border-radius: 16px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        gap: 18px;
+      }
+
+      .walrus-hero-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .walrus-title h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #fff;
+      }
+
+      .walrus-title p {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .surfaces-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        flex: 1;
+      }
+
+      .surface-card-mini {
+        background: #111724;
+        border: 1px solid #1e283d;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .surface-card-mini.synced {
+        border-color: var(--accent);
+        box-shadow: 0 0 20px rgba(53, 208, 186, 0.15);
+      }
+
+      .card-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        background: #1a2336;
+        color: var(--accent);
+      }
+
+      .card-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .card-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .card-live-log {
+        margin-top: auto;
+        background: #090d14;
+        border: 1px solid #1c2436;
+        border-radius: 6px;
+        padding: 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--accent);
+      }
+
+      /* ------------------------------------------------------------- TOP HUD */
+      .hud-header {
+        position: absolute;
+        top: 14px;
+        left: 20px;
+        right: 20px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
       }
 
       .hud-brand {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         border-radius: 9999px;
-        padding: 8px 18px 8px 12px;
+        padding: 8px 18px 8px 14px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       }
 
@@ -123,1652 +1049,1444 @@
         height: 10px;
         border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 0 14px var(--accent);
-        animation: pulseDot 2s infinite ease-in-out;
+        box-shadow: 0 0 12px var(--accent);
       }
 
-      @keyframes pulseDot {
-        0%, 100% { opacity: 0.6; transform: scale(0.9); }
-        50% { opacity: 1; transform: scale(1.2); }
-      }
-
-      .brand-title {
-        font-size: 13px;
+      .brand-name {
+        font-size: 14px;
         font-weight: 800;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
-        color: var(--text);
+        color: #fff;
       }
 
-      .brand-tag {
+      .brand-sub {
         font-size: 11px;
-        font-weight: 700;
-        padding: 3px 8px;
-        background: rgba(53, 208, 186, 0.15);
-        border: 1px solid rgba(53, 208, 186, 0.45);
+        font-weight: 600;
         color: var(--accent);
-        border-radius: 9999px;
         letter-spacing: 0.05em;
       }
 
-      .hud-top-actions {
+      /* Surface Navigation Pills */
+      .surface-nav-bar {
         display: flex;
         align-items: center;
-        gap: 10px;
-      }
-
-      .hud-btn {
-        appearance: none;
+        gap: 6px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         border-radius: 9999px;
+        padding: 4px;
+      }
+
+      .surface-tab-btn {
+        background: transparent;
+        border: 0;
+        color: var(--muted);
+        padding: 6px 14px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .surface-tab-btn:hover {
+        color: #fff;
+      }
+
+      .surface-tab-btn.active {
+        background: var(--accent);
+        color: #07090e;
+        font-weight: 700;
+        box-shadow: 0 4px 14px var(--accent-glow);
+      }
+
+      .hud-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .action-pill-btn {
+        background: var(--surface-glass);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--line);
         color: var(--text);
-        padding: 9px 18px;
-        font-family: inherit;
+        padding: 8px 14px;
+        border-radius: 9999px;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 7px;
-        transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        gap: 6px;
         text-decoration: none;
+        transition: all 0.2s ease;
       }
 
-      .hud-btn:hover {
+      .action-pill-btn:hover {
         border-color: var(--accent);
         color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px var(--accent-glow);
       }
 
-      .hud-btn.active {
-        background: var(--accent);
-        color: #080a0f;
-        border-color: var(--accent);
-        font-weight: 700;
-      }
-
-      .hud-btn.record-btn {
-        border-color: rgba(244, 63, 94, 0.6);
+      .action-pill-btn.record-btn {
         color: var(--accent-red);
-        background: rgba(244, 63, 94, 0.08);
+        border-color: rgba(244, 63, 94, 0.4);
       }
 
-      .hud-btn.record-btn:hover {
-        border-color: var(--accent-red);
-        box-shadow: 0 6px 18px rgba(244, 63, 94, 0.35);
-      }
-
-      .hud-btn.record-btn.recording {
+      .action-pill-btn.record-btn.recording {
         background: var(--accent-red);
         color: #fff;
-        border-color: var(--accent-red);
         animation: pulseRecord 1s infinite alternate;
       }
 
       @keyframes pulseRecord {
-        from { opacity: 0.85; transform: scale(0.98); }
-        to { opacity: 1; transform: scale(1.02); }
+        from { transform: scale(0.97); }
+        to { transform: scale(1.03); }
       }
 
-      /* Act Notification Banner */
-      .act-banner-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 12px;
-      }
-
-      .act-banner {
-        background: var(--surface-glass);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--line-glow);
-        border-radius: 14px;
-        padding: 14px 28px;
-        text-align: center;
-        max-width: 680px;
-        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.7);
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-      }
-
-      .act-num {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 3px;
-      }
-
-      .act-title {
-        font-size: 20px;
-        font-weight: 800;
-        color: var(--text);
-        letter-spacing: -0.015em;
-      }
-
-      .act-desc {
-        font-size: 13px;
-        color: var(--muted);
-        margin-top: 5px;
-        line-height: 1.45;
-      }
-
-      /* Dynamic Comic Callout Pill */
-      .comic-callout {
+      /* ------------------------------------------------------------- BOTTOM CONTROLLER HUD */
+      .hud-footer {
         position: absolute;
-        top: 28%;
-        right: 8%;
-        background: linear-gradient(135deg, var(--accent-gold), #f59e0b);
-        color: #090b10;
-        font-size: 14px;
-        font-weight: 900;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        padding: 8px 18px;
-        border-radius: 9999px;
-        box-shadow: 0 10px 28px var(--accent-gold-glow);
-        transform: rotate(6deg) scale(0);
-        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        bottom: 14px;
+        left: 20px;
+        right: 20px;
         z-index: 20;
-      }
-
-      .comic-callout.show {
-        transform: rotate(-3deg) scale(1);
-      }
-
-      /* Subtitles / Speech Bubble Overlay */
-      .dialogue-overlay {
-        align-self: center;
-        margin-bottom: 12px;
-        max-width: 720px;
-        width: 100%;
-        background: var(--surface-glass);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--line);
-        border-left: 4px solid var(--accent);
-        border-radius: var(--radius);
-        padding: 14px 20px;
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        box-shadow: 0 10px 36px rgba(0, 0, 0, 0.65);
-      }
-
-      .dialogue-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: rgba(53, 208, 186, 0.2);
-        border: 2px solid var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: var(--accent);
-        font-family: var(--mono);
-        font-size: 15px;
-        font-weight: 800;
-        box-shadow: 0 0 12px var(--accent-glow);
-      }
-
-      .dialogue-content {
-        flex: 1;
-      }
-
-      .dialogue-speaker {
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: var(--accent);
-        margin-bottom: 3px;
-      }
-
-      .dialogue-text {
-        font-size: 14px;
-        line-height: 1.5;
-        color: var(--text);
-      }
-
-      /* Bottom Controller Bar */
-      .hud-bottom {
         display: flex;
         flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .progress-track-wrap {
+        width: 100%;
+        display: flex;
+        align-items: center;
         gap: 12px;
         background: var(--surface-glass);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 14px 20px;
-        box-shadow: 0 14px 44px rgba(0, 0, 0, 0.7);
+        border-radius: 9999px;
+        padding: 8px 16px;
       }
 
-      /* Timeline Scrubber */
-      .timeline-wrap {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-
-      .time-display {
+      .time-counter {
         font-family: var(--mono);
         font-size: 12px;
         font-weight: 700;
         color: var(--accent);
-        min-width: 104px;
+        min-width: 95px;
       }
 
-      .timeline-track {
+      .progress-track {
         flex: 1;
-        position: relative;
-        height: 8px;
+        height: 6px;
         background: rgba(255, 255, 255, 0.08);
-        border-radius: 4px;
+        border-radius: 9999px;
+        position: relative;
         cursor: pointer;
       }
 
-      .timeline-progress {
+      .progress-fill {
         position: absolute;
-        left: 0;
         top: 0;
+        left: 0;
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, var(--accent), var(--accent-gold));
-        border-radius: 4px;
-        box-shadow: 0 0 12px var(--accent-glow);
+        background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+        border-radius: 9999px;
       }
 
-      .timeline-handle {
+      .progress-handle {
         position: absolute;
         top: 50%;
         left: 0%;
-        width: 16px;
-        height: 16px;
-        background: #fff;
-        border: 2px solid var(--accent);
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
-        transform: translate(-50%, -50%);
+        background: #fff;
         box-shadow: 0 0 10px var(--accent);
+        transform: translate(-50%, -50%);
         pointer-events: none;
       }
 
-      /* Controls Row */
-      .controls-row {
+      .controls-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
       }
 
-      .playback-group {
+      .playback-buttons {
         display: flex;
         align-items: center;
         gap: 8px;
       }
 
       .ctrl-btn {
-        appearance: none;
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--surface-glass);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
-        border-radius: 8px;
-        color: var(--text);
+        color: #fff;
         padding: 7px 14px;
-        font-family: inherit;
+        border-radius: 9999px;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
         gap: 6px;
-        transition: all 0.14s ease;
+        transition: all 0.2s ease;
       }
 
       .ctrl-btn:hover {
-        background: rgba(53, 208, 186, 0.15);
         border-color: var(--accent);
         color: var(--accent);
       }
 
-      .ctrl-btn.active {
-        background: var(--accent);
-        color: #080a0f;
-        border-color: var(--accent);
-        font-weight: 700;
-      }
-
-      .chapters-group {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 2px;
-      }
-
-      .chapter-pill {
-        appearance: none;
-        background: transparent;
-        border: 1px solid var(--line);
-        border-radius: 9999px;
-        color: var(--muted);
-        padding: 5px 12px;
-        font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.14s ease;
-      }
-
-      .chapter-pill:hover {
-        border-color: var(--text);
-        color: var(--text);
-      }
-
-      .chapter-pill.active {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(53, 208, 186, 0.12);
-        box-shadow: 0 0 10px var(--accent-glow);
-      }
-
-      .meta-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      /* Help Modal */
-      .help-modal {
+      /* Cheta Mascot Subtitle & Narration Bubble */
+      .mascot-narration-box {
         position: absolute;
-        top: 50%;
+        bottom: 84px;
         left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--surface-glass);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid var(--line);
+        transform: translateX(-50%);
+        z-index: 15;
+        background: rgba(14, 18, 27, 0.94);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--accent-glow);
         border-radius: 14px;
-        padding: 26px;
-        max-width: 440px;
+        padding: 10px 20px;
+        max-width: 650px;
         width: 90%;
-        z-index: 100;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        pointer-events: none;
       }
 
-      .help-modal h3 {
-        font-size: 16px;
-        font-weight: 800;
-        margin-bottom: 14px;
+      .mascot-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #07090e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+
+      .mascot-speech-text {
+        font-size: 13px;
+        line-height: 1.45;
+        color: #f1f5f9;
+      }
+
+      .mascot-speech-text strong {
         color: var(--accent);
       }
 
-      .help-modal ul {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        font-size: 13px;
-        color: var(--muted);
-      }
-
-      .help-modal kbd {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid var(--line);
-        border-radius: 4px;
-        padding: 2px 7px;
-        color: var(--text);
-        font-family: var(--mono);
-      }
-
-      .help-close-btn {
-        margin-top: 18px;
-        width: 100%;
-        padding: 9px;
-        background: var(--accent);
-        color: #080a0f;
-        border: 0;
-        border-radius: 8px;
-        font-weight: 800;
-        cursor: pointer;
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
-      @media (max-width: 820px) {
-        .hud-layer {
-          padding: 12px 14px;
-        }
-        .act-title {
-          font-size: 16px;
-        }
-        .act-desc {
+      /* Responsive Adjustments */
+      @media (max-width: 920px) {
+        .surface-nav-bar {
           display: none;
         }
-        .chapters-group {
-          max-width: 240px;
+        .phone-wrapper {
+          width: 320px;
+          height: 520px;
         }
-        .comic-callout {
-          display: none;
+        .terminal-window, .browser-window, .portal-window, .walrus-overview-window {
+          width: 95%;
+          height: 500px;
         }
       }
     </style>
   </head>
   <body>
-    <!-- Three.js Canvas -->
+    <!-- 3D Three.js Studio Scene -->
     <canvas id="webgl-canvas"></canvas>
 
-    <!-- Speedlines & Screen Overlays -->
-    <canvas id="speedlines-canvas" class="speedlines-canvas"></canvas>
-    <div class="screen-fx-overlay"></div>
+    <!-- Ambient Vignette -->
+    <div class="ambient-overlay"></div>
 
-    <!-- Comic Action Burst Callout -->
-    <div id="comic-callout" class="comic-callout">DECENTRALIZED WALRUS STORAGE</div>
+    <!-- Presentation Stage (Houses the Photorealistic Simulated Surfaces) -->
+    <main class="presentation-stage">
 
-    <!-- Overlay HUD -->
-    <div class="hud-layer">
-      <!-- Top Bar -->
-      <header class="hud-header interactive-element">
-        <div class="hud-brand">
-          <div class="brand-dot"></div>
-          <span class="brand-title">Cheta</span>
-          <span class="brand-tag">Motion Design Studio</span>
+      <!-- SURFACE 1: TELEGRAM BOT INTERFACE -->
+      <section id="surface-telegram" class="surface-viewport active interactive-surface">
+        <div class="phone-wrapper">
+          <div class="phone-notch"></div>
+          
+          <div class="tg-header">
+            <div class="tg-avatar">C</div>
+            <div class="tg-meta">
+              <div class="tg-name-row">
+                <span class="tg-name">Cheta</span>
+                <span class="tg-badge">&#10003;</span>
+              </div>
+              <span class="tg-status">bot &bull; 13 tools active &bull; online</span>
+            </div>
+          </div>
+
+          <div id="tg-messages" class="tg-body">
+            <div class="tg-bubble tg-user">
+              <div class="tg-voice-note">
+                <div class="tg-play-icon">&#9658;</div>
+                <div class="tg-waveform">
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                  <div class="tg-wave-bar"></div>
+                </div>
+                <span style="font-size: 11px; color: #a5c3e8;">0:14</span>
+              </div>
+              <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;">Voice Note: "Cheta, remember that I deploy with Rust on Sui testnet, and remind me tomorrow at 9 AM to check node status."</div>
+            </div>
+
+            <div id="tg-typing" class="tg-typing-box" style="display: none;">
+              <span>Cheta is typing</span>
+              <div class="tg-dot-pulse"><span></span><span></span><span></span></div>
+            </div>
+
+            <div id="tg-reply-1" class="tg-bubble tg-bot" style="display: none;">
+              <div class="tg-tool-pill">&#9881; Tool: set_reminder({"time": "09:00", "task": "Check Sui node"})</div>
+              <div>Got it Kosisochukwu! I've set your reminder for <strong>9:00 AM tomorrow</strong>.</div>
+              <div style="margin-top: 6px; font-size: 12px; color: #35d0ba;">&#129504; Committed new durable memory blob to Walrus decentralized storage: <em>"Deploys smart contracts with Rust on Sui testnet"</em>.</div>
+              <div class="tg-inline-btn-group">
+                <div class="tg-inline-btn">&#128197; View in Calendar</div>
+                <div class="tg-inline-btn">&#129504; Walrus Blobs (14)</div>
+                <div class="tg-inline-btn">&#128279; Pair Web/CLI</div>
+              </div>
+            </div>
+
+            <div id="tg-reply-2" class="tg-bubble tg-bot" style="display: none;">
+              <div class="tg-tool-pill">&#128269; Tool: search_web({"query": "Sui testnet epoch status"})</div>
+              <div>Current Sui testnet epoch is active and healthy. Walrus storage epochs are synchronized with zero dropped blobs.</div>
+            </div>
+          </div>
+
+          <div class="tg-input-bar">
+            <input class="tg-input-field" type="text" placeholder="Message or voice note..." readonly value="Listening for instructions...">
+          </div>
         </div>
+      </section>
 
-        <div class="hud-top-actions">
-          <button id="btn-camera-mode" class="hud-btn" type="button" title="Switch between Cinematic Director and Free 3D Orbit">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span id="cam-mode-text">Free Orbit</span>
-          </button>
-          <button id="btn-audio-toggle" class="hud-btn" type="button" title="Toggle Synth Audio & Voice Narration">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-            <span id="audio-toggle-text">Sound: ON</span>
-          </button>
-          <button id="btn-record-video" class="hud-btn record-btn" type="button" title="Record this 5-minute showcase to WebM video">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-            <span id="record-text">Record Video</span>
-          </button>
-          <a class="hud-btn" href="portal.html" title="Return to Home Landing Page">
-            <span>Portal</span>
-          </a>
+      <!-- SURFACE 2: REALISTIC LINUX CLI TERMINAL -->
+      <section id="surface-cli" class="surface-viewport interactive-surface">
+        <div class="terminal-window">
+          <div class="terminal-titlebar">
+            <div class="term-buttons">
+              <div class="term-btn red"></div>
+              <div class="term-btn yellow"></div>
+              <div class="term-btn green"></div>
+            </div>
+            <div class="term-title">kss@cheta-box: ~/workspace (bash)</div>
+            <div style="font-size: 11px; color: #35d0ba; font-family: var(--mono);">&#9679; WALRUS CONNECTED</div>
+          </div>
+
+          <div id="term-content" class="terminal-body">
+            <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti status</span></div>
+            <div style="color: #94a3b8; margin: 4px 0 12px;">
+              [+] Cheta CLI v2.4.0 (Linux x86_64)<br>
+              [+] Walrus Network: CONNECTED (epoch 42, latency 38ms)<br>
+              [+] Storage Provider: Sui Testnet Blob Network (Decentralized)<br>
+              [+] Durable Memory Blobs: 14 indexed &amp; cryptographically verified<br>
+              [+] Active Surfaces Linked: Telegram, Web Extension, Web Portal
+            </div>
+
+            <div id="term-cmd-2" style="display: none;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti memory list --recent 3</span></div>
+              <table class="term-table">
+                <thead>
+                  <tr>
+                    <th>BLOB ID</th>
+                    <th>FACT SUMMARY</th>
+                    <th>SURFACE</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>blob_wal_0x9f82b1...</td>
+                    <td>Deploys with Rust on Sui testnet</td>
+                    <td>Telegram</td>
+                    <td><span class="badge-synced">COMMITTED</span></td>
+                  </tr>
+                  <tr>
+                    <td>blob_wal_0x4e18ac...</td>
+                    <td>AWS Certified GenAI Developer - Professional</td>
+                    <td>Web</td>
+                    <td><span class="badge-synced">COMMITTED</span></td>
+                  </tr>
+                  <tr>
+                    <td>blob_wal_0x77d019...</td>
+                    <td>Working on Gigr services platform</td>
+                    <td>Extension</td>
+                    <td><span class="badge-synced">COMMITTED</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="term-cmd-3" style="display: none; margin-top: 10px;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti chat</span></div>
+              <div style="color: #64748b;">Starting interactive streaming REPL session...</div>
+              <div style="color: #38bdf8; margin-top: 6px;">Cheta CLI&gt; What do you know about my tech stack?</div>
+              <div id="term-stream-text" style="color: #e2e8f0; margin-top: 4px;"></div>
+            </div>
+
+            <div id="term-cmd-4" style="display: none; margin-top: 10px;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti pairing code</span></div>
+              <div style="background: #161f2e; border: 1px solid #2d3b55; padding: 10px; border-radius: 6px; margin-top: 6px;">
+                <span style="color: #ffbe3b; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
+                <span style="color: #94a3b8; font-size: 11px;">Enter this code on your Web Portal or Mobile to synchronize Walrus memory realm.</span>
+              </div>
+            </div>
+
+            <div id="term-live-line" style="margin-top: 10px;">
+              <span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span id="term-typed-cmd"></span><span class="term-cursor"></span>
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <!-- Act Announcement Banner -->
-      <div class="act-banner-wrap">
-        <div id="act-banner" class="act-banner interactive-element">
-          <div id="act-num" class="act-num">ACT 1 OF 6</div>
-          <h2 id="act-title" class="act-title">The AI Agent & Walrus Memory Network</h2>
-          <p id="act-desc" class="act-desc">Meet Cheta: a memory-first agentic assistant backed by Walrus decentralized protocol storage.</p>
+      <!-- SURFACE 3: BROWSER EXTENSION & IN-PAGE WEBMCP TOOLS -->
+      <section id="surface-extension" class="surface-viewport interactive-surface">
+        <div class="browser-window">
+          <div class="browser-topbar">
+            <div class="browser-tab-row">
+              <div class="browser-tab">
+                <span>&#127829; zaMaker! - Pizza Builder</span>
+              </div>
+              <div class="browser-tab inactive">
+                <span>GitHub - Ksschkw/ranti</span>
+              </div>
+              <div class="browser-tab inactive">
+                <span>Sui Explorer</span>
+              </div>
+            </div>
+
+            <div class="browser-nav-row">
+              <div class="browser-nav-arrows">
+                <span>&#8592;</span><span>&#8594;</span><span>&#8635;</span>
+              </div>
+              <div class="browser-url-bar">
+                <span>&#128274;</span>
+                <span>https://<span class="active-domain">googlechromelabs.github.io</span>/webmcp-pizza/</span>
+              </div>
+              <div class="browser-ext-icon" title="Cheta Chrome Extension Active">C</div>
+            </div>
+          </div>
+
+          <div class="browser-content-area">
+            <!-- Left: Active Web Page Viewport -->
+            <div class="browser-page-view">
+              <div class="page-banner">
+                <div>
+                  <h3>zaMaker! WebMCP Pizza Maker</h3>
+                  <div style="font-size: 11px; color: #94a3b8;">Demonstrating in-page DOM tools registered directly via WebMCP</div>
+                </div>
+                <div class="page-pill">&#9889; 7 Page Tools Detected</div>
+              </div>
+
+              <!-- Interactive Pizza Canvas Visualizer -->
+              <div class="pizza-plate">
+                <div id="pizza-cheese" class="pizza-cheese">
+                  <!-- Animated falling toppings get appended here dynamically -->
+                </div>
+              </div>
+
+              <div style="background: #0b0f16; border: 1px solid #1a2233; border-radius: 8px; padding: 12px; margin-top: auto;">
+                <div style="font-size: 11px; color: #35d0ba; font-weight: 700; margin-bottom: 4px;">WEBMCP EVENT BUS</div>
+                <div id="page-tool-status" style="font-size: 11px; font-family: var(--mono); color: #cbd5e1;">Awaiting agent tool call...</div>
+              </div>
+            </div>
+
+            <!-- Right: Real Cheta Sidepanel Extension Interface -->
+            <div class="browser-sidepanel">
+              <div class="sp-header">
+                <div class="sp-brand">
+                  <div class="sp-status-dot"></div>
+                  <span>Cheta Extension</span>
+                </div>
+                <div class="sp-actions-row">
+                  <div class="sp-chip active" id="sp-btn-newchat">+ New</div>
+                  <div class="sp-chip" id="sp-btn-chats">Chats 3</div>
+                  <div class="sp-chip" id="sp-btn-memories">Memories 14</div>
+                </div>
+              </div>
+
+              <div class="sp-tab-badge">
+                <div>
+                  <strong style="color: #fff;">WebMCP zaMaker!</strong>
+                  <div style="color: #64748b;">googlechromelabs.github.io &bull; 34 chars</div>
+                </div>
+                <button id="sp-read-tab-btn" class="sp-read-btn">Read Tab</button>
+              </div>
+
+              <div id="sp-chat-stream" class="sp-chat-body">
+                <div class="tg-bubble tg-user" style="font-size: 11px;">
+                  Add pepperoni and mushrooms to this pizza!
+                </div>
+
+                <div id="sp-tool-badge" class="tg-tool-pill" style="display: none; align-self: flex-start;">
+                  &#9881; In-Page Tool: add_topping({"topping": "pepperoni, mushrooms"})
+                </div>
+
+                <div id="sp-bot-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11px;">
+                  I executed the in-page WebMCP tool directly on <strong>googlechromelabs.github.io</strong>. Pepperoni and mushrooms have been baked onto the active pizza!
+                </div>
+
+                <!-- Slide-out Memories Drawer -->
+                <div id="sp-drawer" class="sp-memories-drawer">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--accent);">
+                    <strong>Decentralized Memories</strong>
+                    <span>14 stored</span>
+                  </div>
+                  <div class="sp-memory-card">
+                    <span class="sp-card-fact">Deploys with Rust on Sui testnet</span>
+                    <div class="sp-card-actions">
+                      <button class="sp-mini-btn">Forget this one</button>
+                      <button class="sp-mini-btn">Correct this one</button>
+                    </div>
+                  </div>
+                  <div class="sp-memory-card">
+                    <span class="sp-card-fact">AWS Certified Generative AI Developer - Professional</span>
+                    <div class="sp-card-actions">
+                      <button class="sp-mini-btn">Forget this one</button>
+                      <button class="sp-mini-btn">Correct this one</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SURFACE 4: WEB PORTAL & EMBEDDED WIDGET -->
+      <section id="surface-portal" class="surface-viewport interactive-surface">
+        <div class="portal-window">
+          <div class="portal-navbar">
+            <div class="portal-brand">
+              <div class="brand-dot"></div>
+              <span>Cheta Web Portal</span>
+            </div>
+            <div class="portal-links">
+              <span class="active">Chat &amp; Widget</span>
+              <span>Walrus Memories</span>
+              <span>Device Pairing</span>
+              <span>Documentation</span>
+            </div>
+          </div>
+
+          <div class="portal-body">
+            <div class="portal-sidebar">
+              <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Chat Sessions</div>
+              <div style="background: #162132; border: 1px solid #23324d; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #fff;">
+                &#128172; Web Research &amp; Rust Stack
+              </div>
+              <div style="padding: 8px 12px; font-size: 12px; color: var(--muted);">
+                &#128172; zaMaker Pizza Automation
+              </div>
+              <div style="padding: 8px 12px; font-size: 12px; color: var(--muted);">
+                &#128172; General Reminders
+              </div>
+
+              <div style="margin-top: auto;" class="pairing-card">
+                <div style="font-size: 11px; font-weight: 700; color: #35d0ba;">DEVICE PAIRING</div>
+                <div style="font-size: 11px; color: #94a3b8;">Link your Linux CLI or Mobile with a 6-digit one-time code:</div>
+                <div class="pairing-code-box">
+                  <div class="code-digit">8</div>
+                  <div class="code-digit">4</div>
+                  <div class="code-digit">2</div>
+                  <div class="code-digit">1</div>
+                  <div class="code-digit">9</div>
+                  <div class="code-digit">5</div>
+                </div>
+                <div style="font-size: 10px; color: #22c55e;">&#10003; Terminal kss@cheta-box verified &amp; linked</div>
+              </div>
+            </div>
+
+            <div class="portal-main-panel">
+              <div class="tg-bubble tg-bot" style="font-size: 13px; max-width: 90%;">
+                Welcome back Kosisochukwu! Your Walrus memory space is active. You have 14 durable memories synchronized across your Telegram, Linux terminal, and browser extension.
+              </div>
+
+              <div id="portal-user-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 13px;">
+                /remember Prefers building on Solana, Rust, and Python.
+              </div>
+
+              <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 13px; max-width: 90%;">
+                <div class="tg-tool-pill">&#129504; Walrus Put: Commit durable fact blob</div>
+                <div>Memory successfully committed to Walrus decentralized storage (Blob <code>blob_wal_0x3a91...</code>). Immediately accessible to your CLI and Extension!</div>
+              </div>
+
+              <!-- Slash command menu popup -->
+              <div id="slash-popup" class="portal-slash-menu">
+                <div class="slash-item selected">
+                  <code>/remember &lt;fact&gt;</code>
+                  <span>Store permanent durable fact to Walrus</span>
+                </div>
+                <div class="slash-item">
+                  <code>/forget &lt;query&gt;</code>
+                  <span>Remove or correct a stored memory blob</span>
+                </div>
+                <div class="slash-item">
+                  <code>/pair &lt;code&gt;</code>
+                  <span>Link another device using a 6-digit code</span>
+                </div>
+                <div class="slash-item">
+                  <code>/tools</code>
+                  <span>Inspect all 13 native agent tools</span>
+                </div>
+              </div>
+
+              <div style="margin-top: auto; display: flex; gap: 8px;">
+                <input id="portal-input" type="text" style="flex: 1; background: #121824; border: 1px solid #232d40; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SURFACE 5: WALRUS DECENTRALIZED MEMORY FABRIC (UNIFIED) -->
+      <section id="surface-walrus" class="surface-viewport interactive-surface">
+        <div class="walrus-overview-window">
+          <div class="walrus-hero-row">
+            <div class="walrus-title">
+              <h2>Walrus Decentralized Memory Fabric</h2>
+              <p>One unified cryptographic memory state shared instantaneously across all user surfaces.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <span class="page-pill">&#9679; Sui Epoch 42 Verified</span>
+              <span class="page-pill" style="border-color: #35d0ba; color: #35d0ba;">14 Blobs Stored</span>
+            </div>
+          </div>
+
+          <div class="surfaces-grid">
+            <div class="surface-card-mini synced">
+              <div class="card-icon-badge">&#128241;</div>
+              <div class="card-name">Telegram Bot</div>
+              <div class="card-desc">Voice notes, PDF documents, calendar events &amp; instant reminders on mobile.</div>
+              <div class="card-live-log">&#10003; Memory written: Rust on Sui</div>
+            </div>
+
+            <div class="surface-card-mini synced">
+              <div class="card-icon-badge">&#128187;</div>
+              <div class="card-name">Linux CLI</div>
+              <div class="card-desc">Streaming REPL tokens, formatted ASCII tables, local offline fallbacks &amp; pairing.</div>
+              <div class="card-live-log">&#10003; Synced from Walrus: 38ms</div>
+            </div>
+
+            <div class="surface-card-mini synced">
+              <div class="card-icon-badge">&#127760;</div>
+              <div class="card-name">Browser Extension</div>
+              <div class="card-desc">Reads active tab DOM, executes in-page WebMCP tools, and manages memories drawer.</div>
+              <div class="card-live-log">&#10003; In-page WebMCP executed</div>
+            </div>
+
+            <div class="surface-card-mini synced">
+              <div class="card-icon-badge">&#128172;</div>
+              <div class="card-name">Web Portal &amp; Widget</div>
+              <div class="card-desc">Slash command suggestions, device pairing, and instant full-text memory explorer.</div>
+              <div class="card-live-log">&#10003; Real-time sync verified</div>
+            </div>
+          </div>
+
+          <div style="background: #090d14; border: 1px solid #1c2436; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 12px; color: #94a3b8;">
+              <strong style="color: #35d0ba;">Zero Fragmentation Guarantee:</strong> Traditional assistants forget everything across apps. Cheta keeps your context durable, encrypted, and accessible everywhere.
+            </div>
+            <a href="portal.html" class="action-pill-btn" style="background: var(--accent); color: #07090e; font-weight: 700;">Open Portal</a>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Mascot Speech Narration Subtitle -->
+    <div class="mascot-narration-box">
+      <div class="mascot-badge">C</div>
+      <div id="narration-text" class="mascot-speech-text">
+        <strong>Cheta Multi-Surface Agent:</strong> Initializing live multi-surface demonstration...
+      </div>
+    </div>
+
+    <!-- HUD Header -->
+    <header class="hud-header">
+      <div class="hud-brand interactive-surface">
+        <div class="brand-dot"></div>
+        <span class="brand-name">Cheta</span>
+        <span class="brand-sub">Multi-Surface AI Agent</span>
+      </div>
+
+      <!-- Navigation tabs for direct surface jumping -->
+      <nav class="surface-nav-bar interactive-surface">
+        <button class="surface-tab-btn active" data-surface="0" type="button">&#128241; Telegram</button>
+        <button class="surface-tab-btn" data-surface="1" type="button">&#128187; Linux CLI</button>
+        <button class="surface-tab-btn" data-surface="2" type="button">&#127760; Browser Extension</button>
+        <button class="surface-tab-btn" data-surface="3" type="button">&#128172; Web Portal</button>
+        <button class="surface-tab-btn" data-surface="4" type="button">&#129504; Walrus Fabric</button>
+      </nav>
+
+      <div class="hud-actions interactive-surface">
+        <button id="btn-camera-mode" class="action-pill-btn" type="button" title="Toggle between auto-directed camera and free orbit">
+          <span>Cam: Auto Director</span>
+        </button>
+        <button id="btn-sound-toggle" class="action-pill-btn" type="button" title="Toggle synthesized sound FX">
+          <span id="sound-label">Sound: ON</span>
+        </button>
+        <button id="btn-record-video" class="action-pill-btn record-btn" type="button" title="Export showcase to WebM video">
+          <span id="record-label">&#9679; Record Video</span>
+        </button>
+        <a class="action-pill-btn" href="portal.html">Portal</a>
+      </div>
+    </header>
+
+    <!-- HUD Footer Timeline Controller -->
+    <footer class="hud-footer">
+      <div class="progress-track-wrap interactive-surface">
+        <span id="time-display" class="time-counter">00:00 / 05:00</span>
+        <div id="timeline-track" class="progress-track">
+          <div id="timeline-fill" class="progress-fill"></div>
+          <div id="timeline-handle" class="progress-handle"></div>
         </div>
       </div>
 
-      <!-- Dialogue Subtitle Bubble -->
-      <div class="dialogue-overlay interactive-element">
-        <div class="dialogue-avatar">C</div>
-        <div class="dialogue-content">
-          <div id="speaker-name" class="dialogue-speaker">Cheta (AI Agent)</div>
-          <div id="dialogue-text" class="dialogue-text">Initializing Walrus memory space and activating agentic tools...</div>
+      <div class="controls-bar">
+        <div class="playback-buttons interactive-surface">
+          <button id="btn-play-pause" class="ctrl-btn" type="button">Pause</button>
+          <button id="btn-restart" class="ctrl-btn" type="button">Restart</button>
+          <button id="btn-speed" class="ctrl-btn" type="button">1.0x</button>
+        </div>
+
+        <div style="font-size: 11px; color: var(--dim); font-family: var(--mono);">
+          Press <kbd style="color: var(--muted);">Space</kbd> to pause &bull; <kbd style="color: var(--muted);">1 - 5</kbd> to switch surfaces &bull; <kbd style="color: var(--muted);">M</kbd> mute
         </div>
       </div>
+    </footer>
 
-      <!-- Bottom Timeline & Playback Controller -->
-      <footer class="hud-bottom interactive-element">
-        <!-- Timeline Track -->
-        <div class="timeline-wrap">
-          <span id="time-display" class="time-display">00:00 / 05:20</span>
-          <div id="timeline-track" class="timeline-track">
-            <div id="timeline-progress" class="timeline-progress"></div>
-            <div id="timeline-handle" class="timeline-handle"></div>
-          </div>
-        </div>
-
-        <!-- Controls & Chapter Navigation -->
-        <div class="controls-row">
-          <div class="playback-group">
-            <button id="btn-play-pause" class="ctrl-btn" type="button">
-              <span id="play-pause-icon">Pause</span>
-            </button>
-            <button id="btn-restart" class="ctrl-btn" type="button">Restart</button>
-            <button id="btn-speed" class="ctrl-btn" type="button">1.0x</button>
-          </div>
-
-          <div class="chapters-group">
-            <button class="chapter-pill active" data-chapter="0" type="button">1. Agent & Walrus</button>
-            <button class="chapter-pill" data-chapter="1" type="button">2. Telegram Face</button>
-            <button class="chapter-pill" data-chapter="2" type="button">3. CLI Terminal</button>
-            <button class="chapter-pill" data-chapter="3" type="button">4. WebMCP Extension</button>
-            <button class="chapter-pill" data-chapter="4" type="button">5. Unified Memory</button>
-            <button class="chapter-pill" data-chapter="5" type="button">6. Grand Finale</button>
-          </div>
-
-          <div class="meta-group">
-            <button id="btn-help" class="ctrl-btn" type="button">Help</button>
-          </div>
-        </div>
-      </footer>
-    </div>
-
-    <!-- Help Shortcuts Modal -->
-    <div id="help-modal" class="help-modal hidden interactive-element">
-      <h3>Motion Studio Shortcuts</h3>
-      <ul>
-        <li><kbd>Space</kbd> Play / Pause animation</li>
-        <li><kbd>C</kbd> Toggle Cinematic Director vs Free 3D Orbit</li>
-        <li><kbd>1 - 6</kbd> Jump to Acts 1 through 6</li>
-        <li><kbd>M</kbd> Toggle Sound FX & Voice Narration</li>
-        <li><kbd>R</kbd> Restart 5-minute showcase from beginning</li>
-      </ul>
-      <button id="help-close" class="help-close-btn" type="button">Got it</button>
-    </div>
-
-    <!-- Libraries: Three.js, OrbitControls & TWEEN.js via CDN -->
+    <!-- Three.js + OrbitControls + TWEEN.js from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <!-- 3D Cinematic Motion Design Engine -->
+    <!-- Core Motion Showcase Script -->
     <script>
       (function () {
         "use strict";
 
-        // Total demo duration: 320 seconds = 5 minutes 20 seconds
-        var TOTAL_DURATION = 320;
+        // Total runtime: 300 seconds (5 full continuous minutes)
+        var TOTAL_DURATION = 300;
 
-        // Acts definition with full storyboard choreography
-        var ACTS = [
+        // Five rich, continuous stages across all faces
+        var SURFACES = [
           {
             id: 0,
+            key: "telegram",
+            name: "Telegram Bot",
             startTime: 0,
-            endTime: 52,
-            num: "ACT 1 OF 6",
-            title: "The AI Agent & Walrus Memory Network",
-            desc: "Cheta is a memory-first agentic assistant. Walrus decentralized storage indexes durable facts with verifiable proof.",
-            speaker: "Cheta (AI Agent)",
-            dialogue: "Welcome! I am Cheta. Everything I learn about you is committed to Walrus decentralized storage and recalled with ranked embeddings across 13 native tools.",
-            callout: "DECENTRALIZED WALRUS PROTOCOL",
-            camPos: { x: 0, y: 3.5, z: 9.5 },
-            camTarget: { x: 0, y: 1.5, z: 0 },
-            setFocus: "vault"
+            endTime: 60,
+            narration: "On Telegram, speak to Cheta via voice notes or drop documents. It extracts durable facts, sets calendar reminders, and synchronizes to your decentralized Walrus space.",
+            camPos: { x: 0, y: 1.8, z: 5.5 },
+            camTarget: { x: 0, y: 0.6, z: 0 },
+            elementId: "surface-telegram"
           },
           {
             id: 1,
-            startTime: 52,
-            endTime: 105,
-            num: "ACT 2 OF 6",
-            title: "The Telegram Face (Voice & Documents)",
-            desc: "Instant conversational access on Telegram with voice note transcription, PDF/DOCX analysis, and inline memory buttons.",
-            speaker: "Cheta (Telegram Surface)",
-            dialogue: "On Telegram, speak to me with voice notes or drop documents. I transcribe audio waveforms and parse files while keeping your private memory space synchronized.",
-            callout: "REAL-TIME VOICE & DOCS",
-            camPos: { x: -6.5, y: 3.2, z: 6.8 },
-            camTarget: { x: -4.5, y: 1.8, z: 0 },
-            setFocus: "telegram"
+            key: "cli",
+            name: "Linux CLI",
+            startTime: 60,
+            endTime: 120,
+            narration: "Inside any Linux terminal, run 'ranti chat'. It streams tokens with zero latency, queries Walrus embeddings offline or online, and issues one-time pairing codes.",
+            camPos: { x: 0, y: 2.2, z: 6.2 },
+            camTarget: { x: 0, y: 0.8, z: 0 },
+            elementId: "surface-cli"
           },
           {
             id: 2,
-            startTime: 105,
-            endTime: 160,
-            num: "ACT 3 OF 6",
-            title: "The CLI Terminal Face (Ultra-Fast & Offline-Ready)",
-            desc: "Command-line interface with persistent local memory caching, instant token streaming, and one-time pairing codes.",
-            speaker: "Cheta (CLI Face)",
-            dialogue: "In your terminal, run 'ranti chat'. It works offline with local model fallbacks, streams zero-latency tokens, and links to your other devices with /pair.",
-            callout: "ZERO-LATENCY & OFFLINE READY",
-            camPos: { x: 6.5, y: 3.2, z: 6.8 },
-            camTarget: { x: 4.5, y: 1.8, z: 0 },
-            setFocus: "cli"
+            key: "extension",
+            name: "Browser Extension",
+            startTime: 120,
+            endTime: 185,
+            narration: "In Chrome and Firefox, Cheta inspects the active tab and executes in-page WebMCP tools directly without scraping, like adding pizza toppings on zaMaker!",
+            camPos: { x: 0, y: 2.4, z: 6.8 },
+            camTarget: { x: 0, y: 1.0, z: 0 },
+            elementId: "surface-extension"
           },
           {
             id: 3,
-            startTime: 160,
-            endTime: 225,
-            num: "ACT 4 OF 6",
-            title: "The Browser Extension & WebMCP Execution",
-            desc: "Reads the active web tab and directly executes in-page WebMCP tools (like zaMaker pizza demo) without DOM scraping.",
-            speaker: "Cheta (Web Extension)",
-            dialogue: "Inside Chrome and Firefox, I read the page in front of you. When a website registers WebMCP tools, I execute actions directly on the page, like adding pizza toppings!",
-            callout: "IN-PAGE WEBMCP ACTIONS",
-            camPos: { x: 0, y: 4.6, z: 7.2 },
-            camTarget: { x: 0, y: 1.8, z: -1 },
-            setFocus: "webmcp"
+            key: "portal",
+            name: "Web Portal & Widget",
+            startTime: 185,
+            endTime: 245,
+            narration: "The Web Portal provides instant slash command auto-completion, 6-digit device pairing, and a full-text semantic memory search engine.",
+            camPos: { x: 0, y: 2.3, z: 6.5 },
+            camTarget: { x: 0, y: 0.9, z: 0 },
+            elementId: "surface-portal"
           },
           {
             id: 4,
-            startTime: 225,
-            endTime: 275,
-            num: "ACT 5 OF 6",
-            title: "Unified Cross-Surface Memory Continuity",
-            desc: "Tell Cheta a preference on Telegram, and it is instantly recalled in the CLI and browser side panel. Counterfactual comparison.",
-            speaker: "Cheta (Walrus Core)",
-            dialogue: "Four surfaces, one unified memory mind. Tell me something in Telegram, and my CLI and browser extension instantly recall it. Notice our side-by-side counterfactual replay!",
-            callout: "ONE MIND, FOUR SURFACES",
-            camPos: { x: 0, y: 7.8, z: 11.2 },
-            camTarget: { x: 0, y: 1.5, z: 0 },
-            setFocus: "constellation"
-          },
-          {
-            id: 5,
-            startTime: 275,
-            endTime: 320,
-            num: "ACT 6 OF 6",
-            title: "Grand Finale: The Hackathon Winner",
-            desc: "13 Real Tools, WebMCP First-Class Integration, 100% Offline LLM Fallback, 420 Passing Tests. Ready to win.",
-            speaker: "Cheta (Celebration)",
-            dialogue: "420 passing tests, 13 real tools, decentralized Walrus storage, and zero external runtime dependencies. Cheta is built to win!",
-            callout: "HACKATHON CHAMPION",
-            camPos: { x: 0, y: 4.2, z: 8.5 },
-            camTarget: { x: 0, y: 2, z: 0 },
-            setFocus: "finale"
+            key: "walrus",
+            name: "Walrus Fabric",
+            startTime: 245,
+            endTime: 300,
+            narration: "Powered by Walrus decentralized protocol: a single, immutable, cryptographic memory layer connecting all your surfaces with zero vendor lock-in.",
+            camPos: { x: 0, y: 3.5, z: 8.5 },
+            camTarget: { x: 0, y: 1.2, z: 0 },
+            elementId: "surface-walrus"
           }
         ];
 
-        /* -------------------------------------------------------- Procedural Audio Engine */
-        var AudioEngine = (function () {
-          var ctx = null;
-          var isMuted = false;
-          var synthTimer = null;
+        // ------------------------------------------------------------- Web Audio FX Generator
+        var audioCtx = null;
+        var soundEnabled = true;
 
-          function getContext() {
-            if (!ctx && (window.AudioContext || window.webkitAudioContext)) {
-              var AudioCtx = window.AudioContext || window.webkitAudioContext;
-              ctx = new AudioCtx();
+        function getAudioContext() {
+          if (!audioCtx) {
+            var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+              audioCtx = new AudioContextClass();
             }
-            if (ctx && ctx.state === "suspended") {
-              ctx.resume();
-            }
-            return ctx;
           }
-
-          function playChirp(freq, duration, type) {
-            if (isMuted) return;
-            var c = getContext();
-            if (!c) return;
-            try {
-              var osc = c.createOscillator();
-              var gain = c.createGain();
-              osc.type = type || "sine";
-              osc.frequency.setValueAtTime(freq || 440, c.currentTime);
-              osc.frequency.exponentialRampToValueAtTime((freq || 440) * 1.5, c.currentTime + duration);
-              gain.gain.setValueAtTime(0.08, c.currentTime);
-              gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
-              osc.connect(gain);
-              gain.connect(c.destination);
-              osc.start();
-              osc.stop(c.currentTime + duration);
-            } catch (e) {}
+          if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume();
           }
+          return audioCtx;
+        }
 
-          function playFanfare() {
-            if (isMuted) return;
-            var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
-            notes.forEach(function (n, i) {
-              window.setTimeout(function () {
-                playChirp(n, 0.45, "triangle");
-              }, i * 90);
-            });
-          }
+        function playChirp(freq, type, duration) {
+          if (!soundEnabled) return;
+          try {
+            var ctx = getAudioContext();
+            if (!ctx) return;
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = type || "sine";
+            osc.frequency.setValueAtTime(freq || 520, ctx.currentTime);
+            gain.gain.setValueAtTime(0.04, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (duration || 0.1));
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + (duration || 0.1));
+          } catch (e) {}
+        }
 
-          function playBeat() {
-            if (isMuted) return;
-            var c = getContext();
-            if (!c) return;
-            try {
-              var osc = c.createOscillator();
-              var gain = c.createGain();
-              osc.type = "sine";
-              osc.frequency.setValueAtTime(160, c.currentTime);
-              osc.frequency.exponentialRampToValueAtTime(45, c.currentTime + 0.14);
-              gain.gain.setValueAtTime(0.07, c.currentTime);
-              gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.14);
-              osc.connect(gain);
-              gain.connect(c.destination);
-              osc.start();
-              osc.stop(c.currentTime + 0.14);
-            } catch (e) {}
-          }
-
-          function startBgm() {
-            if (synthTimer) return;
-            var notes = [220, 261.63, 329.63, 392, 440, 523.25];
-            var step = 0;
-            synthTimer = window.setInterval(function () {
-              if (isMuted) return;
-              if (step % 4 === 0) {
-                playBeat();
-              }
-              var f = notes[step % notes.length];
-              playChirp(f * 1.4, 0.14, "sine");
-              step += 1;
-            }, 300);
-          }
-
-          function toggleMute() {
-            isMuted = !isMuted;
-            if (window.speechSynthesis) {
-              if (isMuted) window.speechSynthesis.cancel();
-            }
-            return !isMuted;
-          }
-
-          return {
-            init: getContext,
-            playChirp: playChirp,
-            playFanfare: playFanfare,
-            startBgm: startBgm,
-            toggleMute: toggleMute,
-            isMuted: function () { return isMuted; }
-          };
-        })();
-
-        /* -------------------------------------------------------- Voice Synthesizer */
-        var Narrator = (function () {
-          var lastText = "";
-          function speak(text) {
-            if (AudioEngine.isMuted()) return;
-            if (!window.speechSynthesis || text === lastText) return;
-            lastText = text;
-            try {
-              window.speechSynthesis.cancel();
-              var utter = new SpeechSynthesisUtterance(text);
-              utter.rate = 1.05;
-              utter.pitch = 1.1;
-              window.speechSynthesis.speak(utter);
-            } catch (e) {}
-          }
-          return { speak: speak };
-        })();
-
-        /* -------------------------------------------------------- Three.js Scene Setup */
+        // ------------------------------------------------------------- Three.js 3D Studio Setup
         var canvas = document.getElementById("webgl-canvas");
-        var speedlinesCanvas = document.getElementById("speedlines-canvas");
-        var slCtx = speedlinesCanvas.getContext("2d");
-        var scene, camera, renderer, controls;
-        var mascotGroup, vaultGroup, telegramGroup, cliGroup, webmcpGroup, constellationGroup, finaleGroup;
-        var pizzaMesh, toppingsGroup = [];
-        var confettiParticles = [];
-        var energyPackets = [];
-        var toolBadges = [];
-        var isFreeCam = false;
+        var scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x07090e, 0.04);
 
-        function initGraphics() {
-          scene = new THREE.Scene();
-          scene.background = new THREE.Color(0x07090e);
-          scene.fog = new THREE.FogExp2(0x07090e, 0.032);
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2.5, 7.5);
 
-          camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 1000);
-          camera.position.set(0, 3.5, 9.5);
+        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x07090e, 1);
 
-          renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
-          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-          renderer.setSize(window.innerWidth, window.innerHeight);
-          renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.25;
-          renderer.shadowMap.enabled = true;
-          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        var controls = new THREE.OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 25;
+        controls.minDistance = 2;
+        controls.enabled = false; // Director mode by default
 
-          if (typeof THREE.OrbitControls !== "undefined") {
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.08;
-            controls.enabled = false;
-          }
+        // Lighting
+        var ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        scene.add(ambientLight);
 
-          // Dynamic Lights
-          var ambientLight = new THREE.AmbientLight(0x24283b, 2.0);
-          scene.add(ambientLight);
+        var dirLight1 = new THREE.DirectionalLight(0x35d0ba, 1.2);
+        dirLight1.position.set(5, 10, 7);
+        scene.add(dirLight1);
 
-          var sunLight = new THREE.DirectionalLight(0xffffff, 1.4);
-          sunLight.position.set(6, 14, 9);
-          sunLight.castShadow = true;
-          sunLight.shadow.mapSize.width = 2048;
-          sunLight.shadow.mapSize.height = 2048;
-          scene.add(sunLight);
+        var dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.8);
+        dirLight2.position.set(-6, -4, -5);
+        scene.add(dirLight2);
 
-          var cyanLight = new THREE.PointLight(0x35d0ba, 2.8, 32);
-          cyanLight.position.set(0, 4.5, 3);
-          scene.add(cyanLight);
+        var pointLightGold = new THREE.PointLight(0xffbe3b, 1.4, 20);
+        pointLightGold.position.set(0, 3, 2);
+        scene.add(pointLightGold);
 
-          var purpleLight = new THREE.PointLight(0xa855f7, 2.2, 35);
-          purpleLight.position.set(-6, 3.5, -2);
-          scene.add(purpleLight);
+        // Studio Hex Grid Floor
+        var grid = new THREE.GridHelper(40, 40, 0x35d0ba, 0x161e2e);
+        grid.position.y = -1.2;
+        scene.add(grid);
 
-          var goldLight = new THREE.PointLight(0xffbe3b, 2.0, 32);
-          goldLight.position.set(6, 3.5, -2);
-          scene.add(goldLight);
+        // ------------------------------------------------------------- Central Walrus Core (Octahedron & Gyro Rings)
+        var coreGroup = new THREE.Group();
+        coreGroup.position.set(0, 1.5, -2);
+        scene.add(coreGroup);
 
-          // Floor Arena with Cybernetic Radial Rings
-          var floorGeo = new THREE.PlaneGeometry(80, 80);
-          var floorMat = new THREE.MeshStandardMaterial({
-            color: 0x090c14,
-            roughness: 0.8,
-            metalness: 0.2
-          });
-          var floorMesh = new THREE.Mesh(floorGeo, floorMat);
-          floorMesh.rotation.x = -Math.PI / 2;
-          floorMesh.position.y = -0.5;
-          floorMesh.receiveShadow = true;
-          scene.add(floorMesh);
+        var octGeo = new THREE.OctahedronGeometry(1.2, 0);
+        var octMat = new THREE.MeshStandardMaterial({
+          color: 0x35d0ba,
+          emissive: 0x0f5044,
+          roughness: 0.2,
+          metalness: 0.8,
+          wireframe: true
+        });
+        var octMesh = new THREE.Mesh(octGeo, octMat);
+        coreGroup.add(octMesh);
 
-          var gridHelper = new THREE.GridHelper(64, 64, 0x35d0ba, 0x151a28);
-          gridHelper.position.y = -0.49;
-          scene.add(gridHelper);
+        var ring1Geo = new THREE.TorusGeometry(1.8, 0.03, 16, 64);
+        var ring1Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+        var ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+        coreGroup.add(ring1);
 
-          buildMascot();
-          buildVaultSet();
-          buildTelegramSet();
-          buildCliSet();
-          buildWebMcpSet();
-          buildConstellationSet();
-          buildFinaleSet();
+        var ring2Geo = new THREE.TorusGeometry(2.2, 0.03, 16, 64);
+        var ring2Mat = new THREE.MeshBasicMaterial({ color: 0xffbe3b });
+        var ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+        ring2.rotation.x = Math.PI / 2;
+        coreGroup.add(ring2);
 
-          window.addEventListener("resize", onWindowResize);
-          onWindowResize();
+        // Cryptographic Data Particles
+        var particleCount = 140;
+        var pGeo = new THREE.BufferGeometry();
+        var pPositions = new Float32Array(particleCount * 3);
+        for (var i = 0; i < particleCount; i++) {
+          pPositions[i * 3] = (Math.random() - 0.5) * 16;
+          pPositions[i * 3 + 1] = Math.random() * 8 - 1;
+          pPositions[i * 3 + 2] = (Math.random() - 0.5) * 16;
         }
+        pGeo.setAttribute("position", new THREE.BufferAttribute(pPositions, 3));
+        var pMat = new THREE.PointsMaterial({ color: 0x35d0ba, size: 0.07, transparent: true, opacity: 0.6 });
+        var particleSystem = new THREE.Points(pGeo, pMat);
+        scene.add(particleSystem);
 
-        function onWindowResize() {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
+        // ------------------------------------------------------------- 3D Articulated Mascot "Cheta"
+        var mascotGroup = new THREE.Group();
+        mascotGroup.position.set(3.4, 0.6, 2.5);
+        scene.add(mascotGroup);
 
-          speedlinesCanvas.width = window.innerWidth;
-          speedlinesCanvas.height = window.innerHeight;
-        }
+        // Head
+        var headGeo = new THREE.BoxGeometry(0.7, 0.6, 0.6);
+        var headMat = new THREE.MeshStandardMaterial({ color: 0x1a2638, roughness: 0.3, metalness: 0.6 });
+        var mascotHead = new THREE.Mesh(headGeo, headMat);
+        mascotGroup.add(mascotHead);
 
-        /* -------------------------------------------------------- Mascot: Cheta (Articulated Cartoon Robot) */
-        function buildMascot() {
-          mascotGroup = new THREE.Group();
-          mascotGroup.position.set(0, 1.6, 0);
+        // Glowing Visor Eyes
+        var visorGeo = new THREE.BoxGeometry(0.55, 0.22, 0.08);
+        var visorMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
+        var mascotVisor = new THREE.Mesh(visorGeo, visorMat);
+        mascotVisor.position.set(0, 0.05, 0.31);
+        mascotHead.add(mascotVisor);
 
-          var toonSkinMat = new THREE.MeshToonMaterial({ color: 0x161a26, emissive: 0x091018 });
-          var accentMat = new THREE.MeshToonMaterial({ color: 0x35d0ba });
-          var goldMat = new THREE.MeshToonMaterial({ color: 0xffbe3b });
+        // Dual Antennae
+        var antGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.3);
+        var antMat = new THREE.MeshStandardMaterial({ color: 0xffbe3b });
+        var ant1 = new THREE.Mesh(antGeo, antMat);
+        ant1.position.set(-0.25, 0.42, 0);
+        ant1.rotation.z = 0.2;
+        mascotHead.add(ant1);
 
-          // Head (Stylized rounded robot head)
-          var headGeo = new THREE.SphereGeometry(0.78, 32, 24);
-          headGeo.scale(1.12, 0.96, 1.05);
-          var headMesh = new THREE.Mesh(headGeo, toonSkinMat);
-          headMesh.castShadow = true;
-          mascotGroup.add(headMesh);
-          mascotGroup.headMesh = headMesh;
+        var ant2 = new THREE.Mesh(antGeo, antMat);
+        ant2.position.set(0.25, 0.42, 0);
+        ant2.rotation.z = -0.2;
+        mascotHead.add(ant2);
 
-          // Holographic Visor
-          var visorGeo = new THREE.BoxGeometry(1.0, 0.35, 0.5);
-          var visorMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
-          var visorMesh = new THREE.Mesh(visorGeo, visorMat);
-          visorMesh.position.set(0, 0.06, 0.62);
-          mascotGroup.add(visorMesh);
+        // Floating Hands
+        var handGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        var handMat = new THREE.MeshStandardMaterial({ color: 0x35d0ba, metalness: 0.5 });
+        var leftHand = new THREE.Mesh(handGeo, handMat);
+        leftHand.position.set(-0.55, -0.2, 0.2);
+        mascotGroup.add(leftHand);
 
-          // Animated Cartoon Pupils
-          var eyeGeo = new THREE.PlaneGeometry(0.2, 0.2);
-          var eyeMat = new THREE.MeshBasicMaterial({ color: 0x07090e });
-          var leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-          leftEye.position.set(-0.26, 0.06, 0.88);
-          var rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-          rightEye.position.set(0.26, 0.06, 0.88);
-          mascotGroup.add(leftEye);
-          mascotGroup.add(rightEye);
-          mascotGroup.leftEye = leftEye;
-          mascotGroup.rightEye = rightEye;
+        var rightHand = new THREE.Mesh(handGeo, handMat);
+        rightHand.position.set(0.55, -0.2, 0.2);
+        mascotGroup.add(rightHand);
 
-          // Cute Spring Antennae
-          var earGeo = new THREE.ConeGeometry(0.18, 0.48, 16);
-          var leftEar = new THREE.Mesh(earGeo, accentMat);
-          leftEar.position.set(-0.8, 0.72, 0);
-          leftEar.rotation.z = 0.55;
-          var rightEar = new THREE.Mesh(earGeo, accentMat);
-          rightEar.position.set(0.8, 0.72, 0);
-          rightEar.rotation.z = -0.55;
-          mascotGroup.add(leftEar);
-          mascotGroup.add(rightEar);
-          mascotGroup.leftEar = leftEar;
-          mascotGroup.rightEar = rightEar;
-
-          // Glowing Antenna Orbs
-          var orbGeo = new THREE.SphereGeometry(0.1, 16, 12);
-          var orbMat = new THREE.MeshBasicMaterial({ color: 0xffbe3b });
-          var leftOrb = new THREE.Mesh(orbGeo, orbMat);
-          leftOrb.position.set(-1.0, 0.95, 0);
-          var rightOrb = new THREE.Mesh(orbGeo, orbMat);
-          rightOrb.position.set(1.0, 0.95, 0);
-          mascotGroup.add(leftOrb);
-          mascotGroup.add(rightOrb);
-
-          // Torso with Glass Chamber
-          var bodyGeo = new THREE.CylinderGeometry(0.38, 0.54, 0.72, 16);
-          var bodyMesh = new THREE.Mesh(bodyGeo, toonSkinMat);
-          bodyMesh.position.set(0, -0.84, 0);
-          bodyMesh.castShadow = true;
-          mascotGroup.add(bodyMesh);
-
-          // Floating Walrus Octahedral Crystal Core
-          var coreGeo = new THREE.OctahedronGeometry(0.24, 0);
-          var coreMat = new THREE.MeshStandardMaterial({
-            color: 0x35d0ba,
-            emissive: 0x35d0ba,
-            emissiveIntensity: 0.8,
-            wireframe: true
-          });
-          var coreMesh = new THREE.Mesh(coreGeo, coreMat);
-          coreMesh.position.set(0, -0.8, 0.35);
-          mascotGroup.add(coreMesh);
-          mascotGroup.coreMesh = coreMesh;
-
-          // Gyro Memory Rings
-          var ringGeo = new THREE.TorusGeometry(1.35, 0.024, 8, 64);
-          var ringMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba, transparent: true, opacity: 0.75 });
-          var ringMesh = new THREE.Mesh(ringGeo, ringMat);
-          ringMesh.rotation.x = Math.PI / 2.6;
-          mascotGroup.add(ringMesh);
-          mascotGroup.ringMesh = ringMesh;
-
-          // Floating Hands with Gesture Support
-          var handGeo = new THREE.SphereGeometry(0.18, 16, 12);
-          var leftHand = new THREE.Mesh(handGeo, accentMat);
-          leftHand.position.set(-0.92, -0.72, 0.25);
-          var rightHand = new THREE.Mesh(handGeo, accentMat);
-          rightHand.position.set(0.92, -0.72, 0.25);
-          mascotGroup.add(leftHand);
-          mascotGroup.add(rightHand);
-          mascotGroup.leftHand = leftHand;
-          mascotGroup.rightHand = rightHand;
-
-          // Jetpack Thruster Particles
-          var thrusterGeo = new THREE.ConeGeometry(0.14, 0.35, 12);
-          var thrusterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-          var thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
-          thruster.position.set(0, -1.25, -0.2);
-          thruster.rotation.x = Math.PI;
-          mascotGroup.add(thruster);
-          mascotGroup.thruster = thruster;
-
-          scene.add(mascotGroup);
-        }
-
-        /* -------------------------------------------------------- Set 1: Walrus Quantum Memory Vault */
-        function buildVaultSet() {
-          vaultGroup = new THREE.Group();
-          vaultGroup.position.set(0, 0, -3.2);
-
-          // Monolithic Hexagonal Data Pillars
-          var pillarGeo = new THREE.CylinderGeometry(0.48, 0.6, 5.0, 6);
-          var pillarMat = new THREE.MeshStandardMaterial({
-            color: 0x121624,
-            metalness: 0.85,
-            roughness: 0.25,
-            emissive: 0x092b2e,
-            emissiveIntensity: 0.3
-          });
-
-          for (var i = -4; i <= 4; i += 2) {
-            var pillar = new THREE.Mesh(pillarGeo, pillarMat);
-            pillar.position.set(i * 1.9, 2.0, -3.0 - Math.abs(i) * 0.4);
-            pillar.castShadow = true;
-            pillar.receiveShadow = true;
-            vaultGroup.add(pillar);
-
-            // Floating Cryptographic Data Blobs
-            var blobGeo = new THREE.DodecahedronGeometry(0.28, 0);
-            var blobMat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0x35d0ba : 0xffbe3b });
-            var blob = new THREE.Mesh(blobGeo, blobMat);
-            blob.position.set(i * 1.9, 4.8, -3.0 - Math.abs(i) * 0.4);
-            vaultGroup.add(blob);
-          }
-
-          // 13 Native Agent Tools: Orbiting Holographic Badges
-          var toolNames = [
-            "calculate", "weather", "wikipedia", "reminder", "calendar",
-            "web_search", "web_crawler", "summarize", "find_text", "highlight",
-            "extract_links", "scroll_to", "counterfactual"
-          ];
-
-          toolNames.forEach(function (name, idx) {
-            var badgeGeo = new THREE.BoxGeometry(0.6, 0.6, 0.12);
-            var badgeMat = new THREE.MeshStandardMaterial({
-              color: 0x171d2b,
-              emissive: idx % 2 === 0 ? 0x35d0ba : 0xffbe3b,
-              emissiveIntensity: 0.45,
-              wireframe: true
-            });
-            var badge = new THREE.Mesh(badgeGeo, badgeMat);
-            var theta = (idx / toolNames.length) * Math.PI * 2;
-            badge.position.set(Math.cos(theta) * 3.8, 2.4 + Math.sin(theta) * 0.6, Math.sin(theta) * 2.8);
-            badge.baseTheta = theta;
-            vaultGroup.add(badge);
-            toolBadges.push(badge);
-          });
-
-          scene.add(vaultGroup);
-        }
-
-        /* -------------------------------------------------------- Set 2: Telegram Smartphone Studio */
-        function buildTelegramSet() {
-          telegramGroup = new THREE.Group();
-          telegramGroup.position.set(-4.8, 0, 0);
-
-          // 3D Cartoon Smartphone Body
-          var phoneGeo = new THREE.BoxGeometry(1.8, 3.6, 0.18);
-          var phoneMat = new THREE.MeshStandardMaterial({
-            color: 0x141824,
-            roughness: 0.2,
-            metalness: 0.85
-          });
-          var phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
-          phoneMesh.position.set(0, 2.0, 0);
-          phoneMesh.castShadow = true;
-          telegramGroup.add(phoneMesh);
-
-          // Phone Bezel & Screen
-          var screenGeo = new THREE.PlaneGeometry(1.65, 3.3);
-          var screenMat = new THREE.MeshBasicMaterial({ color: 0x0c0f18 });
-          var screenMesh = new THREE.Mesh(screenGeo, screenMat);
-          screenMesh.position.set(0, 2.0, 0.1);
-          telegramGroup.add(screenMesh);
-
-          // Animated Telegram Chat Bubbles
-          var bubbleGeo = new THREE.BoxGeometry(1.1, 0.32, 0.06);
-          var userMat = new THREE.MeshBasicMaterial({ color: 0x1e3a5f });
-          var botMat = new THREE.MeshBasicMaterial({ color: 0x134e48 });
-
-          var b1 = new THREE.Mesh(bubbleGeo, userMat);
-          b1.position.set(0.2, 3.0, 0.15);
-          var b2 = new THREE.Mesh(bubbleGeo, botMat);
-          b2.position.set(-0.2, 2.3, 0.15);
-          var b3 = new THREE.Mesh(bubbleGeo, userMat);
-          b3.position.set(0.2, 1.6, 0.15);
-          var b4 = new THREE.Mesh(bubbleGeo, botMat);
-          b4.position.set(-0.2, 0.9, 0.15);
-
-          telegramGroup.add(b1);
-          telegramGroup.add(b2);
-          telegramGroup.add(b3);
-          telegramGroup.add(b4);
-
-          // Floating 3D Voice Note Waveform Ribbon
-          var waveGeo = new THREE.TorusGeometry(0.75, 0.04, 12, 48);
-          var waveMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
-          var waveMesh = new THREE.Mesh(waveGeo, waveMat);
-          waveMesh.position.set(0, 4.3, 0.2);
-          telegramGroup.add(waveMesh);
-          telegramGroup.waveMesh = waveMesh;
-
-          scene.add(telegramGroup);
-        }
-
-        /* -------------------------------------------------------- Set 3: Hacker CLI Terminal */
-        function buildCliSet() {
-          cliGroup = new THREE.Group();
-          cliGroup.position.set(4.8, 0, 0);
-
-          // Cyberpunk Curved CRT Monitor
-          var monGeo = new THREE.BoxGeometry(2.7, 2.2, 1.4);
-          var monMat = new THREE.MeshStandardMaterial({ color: 0x131622, roughness: 0.5 });
-          var monitor = new THREE.Mesh(monGeo, monMat);
-          monitor.position.set(0, 2.2, 0);
-          monitor.castShadow = true;
-          cliGroup.add(monitor);
-
-          // Glowing Green Phosphor Screen
-          var crtGeo = new THREE.PlaneGeometry(2.25, 1.8);
-          var crtMat = new THREE.MeshBasicMaterial({ color: 0x04130f });
-          var crtScreen = new THREE.Mesh(crtGeo, crtMat);
-          crtScreen.position.set(0, 2.2, 0.71);
-          cliGroup.add(crtScreen);
-
-          // Dynamic Code Stream Lines
-          for (var i = 0; i < 6; i++) {
-            var lineGeo = new THREE.PlaneGeometry(1.6 - i * 0.18, 0.09);
-            var lineMat = new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffbe3b : 0x35d0ba });
-            var line = new THREE.Mesh(lineGeo, lineMat);
-            line.position.set(-0.25 + (i % 2) * 0.12, 2.7 - i * 0.26, 0.72);
-            cliGroup.add(line);
-          }
-
-          // Mechanical Keyboard with Individual 3D Keys
-          var kbBaseGeo = new THREE.BoxGeometry(2.5, 0.14, 0.9);
-          var kbBase = new THREE.Mesh(kbBaseGeo, monMat);
-          kbBase.position.set(0, 0.9, 0.95);
-          kbBase.rotation.x = 0.2;
-          cliGroup.add(kbBase);
-
-          scene.add(cliGroup);
-        }
-
-        /* -------------------------------------------------------- Set 4: WebMCP Browser & zaMaker Studio */
-        function buildWebMcpSet() {
-          webmcpGroup = new THREE.Group();
-          webmcpGroup.position.set(0, 0, 0);
-
-          // Floating Holographic Browser Frame
-          var winGeo = new THREE.BoxGeometry(4.8, 3.0, 0.14);
-          var winMat = new THREE.MeshStandardMaterial({
-            color: 0x111520,
-            metalness: 0.7,
-            roughness: 0.25
-          });
-          var browserWin = new THREE.Mesh(winGeo, winMat);
-          browserWin.position.set(0, 2.8, -2.2);
-          browserWin.castShadow = true;
-          webmcpGroup.add(browserWin);
-
-          // Browser Top Bar with 3 Circles
-          for (var c = -1; c <= 1; c++) {
-            var dotGeo = new THREE.CircleGeometry(0.06, 16);
-            var dotColor = c === -1 ? 0xf43f5e : c === 0 ? 0xffbe3b : 0x10b981;
-            var dotMesh = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: dotColor }));
-            dotMesh.position.set(-2.0 + (c + 1) * 0.18, 4.05, -2.12);
-            webmcpGroup.add(dotMesh);
-          }
-
-          // WebMCP zaMaker Interactive 3D Pizza Canvas
-          var pizzaGeo = new THREE.CylinderGeometry(1.35, 1.4, 0.14, 32);
-          var crustMat = new THREE.MeshStandardMaterial({ color: 0xedb44e, roughness: 0.85 });
-          pizzaMesh = new THREE.Mesh(pizzaGeo, crustMat);
-          pizzaMesh.position.set(0, 2.0, -1.2);
-          pizzaMesh.rotation.x = Math.PI / 3.8;
-          pizzaMesh.castShadow = true;
-          webmcpGroup.add(pizzaMesh);
-
-          // Rich Tomato Sauce Layer
-          var sauceGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.05, 32);
-          var sauceMat = new THREE.MeshBasicMaterial({ color: 0xd32f2f });
-          var sauceMesh = new THREE.Mesh(sauceGeo, sauceMat);
-          sauceMesh.position.set(0, 0.07, 0);
-          pizzaMesh.add(sauceMesh);
-
-          // Bouncy Cartoon Toppings (Pepperoni, Basil, Mushrooms, Olives)
-          for (var t = 0; t < 18; t++) {
-            var topGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16);
-            var topColors = [0xb71c1c, 0x2e7d32, 0x8d6e63, 0x212121];
-            var topMat = new THREE.MeshStandardMaterial({ color: topColors[t % topColors.length] });
-            var topMesh = new THREE.Mesh(topGeo, topMat);
-            var rad = Math.random() * 0.95;
-            var angle = Math.random() * Math.PI * 2;
-            topMesh.position.set(Math.cos(angle) * rad, 0.12, Math.sin(angle) * rad);
-            topMesh.baseY = 0.12;
-            topMesh.dropDelay = t * 0.1;
-            pizzaMesh.add(topMesh);
-            toppingsGroup.push(topMesh);
-          }
-
-          scene.add(webmcpGroup);
-        }
-
-        /* -------------------------------------------------------- Set 5: Constellation (Unified Memory) */
-        function buildConstellationSet() {
-          constellationGroup = new THREE.Group();
-          constellationGroup.position.set(0, 2.2, 0);
-
-          // Massive Glowing Walrus Protocol Memory Core
-          var coreGeo = new THREE.SphereGeometry(1.25, 32, 24);
-          var coreMat = new THREE.MeshStandardMaterial({
-            color: 0x132235,
-            emissive: 0x35d0ba,
-            emissiveIntensity: 0.6,
-            wireframe: true
-          });
-          var coreGlobe = new THREE.Mesh(coreGeo, coreMat);
-          constellationGroup.add(coreGlobe);
-          constellationGroup.coreGlobe = coreGlobe;
-
-          // 4 Orbiting Device Nodes
-          var satColors = [0x38bdf8, 0x35d0ba, 0xa855f7, 0xffbe3b];
-          constellationGroup.satellites = [];
-
-          for (var s = 0; s < 4; s++) {
-            var satGeo = new THREE.IcosahedronGeometry(0.42, 1);
-            var satMat = new THREE.MeshStandardMaterial({
-              color: satColors[s],
-              emissive: satColors[s],
-              emissiveIntensity: 0.4
-            });
-            var sat = new THREE.Mesh(satGeo, satMat);
-            sat.orbitAngle = (s / 4) * Math.PI * 2;
-            sat.orbitRadius = 4.2;
-            sat.position.set(Math.cos(sat.orbitAngle) * sat.orbitRadius, 0, Math.sin(sat.orbitAngle) * sat.orbitRadius);
-            constellationGroup.add(sat);
-            constellationGroup.satellites.push(sat);
-
-            // Energy Packets Pulsing to Core
-            var packetGeo = new THREE.SphereGeometry(0.08, 12, 8);
-            var packetMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            var packet = new THREE.Mesh(packetGeo, packetMat);
-            packet.satIndex = s;
-            packet.progress = Math.random();
-            constellationGroup.add(packet);
-            energyPackets.push(packet);
-          }
-
-          scene.add(constellationGroup);
-        }
-
-        /* -------------------------------------------------------- Set 6: Grand Finale & Hackathon Winner */
-        function buildFinaleSet() {
-          finaleGroup = new THREE.Group();
-          finaleGroup.position.set(0, 0, 0);
-
-          // Golden Championship Trophy
-          var cupGeo = new THREE.CylinderGeometry(0.75, 0.28, 1.1, 32);
-          var goldMat = new THREE.MeshStandardMaterial({
-            color: 0xffd54f,
-            metalness: 0.95,
-            roughness: 0.1
-          });
-          var trophyCup = new THREE.Mesh(cupGeo, goldMat);
-          trophyCup.position.set(0, 4.0, 0);
-          trophyCup.castShadow = true;
-          finaleGroup.add(trophyCup);
-
-          var baseGeo = new THREE.CylinderGeometry(0.55, 0.7, 0.5, 32);
-          var baseMesh = new THREE.Mesh(baseGeo, goldMat);
-          baseMesh.position.set(0, 3.3, 0);
-          baseMesh.castShadow = true;
-          finaleGroup.add(baseMesh);
-
-          // Confetti Particle Vortex (240 Colorful Ribbons)
-          for (var p = 0; p < 240; p++) {
-            var pGeo = new THREE.PlaneGeometry(0.1, 0.1);
-            var colors = [0x35d0ba, 0xffbe3b, 0xa855f7, 0xf43f5e, 0x38bdf8];
-            var pMat = new THREE.MeshBasicMaterial({ color: colors[p % colors.length], side: THREE.DoubleSide });
-            var particle = new THREE.Mesh(pGeo, pMat);
-            particle.position.set((Math.random() - 0.5) * 14, Math.random() * 9 + 1, (Math.random() - 0.5) * 12);
-            particle.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-            particle.velocityY = Math.random() * 0.04 + 0.015;
-            particle.rotSpeed = Math.random() * 0.06;
-            finaleGroup.add(particle);
-            confettiParticles.push(particle);
-          }
-
-          scene.add(finaleGroup);
-        }
-
-        /* -------------------------------------------------------- Dynamic Motion Director */
-        var currentTime = 0;
+        // ------------------------------------------------------------- State & Timeline Management
         var isPlaying = true;
-        var playSpeed = 1.0;
-        var currentActIndex = 0;
+        var playbackSpeed = 1.0;
+        var currentTime = 0;
+        var lastTimestamp = performance.now();
+        var currentSurfaceIndex = 0;
+        var isFreeOrbit = false;
 
-        function updateActState() {
-          var act = ACTS[currentActIndex];
-          for (var a = 0; a < ACTS.length; a++) {
-            if (currentTime >= ACTS[a].startTime && currentTime < ACTS[a].endTime) {
-              if (currentActIndex !== a) {
-                currentActIndex = a;
-                act = ACTS[a];
-                onActChanged(act);
-              }
-              break;
-            }
-          }
+        // UI DOM Elements
+        var timeDisplay = document.getElementById("time-display");
+        var timelineFill = document.getElementById("timeline-fill");
+        var timelineHandle = document.getElementById("timeline-handle");
+        var timelineTrack = document.getElementById("timeline-track");
+        var narrationText = document.getElementById("narration-text");
+        var surfaceButtons = document.querySelectorAll(".surface-tab-btn");
+        var surfaceViews = document.querySelectorAll(".surface-viewport");
+        var btnPlayPause = document.getElementById("btn-play-pause");
+        var btnRestart = document.getElementById("btn-restart");
+        var btnSpeed = document.getElementById("btn-speed");
+        var btnCameraMode = document.getElementById("btn-camera-mode");
+        var btnSoundToggle = document.getElementById("btn-sound-toggle");
+        var soundLabel = document.getElementById("sound-label");
 
-          // Camera Dolly & Motion Transitions with Easing
-          if (!isFreeCam) {
-            camera.position.x += (act.camPos.x - camera.position.x) * 0.045;
-            camera.position.y += (act.camPos.y - camera.position.y) * 0.045;
-            camera.position.z += (act.camPos.z - camera.position.z) * 0.045;
-            camera.lookAt(act.camTarget.x, act.camTarget.y, act.camTarget.z);
-          }
-
-          // Active Sets Visibility Management
-          vaultGroup.visible = (act.setFocus === "vault" || act.setFocus === "constellation");
-          telegramGroup.visible = (act.setFocus === "telegram" || act.setFocus === "constellation");
-          cliGroup.visible = (act.setFocus === "cli" || act.setFocus === "constellation");
-          webmcpGroup.visible = (act.setFocus === "webmcp" || act.setFocus === "constellation");
-          constellationGroup.visible = (act.setFocus === "constellation");
-          finaleGroup.visible = (act.setFocus === "finale");
-        }
-
-        function triggerComicCallout(text) {
-          var callout = document.getElementById("comic-callout");
-          callout.textContent = text;
-          callout.classList.remove("show");
-          void callout.offsetWidth; // Force CSS reflow
-          callout.classList.add("show");
-          window.setTimeout(function () {
-            callout.classList.remove("show");
-          }, 3200);
-        }
-
-        function triggerSpeedlines() {
-          speedlinesCanvas.style.opacity = "0.75";
-          window.setTimeout(function () {
-            speedlinesCanvas.style.opacity = "0";
-          }, 600);
-        }
-
-        function drawSpeedlines() {
-          if (speedlinesCanvas.style.opacity === "0") return;
-          slCtx.clearRect(0, 0, speedlinesCanvas.width, speedlinesCanvas.height);
-          var cx = speedlinesCanvas.width / 2;
-          var cy = speedlinesCanvas.height / 2;
-          slCtx.strokeStyle = "rgba(53, 208, 186, 0.4)";
-          slCtx.lineWidth = 2;
-          for (var i = 0; i < 40; i++) {
-            var angle = Math.random() * Math.PI * 2;
-            var r1 = Math.random() * 200 + 150;
-            var r2 = r1 + Math.random() * 300 + 100;
-            slCtx.beginPath();
-            slCtx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
-            slCtx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
-            slCtx.stroke();
-          }
-        }
-
-        function onActChanged(act) {
-          document.getElementById("act-num").textContent = act.num;
-          document.getElementById("act-title").textContent = act.title;
-          document.getElementById("act-desc").textContent = act.desc;
-          document.getElementById("speaker-name").textContent = act.speaker;
-          document.getElementById("dialogue-text").textContent = act.dialogue;
-
-          var pills = document.querySelectorAll(".chapter-pill");
-          pills.forEach(function (pill, idx) {
-            pill.classList.toggle("active", idx === act.id);
-          });
-
-          AudioEngine.playChirp(460 + act.id * 90, 0.28, "triangle");
-          triggerComicCallout(act.callout);
-          triggerSpeedlines();
-
-          if (act.id === 5) {
-            AudioEngine.playFanfare();
-          }
-
-          Narrator.speak(act.dialogue);
-        }
-
+        // Format MM:SS helper
         function formatTime(sec) {
           var m = Math.floor(sec / 60);
           var s = Math.floor(sec % 60);
-          return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+          return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
         }
 
-        function updateTimelineUI() {
-          var frac = Math.min(1, Math.max(0, currentTime / TOTAL_DURATION));
-          var pct = (frac * 100).toFixed(2) + "%";
-          document.getElementById("timeline-progress").style.width = pct;
-          document.getElementById("timeline-handle").style.left = pct;
-          document.getElementById("time-display").textContent =
-            formatTime(currentTime) + " / " + formatTime(TOTAL_DURATION);
+        // Switch Active Surface View
+        function activateSurface(index) {
+          if (index < 0 || index >= SURFACES.length) return;
+          currentSurfaceIndex = index;
+          var surf = SURFACES[index];
+
+          // Update navigation tabs
+          for (var i = 0; i < surfaceButtons.length; i++) {
+            if (i === index) {
+              surfaceButtons[i].classList.add("active");
+            } else {
+              surfaceButtons[i].classList.remove("active");
+            }
+          }
+
+          // Update DOM viewports
+          for (var j = 0; j < surfaceViews.length; j++) {
+            if (surfaceViews[j].id === surf.elementId) {
+              surfaceViews[j].classList.add("active");
+            } else {
+              surfaceViews[j].classList.remove("active");
+            }
+          }
+
+          // Update narration subtitle
+          narrationText.innerHTML = "<strong>" + surf.name + ":</strong> " + surf.narration;
+
+          // Camera Transition in Director mode
+          if (!isFreeOrbit && typeof TWEEN !== "undefined") {
+            new TWEEN.Tween(camera.position)
+              .to(surf.camPos, 1200)
+              .easing(TWEEN.Easing.Cubic.Out)
+              .start();
+
+            new TWEEN.Tween(controls.target)
+              .to(surf.camTarget, 1200)
+              .easing(TWEEN.Easing.Cubic.Out)
+              .start();
+
+            // Mascot repositioning per surface
+            var mascotTargetX = (index % 2 === 0) ? 3.2 : -3.2;
+            new TWEEN.Tween(mascotGroup.position)
+              .to({ x: mascotTargetX, y: 0.6, z: 2.2 }, 1000)
+              .easing(TWEEN.Easing.Quadratic.Out)
+              .start();
+          }
+
+          playChirp(440 + index * 60, "sine", 0.15);
         }
 
-        /* -------------------------------------------------------- Main Animation Loop */
-        var clock = new THREE.Clock();
+        // Attach click listeners to tabs
+        for (var b = 0; b < surfaceButtons.length; b++) {
+          (function (idx) {
+            surfaceButtons[idx].addEventListener("click", function () {
+              currentTime = SURFACES[idx].startTime;
+              activateSurface(idx);
+            });
+          })(b);
+        }
 
-        function animate() {
+        // ------------------------------------------------------------- Continuous Surface Animation Scripting
+        // This function drives the micro-animations inside each surface based on current time
+        function updateSurfaceSimulations(time) {
+          // --- Surface 0: Telegram Bot (0 - 60s) ---
+          if (time >= 0 && time < 60) {
+            var tgRel = time;
+            var tgTyping = document.getElementById("tg-typing");
+            var tgReply1 = document.getElementById("tg-reply-1");
+            var tgReply2 = document.getElementById("tg-reply-2");
+
+            if (tgRel > 4 && tgRel < 9) {
+              tgTyping.style.display = "flex";
+            } else {
+              tgTyping.style.display = "none";
+            }
+
+            if (tgRel >= 9) {
+              tgReply1.style.display = "block";
+            } else {
+              tgReply1.style.display = "none";
+            }
+
+            if (tgRel >= 24) {
+              tgReply2.style.display = "block";
+            } else {
+              tgReply2.style.display = "none";
+            }
+          }
+
+          // --- Surface 1: Linux CLI (60 - 120s) ---
+          if (time >= 60 && time < 120) {
+            var cliRel = time - 60;
+            var termCmd2 = document.getElementById("term-cmd-2");
+            var termCmd3 = document.getElementById("term-cmd-3");
+            var termCmd4 = document.getElementById("term-cmd-4");
+            var termStreamText = document.getElementById("term-stream-text");
+            var termTypedCmd = document.getElementById("term-typed-cmd");
+
+            if (cliRel < 6) {
+              termTypedCmd.textContent = "ranti memory list --recent 3".slice(0, Math.floor(cliRel * 5));
+            } else {
+              termTypedCmd.textContent = "";
+            }
+
+            if (cliRel >= 6) {
+              termCmd2.style.display = "block";
+            } else {
+              termCmd2.style.display = "none";
+            }
+
+            if (cliRel >= 16) {
+              termCmd3.style.display = "block";
+              var fullTokenResponse = "Recalling from Walrus decentralized storage (Blob 0x9f82b1): You build with Solana, Rust, and Python. You are deploying smart contracts to Sui testnet with durable memory verification.";
+              var tokenCount = Math.min(fullTokenResponse.length, Math.floor((cliRel - 16) * 16));
+              termStreamText.textContent = fullTokenResponse.slice(0, tokenCount);
+            } else {
+              termCmd3.style.display = "none";
+            }
+
+            if (cliRel >= 38) {
+              termCmd4.style.display = "block";
+            } else {
+              termCmd4.style.display = "none";
+            }
+          }
+
+          // --- Surface 2: Browser Extension & WebMCP (120 - 185s) ---
+          if (time >= 120 && time < 185) {
+            var extRel = time - 120;
+            var spToolBadge = document.getElementById("sp-tool-badge");
+            var spBotReply = document.getElementById("sp-bot-reply");
+            var spDrawer = document.getElementById("sp-drawer");
+            var pizzaCheese = document.getElementById("pizza-cheese");
+            var pageToolStatus = document.getElementById("page-tool-status");
+
+            if (extRel >= 8) {
+              spToolBadge.style.display = "inline-flex";
+              pageToolStatus.textContent = "[WebMCP] add_topping({'topping': 'pepperoni, mushrooms'}) executed";
+            } else {
+              spToolBadge.style.display = "none";
+              pageToolStatus.textContent = "Awaiting agent tool call...";
+            }
+
+            // Spawn pizza toppings into DOM
+            if (extRel >= 12 && pizzaCheese.children.length === 0) {
+              // Add pepperonis
+              var p1 = document.createElement("div");
+              p1.className = "topping-pep";
+              p1.style.top = "25px"; p1.style.left = "35px";
+              pizzaCheese.appendChild(p1);
+
+              var p2 = document.createElement("div");
+              p2.className = "topping-pep";
+              p2.style.top = "80px"; p2.style.left = "75px";
+              pizzaCheese.appendChild(p2);
+
+              var p3 = document.createElement("div");
+              p3.className = "topping-pep";
+              p3.style.top = "40px"; p3.style.left = "110px";
+              pizzaCheese.appendChild(p3);
+
+              // Add mushrooms
+              var m1 = document.createElement("div");
+              m1.className = "topping-mush";
+              m1.style.top = "110px"; m1.style.left = "30px";
+              pizzaCheese.appendChild(m1);
+
+              var m2 = document.createElement("div");
+              m2.className = "topping-mush";
+              m2.style.top = "115px"; m2.style.left = "110px";
+              pizzaCheese.appendChild(m2);
+
+              playChirp(720, "triangle", 0.2);
+            } else if (extRel < 12 && pizzaCheese.children.length > 0) {
+              pizzaCheese.innerHTML = "";
+            }
+
+            if (extRel >= 14) {
+              spBotReply.style.display = "block";
+            } else {
+              spBotReply.style.display = "none";
+            }
+
+            // Toggle memories drawer
+            if (extRel >= 32) {
+              spDrawer.classList.add("open");
+            } else {
+              spDrawer.classList.remove("open");
+            }
+          }
+
+          // --- Surface 3: Web Portal (185 - 245s) ---
+          if (time >= 185 && time < 245) {
+            var portRel = time - 185;
+            var slashPopup = document.getElementById("slash-popup");
+            var portalUserMsg = document.getElementById("portal-user-msg");
+            var portalBotMsg = document.getElementById("portal-bot-msg");
+            var portalInput = document.getElementById("portal-input");
+
+            if (portRel > 4 && portRel < 14) {
+              slashPopup.style.display = "flex";
+              portalInput.value = "/rem";
+            } else {
+              slashPopup.style.display = "none";
+            }
+
+            if (portRel >= 14) {
+              portalUserMsg.style.display = "block";
+              portalInput.value = "";
+            } else {
+              portalUserMsg.style.display = "none";
+            }
+
+            if (portRel >= 20) {
+              portalBotMsg.style.display = "block";
+            } else {
+              portalBotMsg.style.display = "none";
+            }
+          }
+        }
+
+        // ------------------------------------------------------------- Controls & Scrubbing
+        btnPlayPause.addEventListener("click", function () {
+          isPlaying = !isPlaying;
+          btnPlayPause.textContent = isPlaying ? "Pause" : "Play";
+        });
+
+        btnRestart.addEventListener("click", function () {
+          currentTime = 0;
+          isPlaying = true;
+          btnPlayPause.textContent = "Pause";
+          activateSurface(0);
+        });
+
+        btnSpeed.addEventListener("click", function () {
+          if (playbackSpeed === 1.0) playbackSpeed = 1.5;
+          else if (playbackSpeed === 1.5) playbackSpeed = 2.0;
+          else playbackSpeed = 1.0;
+          btnSpeed.textContent = playbackSpeed.toFixed(1) + "x";
+        });
+
+        btnCameraMode.addEventListener("click", function () {
+          isFreeOrbit = !isFreeOrbit;
+          controls.enabled = isFreeOrbit;
+          btnCameraMode.querySelector("span").textContent = isFreeOrbit ? "Cam: Free 3D Orbit" : "Cam: Auto Director";
+          if (!isFreeOrbit) {
+            activateSurface(currentSurfaceIndex);
+          }
+        });
+
+        btnSoundToggle.addEventListener("click", function () {
+          soundEnabled = !soundEnabled;
+          soundLabel.textContent = soundEnabled ? "Sound: ON" : "Sound: Muted";
+          if (soundEnabled) playChirp(600, "sine", 0.1);
+        });
+
+        // Timeline Scrubbing
+        timelineTrack.addEventListener("click", function (e) {
+          var rect = timelineTrack.getBoundingClientRect();
+          var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          currentTime = ratio * TOTAL_DURATION;
+
+          // Determine corresponding surface
+          for (var k = 0; k < SURFACES.length; k++) {
+            if (currentTime >= SURFACES[k].startTime && currentTime < SURFACES[k].endTime) {
+              activateSurface(k);
+              break;
+            }
+          }
+        });
+
+        // Keyboard Shortcuts
+        window.addEventListener("keydown", function (e) {
+          if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+          if (e.code === "Space") {
+            e.preventDefault();
+            btnPlayPause.click();
+          } else if (e.key >= "1" && e.key <= "5") {
+            var idx = parseInt(e.key, 10) - 1;
+            currentTime = SURFACES[idx].startTime;
+            activateSurface(idx);
+          } else if (e.code === "KeyM") {
+            btnSoundToggle.click();
+          } else if (e.code === "KeyR") {
+            btnRestart.click();
+          }
+        });
+
+        // ------------------------------------------------------------- Direct Video Recording (WebM Export)
+        var btnRecord = document.getElementById("btn-record-video");
+        var recordLabel = document.getElementById("record-label");
+        var mediaRecorder = null;
+        var recordedChunks = [];
+        var isRecording = false;
+
+        btnRecord.addEventListener("click", function () {
+          if (!isRecording) {
+            startVideoRecording();
+          } else {
+            stopVideoRecording();
+          }
+        });
+
+        function startVideoRecording() {
+          try {
+            var stream = canvas.captureStream(30);
+            recordedChunks = [];
+            var mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+            mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+
+            mediaRecorder.ondataavailable = function (e) {
+              if (e.data && e.data.size > 0) {
+                recordedChunks.push(e.data);
+              }
+            };
+
+            mediaRecorder.onstop = function () {
+              var blob = new Blob(recordedChunks, { type: "video/webm" });
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement("a");
+              a.href = url;
+              a.download = "cheta-multi-surface-showcase.webm";
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(function () {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }, 100);
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            btnRecord.classList.add("recording");
+            recordLabel.textContent = "&#9632; Stop & Save";
+          } catch (err) {
+            alert("Video recording could not start: " + err.message);
+          }
+        }
+
+        function stopVideoRecording() {
+          if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            isRecording = false;
+            btnRecord.classList.remove("recording");
+            recordLabel.textContent = "&#9679; Record Video";
+          }
+        }
+
+        // ------------------------------------------------------------- Animation & Render Loop
+        activateSurface(0);
+
+        function animate(timestamp) {
           requestAnimationFrame(animate);
 
-          var delta = clock.getDelta();
-          if (window.TWEEN) TWEEN.update();
+          var deltaSec = (timestamp - lastTimestamp) / 1000;
+          lastTimestamp = timestamp;
+
+          if (typeof TWEEN !== "undefined") {
+            TWEEN.update();
+          }
 
           if (isPlaying) {
-            currentTime += delta * playSpeed;
+            currentTime += deltaSec * playbackSpeed;
             if (currentTime >= TOTAL_DURATION) {
-              currentTime = TOTAL_DURATION;
-              isPlaying = false;
-              document.getElementById("play-pause-icon").textContent = "Replay";
-            }
-            updateActState();
-            updateTimelineUI();
-          }
-
-          drawSpeedlines();
-
-          var t = clock.getElapsedTime();
-
-          // Mascot Animations
-          if (mascotGroup) {
-            mascotGroup.position.y = 1.6 + Math.sin(t * 2.4) * 0.14;
-            mascotGroup.rotation.y = Math.sin(t * 0.9) * 0.22;
-
-            if (mascotGroup.coreMesh) {
-              mascotGroup.coreMesh.rotation.y += 0.035;
-              mascotGroup.coreMesh.rotation.x += 0.02;
-            }
-            if (mascotGroup.ringMesh) {
-              mascotGroup.ringMesh.rotation.z += 0.018;
+              currentTime = 0; // Seamless continuous loop
             }
 
-            // Blinking
-            if (mascotGroup.leftEye && mascotGroup.rightEye) {
-              var isBlinking = Math.sin(t * 4.2) > 0.95;
-              var scaleY = isBlinking ? 0.04 : 0.2;
-              mascotGroup.leftEye.scale.y = scaleY;
-              mascotGroup.rightEye.scale.y = scaleY;
-            }
-
-            // Ear Antenna Spring Oscillations
-            if (mascotGroup.leftEar && mascotGroup.rightEar) {
-              mascotGroup.leftEar.rotation.z = 0.55 + Math.sin(t * 5.0) * 0.08;
-              mascotGroup.rightEar.rotation.z = -0.55 - Math.sin(t * 5.0) * 0.08;
-            }
-
-            // Victory Dance in Finale
-            if (currentActIndex === 5 && mascotGroup.leftHand && mascotGroup.rightHand) {
-              mascotGroup.leftHand.position.y = -0.3 + Math.sin(t * 9) * 0.35;
-              mascotGroup.rightHand.position.y = -0.3 + Math.cos(t * 9) * 0.35;
-              mascotGroup.rotation.x = Math.sin(t * 6) * 0.15;
-            }
-          }
-
-          // Tool Badges Orbiting
-          if (toolBadges.length) {
-            toolBadges.forEach(function (badge, i) {
-              var angle = badge.baseTheta + t * 0.3;
-              badge.position.x = Math.cos(angle) * 3.8;
-              badge.position.z = Math.sin(angle) * 2.8;
-              badge.rotation.y = angle;
-            });
-          }
-
-          // WebMCP Pizza Bouncy Toppings
-          if (webmcpGroup && toppingsGroup.length) {
-            toppingsGroup.forEach(function (top, idx) {
-              top.position.y = top.baseY + Math.abs(Math.sin(t * 3.2 + idx * 0.5)) * 0.18;
-            });
-          }
-
-          // Constellation Orbiting & Energy Packets
-          if (constellationGroup && constellationGroup.satellites) {
-            var rotSpeed = t * 0.55;
-            constellationGroup.satellites.forEach(function (sat) {
-              var angle = sat.orbitAngle + rotSpeed;
-              sat.position.x = Math.cos(angle) * sat.orbitRadius;
-              sat.position.z = Math.sin(angle) * sat.orbitRadius;
-            });
-
-            if (constellationGroup.coreGlobe) {
-              constellationGroup.coreGlobe.rotation.y += 0.01;
-            }
-
-            energyPackets.forEach(function (packet) {
-              packet.progress = (packet.progress + 0.018) % 1;
-              var sat = constellationGroup.satellites[packet.satIndex];
-              packet.position.x = sat.position.x * (1 - packet.progress);
-              packet.position.y = sat.position.y * (1 - packet.progress);
-              packet.position.z = sat.position.z * (1 - packet.progress);
-            });
-          }
-
-          // Finale Confetti Dynamics
-          if (finaleGroup.visible && confettiParticles.length) {
-            confettiParticles.forEach(function (p) {
-              p.position.y -= p.velocityY;
-              p.rotation.x += p.rotSpeed;
-              p.rotation.y += p.rotSpeed;
-              if (p.position.y < -0.4) {
-                p.position.y = 9 + Math.random() * 2;
+            // Check surface boundary and transition
+            var activeIdx = 0;
+            for (var i = 0; i < SURFACES.length; i++) {
+              if (currentTime >= SURFACES[i].startTime && currentTime < SURFACES[i].endTime) {
+                activeIdx = i;
+                break;
               }
-            });
+            }
+
+            if (activeIdx !== currentSurfaceIndex) {
+              activateSurface(activeIdx);
+            }
+
+            // Update surface micro-animations
+            updateSurfaceSimulations(currentTime);
+
+            // Update Progress HUD
+            var pct = (currentTime / TOTAL_DURATION) * 100;
+            timelineFill.style.width = pct + "%";
+            timelineHandle.style.left = pct + "%";
+            timeDisplay.textContent = formatTime(currentTime) + " / " + formatTime(TOTAL_DURATION);
           }
 
-          if (controls && isFreeCam) {
+          // 3D Motion Updates
+          var t = timestamp * 0.001;
+
+          // Walrus Core Rotation
+          if (octMesh) {
+            octMesh.rotation.x = t * 0.4;
+            octMesh.rotation.y = t * 0.6;
+          }
+          if (ring1) ring1.rotation.z = -t * 0.5;
+          if (ring2) ring2.rotation.y = t * 0.35;
+
+          // Particle Field subtle drift
+          if (particleSystem) {
+            particleSystem.rotation.y = t * 0.05;
+          }
+
+          // Cheta Mascot Lifelike Hover & Expressions
+          if (mascotGroup) {
+            mascotGroup.position.y = 0.6 + Math.sin(t * 2.5) * 0.12;
+            mascotHead.rotation.y = Math.sin(t * 1.5) * 0.15;
+            mascotHead.rotation.x = Math.sin(t * 2.0) * 0.08;
+
+            // Mascot hand typing & gesturing
+            leftHand.position.y = -0.2 + Math.sin(t * 4.0) * 0.05;
+            rightHand.position.y = -0.2 + Math.cos(t * 4.0) * 0.05;
+
+            // Cartoon eye blink
+            var blinkCycle = t % 4;
+            if (blinkCycle > 3.85) {
+              mascotVisor.scale.y = 0.1;
+            } else {
+              mascotVisor.scale.y = 1.0;
+            }
+          }
+
+          if (controls && controls.enabled) {
             controls.update();
           }
 
           renderer.render(scene, camera);
         }
 
-        /* -------------------------------------------------------- Video Recorder (WebM Export) */
-        var mediaRecorder = null;
-        var recordedChunks = [];
-        var isRecording = false;
-
-        function toggleVideoRecord() {
-          var btn = document.getElementById("btn-record-video");
-          var text = document.getElementById("record-text");
-
-          if (!isRecording) {
-            try {
-              var stream = canvas.captureStream(30);
-              mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
-              recordedChunks = [];
-
-              mediaRecorder.ondataavailable = function (e) {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-              };
-
-              mediaRecorder.onstop = function () {
-                var blob = new Blob(recordedChunks, { type: "video/webm" });
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement("a");
-                a.href = url;
-                a.download = "cheta-5min-motion-showcase.webm";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-              };
-
-              mediaRecorder.start();
-              isRecording = true;
-              btn.classList.add("recording");
-              text.textContent = "Stop & Save Video";
-            } catch (err) {
-              alert("Video recording is not supported in this browser build.");
-            }
-          } else {
-            if (mediaRecorder) mediaRecorder.stop();
-            isRecording = false;
-            btn.classList.remove("recording");
-            text.textContent = "Record Video";
-          }
-        }
-
-        /* -------------------------------------------------------- Controller Wiring */
-        function wireControls() {
-          var playBtn = document.getElementById("btn-play-pause");
-          playBtn.addEventListener("click", function () {
-            AudioEngine.init();
-            AudioEngine.startBgm();
-            isPlaying = !isPlaying;
-            document.getElementById("play-pause-icon").textContent = isPlaying ? "Pause" : "Play";
-          });
-
-          document.getElementById("btn-restart").addEventListener("click", function () {
-            currentTime = 0;
-            isPlaying = true;
-            document.getElementById("play-pause-icon").textContent = "Pause";
-            currentActIndex = -1;
-            updateActState();
-            updateTimelineUI();
-          });
-
-          var speedBtn = document.getElementById("btn-speed");
-          var speeds = [1.0, 1.5, 2.0];
-          var speedIdx = 0;
-          speedBtn.addEventListener("click", function () {
-            speedIdx = (speedIdx + 1) % speeds.length;
-            playSpeed = speeds[speedIdx];
-            speedBtn.textContent = playSpeed.toFixed(1) + "x";
-          });
-
-          var track = document.getElementById("timeline-track");
-          track.addEventListener("click", function (e) {
-            AudioEngine.init();
-            var rect = track.getBoundingClientRect();
-            var frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            currentTime = frac * TOTAL_DURATION;
-            currentActIndex = -1;
-            updateActState();
-            updateTimelineUI();
-          });
-
-          document.querySelectorAll(".chapter-pill").forEach(function (pill) {
-            pill.addEventListener("click", function () {
-              AudioEngine.init();
-              var chapIdx = parseInt(pill.getAttribute("data-chapter"), 10);
-              if (!isNaN(chapIdx) && ACTS[chapIdx]) {
-                currentTime = ACTS[chapIdx].startTime + 0.1;
-                currentActIndex = -1;
-                updateActState();
-                updateTimelineUI();
-              }
-            });
-          });
-
-          var camBtn = document.getElementById("btn-camera-mode");
-          camBtn.addEventListener("click", function () {
-            isFreeCam = !isFreeCam;
-            if (controls) controls.enabled = isFreeCam;
-            document.getElementById("cam-mode-text").textContent = isFreeCam ? "Cinematic" : "Free Orbit";
-            camBtn.classList.toggle("active", isFreeCam);
-          });
-
-          var audioBtn = document.getElementById("btn-audio-toggle");
-          audioBtn.addEventListener("click", function () {
-            var active = AudioEngine.toggleMute();
-            document.getElementById("audio-toggle-text").textContent = active ? "Sound: ON" : "Sound: OFF";
-            audioBtn.classList.toggle("active", active);
-          });
-
-          document.getElementById("btn-record-video").addEventListener("click", toggleVideoRecord);
-
-          var helpModal = document.getElementById("help-modal");
-          document.getElementById("btn-help").addEventListener("click", function () {
-            helpModal.classList.remove("hidden");
-          });
-          document.getElementById("help-close").addEventListener("click", function () {
-            helpModal.classList.add("hidden");
-          });
-
-          window.addEventListener("keydown", function (e) {
-            if (e.code === "Space") {
-              e.preventDefault();
-              playBtn.click();
-            } else if (e.code === "KeyC") {
-              camBtn.click();
-            } else if (e.code === "KeyM") {
-              audioBtn.click();
-            } else if (e.code === "KeyR") {
-              document.getElementById("btn-restart").click();
-            } else if (e.key >= "1" && e.key <= "6") {
-              var idx = parseInt(e.key, 10) - 1;
-              if (ACTS[idx]) {
-                currentTime = ACTS[idx].startTime + 0.1;
-                currentActIndex = -1;
-                updateActState();
-                updateTimelineUI();
-              }
-            }
-          });
-        }
-
-        window.addEventListener("DOMContentLoaded", function () {
-          initGraphics();
-          wireControls();
-          onActChanged(ACTS[0]);
-          animate();
+        requestAnimationFrame(function (ts) {
+          lastTimestamp = ts;
+          animate(ts);
         });
+
+        // Window resize handler
+        window.addEventListener("resize", function () {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
       })();
     </script>
   </body>
