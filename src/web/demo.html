@@ -109,6 +109,15 @@
       z-index: 20;
     }
 
+    .narrator-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+    }
+
     .narrator-head {
       font-family: var(--f-bubbly);
       font-size: 11px;
@@ -116,8 +125,65 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--gold);
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 8px;
+    }
+
+    .voice-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(212, 168, 83, 0.12);
+      border: 1px solid rgba(212, 168, 83, 0.3);
+      color: var(--gold);
+      font-family: var(--f-mono);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .voice-toggle-btn:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+    }
+
+    .voice-toggle-btn.muted {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: #333;
+      color: #777;
+    }
+
+    .voice-wave {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2.5px;
+      height: 12px;
+      margin: 6px auto 0;
+      opacity: 0.3;
+      transition: opacity 0.25s;
+    }
+
+    .voice-wave.active {
+      opacity: 1;
+    }
+
+    .voice-wave .bar {
+      width: 2.5px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 1px;
+    }
+
+    .voice-wave.active .b1 { animation: waveAnim 0.7s ease infinite alternate; }
+    .voice-wave.active .b2 { animation: waveAnim 0.5s ease 0.15s infinite alternate; }
+    .voice-wave.active .b3 { animation: waveAnim 0.6s ease 0.3s infinite alternate; }
+    .voice-wave.active .b4 { animation: waveAnim 0.45s ease 0.1s infinite alternate; }
+
+    @keyframes waveAnim {
+      from { height: 3px; }
+      to { height: 13px; }
     }
 
     .narrator-face {
@@ -1909,7 +1975,13 @@
 
     <!-- ════════════════════════════ NARRATOR ════════════════════════════ -->
     <div id="narrator">
-      <div class="narrator-head">Cheta &mdash; Guide</div>
+      <div class="narrator-head-row">
+        <div class="narrator-head">Cheta &mdash; Guide</div>
+        <button class="voice-toggle-btn" id="voice-toggle" type="button" title="Toggle Voiceover Audio">
+          <svg class="voice-icon-on" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          <span id="voice-status-text">Voice ON</span>
+        </button>
+      </div>
       <div class="narrator-face">
         <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="32" cy="28" r="18" fill="#18181c" stroke="#333" stroke-width="1.5"/>
@@ -1923,6 +1995,12 @@
           <rect x="28" y="13" width="8" height="4" rx="2" fill="#d4a853" opacity="0.8"/>
           <circle cx="32" cy="13" r="1.5" fill="#f0e0a0"/>
         </svg>
+      </div>
+      <div class="voice-wave" id="voice-wave">
+        <span class="bar b1"></span>
+        <span class="bar b2"></span>
+        <span class="bar b3"></span>
+        <span class="bar b4"></span>
       </div>
       <div class="narrator-scene-title" id="nar-title">Loading...</div>
       <div class="narrator-text" id="nar-text">&nbsp;<span class="narrator-cursor"></span></div>
@@ -2073,6 +2151,76 @@
     }
 
     /* ================================================================
+       STUDIO NEURAL VOICEOVER ENGINE (Microsoft Copilot Brian Neural)
+    ================================================================ */
+    var VoiceEngine = (function() {
+      var currentAudio = null;
+      var isMuted = false;
+
+      function stop() {
+        if (currentAudio) {
+          try {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+          } catch(e) {}
+          currentAudio = null;
+        }
+        var wave = document.getElementById('voice-wave');
+        if (wave) wave.classList.remove('active');
+      }
+
+      function play(trackKey) {
+        stop();
+        if (isMuted || !trackKey) return;
+        try {
+          var audio = new Audio('audio/narration/' + trackKey + '.mp3');
+          currentAudio = audio;
+          var wave = document.getElementById('voice-wave');
+          if (wave) wave.classList.add('active');
+
+          audio.onended = function() {
+            if (wave) wave.classList.remove('active');
+          };
+          audio.onerror = function() {
+            if (wave) wave.classList.remove('active');
+          };
+
+          var p = audio.play();
+          if (p && p.catch) {
+            p.catch(function(err) {
+              if (wave) wave.classList.remove('active');
+            });
+          }
+        } catch (e) {}
+      }
+
+      function toggle() {
+        isMuted = !isMuted;
+        if (isMuted) stop();
+        var txt = document.getElementById('voice-status-text');
+        var btn = document.getElementById('voice-toggle');
+        if (txt) txt.textContent = isMuted ? 'Voice Muted' : 'Voice ON';
+        if (btn) btn.classList.toggle('muted', isMuted);
+        return !isMuted;
+      }
+
+      return {
+        play: play,
+        stop: stop,
+        toggle: toggle,
+        isMuted: function() { return isMuted; }
+      };
+    })();
+
+    var voiceBtn = document.getElementById('voice-toggle');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        VoiceEngine.toggle();
+      });
+    }
+
+    /* ================================================================
        STREAMING TYPEWRITER & TIMING ENGINE (With Full Cancellation)
     ================================================================ */
     var activeTypingMap = new WeakMap();
@@ -2080,6 +2228,7 @@
     var activeSceneTimers = [];
 
     function cancelActiveScene() {
+      VoiceEngine.stop();
       currentSceneEpoch++;
       for (var i = 0; i < activeSceneTimers.length; i++) {
         clearTimeout(activeSceneTimers[i]);
@@ -2195,10 +2344,13 @@
       });
     }
 
-    function narrate(title, text, speed) {
+    function narrate(title, text, speed, audioKey) {
       var titleEl = document.getElementById('nar-title');
       if (titleEl) titleEl.textContent = title;
       var textEl = document.getElementById('nar-text');
+      if (audioKey) {
+        VoiceEngine.play(audioKey);
+      }
       return typeInto(textEl, text, speed || 20);
     }
 
@@ -2257,11 +2409,11 @@
       introRan = true;
 
       narrate('What is Cheta?',
-        'Cheta is an autonomous memory-first AI agent. Tell it something in Telegram, and your Terminal and Browser immediately know it. Consolidation prevents old facts from competing with fresh updates.', 22);
+        'Cheta is an autonomous memory-first AI agent. Tell it something in Telegram, and your Terminal and Browser immediately know it. Consolidation prevents old facts from competing with fresh updates.', 20, 'intro_0');
 
-      sleep(5500).then(function() {
+      sleep(7500).then(function() {
         goToScene(1);
-      });
+      }).catch(function() {});
     }
 
     /* ================================================================
@@ -2312,11 +2464,9 @@
       tgRan = true;
       document.getElementById('tg-body').innerHTML = '';
 
-      narrate('Telegram Face', '');
-
       sleep(350).then(function() {
         return narrate('Telegram Face',
-          'Cheta learns through natural conversation. No special "/remember" command needed! It mines durable facts automatically on every turn and consolidates them on Walrus.', 21);
+          'Cheta learns through natural conversation. No special "/remember" command needed! It mines durable facts automatically on every turn and consolidates them on Walrus.', 20, 'tg_1');
       }).then(function() {
         return sleep(500);
       }).then(function() {
@@ -2342,7 +2492,7 @@
         return sleep(1200);
       }).then(function() {
         return narrate('Telegram Face',
-          'Automatic Consolidation: Cheta detects that Rust updates your older Python preference. The old record is superseded on Walrus, preventing memory rot.', 21);
+          'Automatic Consolidation: Cheta detects that Rust updates your older Python preference. The old record is superseded on Walrus, preventing memory rot.', 21, 'tg_2');
       }).then(function() {
         return sleep(1200);
       }).then(function() {
@@ -2387,7 +2537,7 @@
         return sleep(1400);
       }).then(function() {
         return narrate('Telegram Face',
-          'Notice how natural it is: no manual tagging, automatic superseding, instant reminders, and cross-surface pairing codes.', 21);
+          'Notice how natural it is: no manual tagging, automatic superseding, instant reminders, and cross-surface pairing codes.', 21, 'tg_3');
       }).then(function() {
         return sleep(4500);
       }).then(function() {
@@ -2451,7 +2601,7 @@
 
       sleep(300).then(function() {
         return narrate('CLI Face',
-          'The Linux Terminal interface: pure developer velocity. Built with clack terminal prompts, real-time Walrus status, salience scoring, and counterfactual replay.', 21);
+          'The Linux Terminal interface: pure developer velocity. Built with clack terminal prompts, real-time Walrus status, salience scoring, and counterfactual replay.', 21, 'cli_1');
       }).then(function() {
         return termCmd('cheta status');
       }).then(function() {
@@ -2490,7 +2640,7 @@
         return sleep(800);
       }).then(function() {
         return narrate('CLI Face',
-          'Notice that Cheta in the terminal knows the Rust stack and Lagos location you just told it on Telegram! One memory across all devices.', 21);
+          'Notice that Cheta in the terminal knows the Rust stack and Lagos location you just told it on Telegram! One memory across all devices.', 21, 'cli_2');
       }).then(function() {
         return sleep(700);
       }).then(function() {
@@ -2539,7 +2689,7 @@
         ], 't-out', 50);
       }).then(function() {
         return narrate('CLI Face',
-          'Counterfactual replay proves that memory changed the answer. The Memory Passport lets you back up and carry your mind anywhere.', 21);
+          'Counterfactual replay proves that memory changed the answer. The Memory Passport lets you back up and carry your mind anywhere.', 21, 'cli_3');
       }).then(function() {
         return sleep(4500);
       }).then(function() {
@@ -2652,7 +2802,7 @@
 
       sleep(350).then(function() {
         return narrate('Browser Extension & WebMCP',
-          'First: WebMCP in-page automation! Cheta probes the active page DOM for tools registered via document.modelContext on Google Chrome Labs.', 21);
+          'First: WebMCP in-page automation! Cheta probes the active page DOM for tools registered via document.modelContext on Google Chrome Labs.', 21, 'ext_1');
       }).then(function() {
         // Move cursor to extension icon and click
         return clickElement(document.getElementById('cheta-ext-btn'));
@@ -2674,7 +2824,7 @@
         return sleep(1200);
       }).then(function() {
         return narrate('Browser Extension & WebMCP',
-          'Now watch: opening Tab 2 to demonstrate tab reading, page summarisation, live text highlighting, and the Walrus Memories drawer!', 21);
+          'Now watch: opening Tab 2 to demonstrate tab reading, page summarisation, live text highlighting, and the Walrus Memories drawer!', 21, 'ext_2');
       }).then(function() {
         // Click Tab 2 (Documentation)
         return clickElement(document.getElementById('tab-doc'));
@@ -2709,7 +2859,7 @@
       }).then(function() {
         // Open Memories Drawer
         return narrate('Browser Extension & WebMCP',
-          'The Memories drawer fetches your live Walrus memory blobs directly into the browser sidepanel.', 21);
+          'The Memories drawer fetches your live Walrus memory blobs directly into the browser sidepanel.', 21, 'ext_3');
       }).then(function() {
         document.querySelectorAll('.ext-tab').forEach(function(t) { t.classList.remove('sel'); });
         document.getElementById('ext-tab-mem').classList.add('sel');
@@ -2754,7 +2904,7 @@
         });
 
         return narrate('Browser Extension & WebMCP',
-          'The browser extension seamlessly links into your identity through a 6-digit device pairing code.', 21);
+          'The browser extension seamlessly links into your identity through a 6-digit device pairing code.', 21, 'ext_4');
       }).then(function() {
         return sleep(4500);
       }).then(function() {
@@ -2804,7 +2954,7 @@
 
       sleep(350).then(function() {
         return narrate('Web Portal & Evidence',
-          'The Web Portal at /app/portal.html provides a responsive full dashboard: chat with memory recall, memory index visualizer, pairing manager, and counterfactual evidence audit.', 21);
+          'The Web Portal at /app/portal.html provides a responsive full dashboard: chat with memory recall, memory index visualizer, pairing manager, and counterfactual evidence audit.', 21, 'portal_1');
       }).then(function() {
         return portalChatBubble('user', 'show my active Walrus memories');
       }).then(function() {
@@ -2849,7 +2999,7 @@
         main.scrollTop = main.scrollHeight;
 
         return narrate('Web Portal & Evidence',
-          'Cross-device pairing binds Telegram, CLI, Extension, and Web Portal into one shared mind in seconds.', 21);
+          'Cross-device pairing binds Telegram, CLI, Extension, and Web Portal into one shared mind in seconds.', 21, 'portal_2');
       }).then(function() {
         return sleep(1400);
       }).then(function() {
@@ -2866,7 +3016,7 @@
         return sleep(1500);
       }).then(function() {
         return narrate('Web Portal & Evidence',
-          'Cheta: One Mind Across Every Device. Decentralized Walrus memory, consolidation on ingest, and salience-ranked recall.', 21);
+          'Cheta: One Mind Across Every Device. Decentralized Walrus memory, consolidation on ingest, and salience-ranked recall.', 21, 'portal_3');
       }).then(function() {
         return sleep(4500);
       }).then(function() {
