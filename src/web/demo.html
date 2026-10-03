@@ -4,27 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Cheta: Continuous Multi-Surface AI Agent Showcase across Telegram, Linux CLI, Web Extension, Web Portal, and Walrus Decentralized Memory.">
+    <meta name="description" content="Cheta: Hyper-Realistic Multi-Surface AI Agent Showcase across Telegram, Linux Terminal, Browser Extension, Web Portal, and Walrus Decentralized Memory.">
     <title>Cheta: The Multi-Surface AI Agent Showcase</title>
+    <!-- Friendly Bubbly Narration Font + Modern System UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #07090e;
-        --surface: #0e121b;
-        --surface-glass: rgba(14, 18, 27, 0.94);
-        --line: #1e2536;
-        --text: #f1f5f9;
-        --muted: #8b95a5;
-        --dim: #556075;
+        --bg: #090a0d;
+        --surface-dark: #0f1117;
+        --surface-glass: rgba(15, 17, 23, 0.92);
+        --line: #1c202a;
+        --line-light: #2a3140;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --dim: #545d68;
         --accent: #35d0ba;
-        --accent-glow: rgba(53, 208, 186, 0.4);
-        --accent-gold: #ffbe3b;
-        --accent-gold-glow: rgba(255, 190, 59, 0.35);
+        --accent-gold: #eab308;
         --accent-blue: #38bdf8;
-        --accent-purple: #a855f7;
-        --accent-red: #f43f5e;
+        --accent-red: #ef4444;
         --accent-green: #22c55e;
-        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        --mono: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+        --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --bubbly: "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
       }
 
       * {
@@ -61,22 +64,23 @@
         height: 100%;
         z-index: 2;
         pointer-events: none;
-        box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
-        background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(7, 9, 14, 0.65) 100%);
+        box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.92);
+        background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(9, 10, 13, 0.75) 100%);
       }
 
-      /* Stage Layer */
+      /* Dynamic Presentation Stage */
       .presentation-stage {
         position: absolute;
-        top: 64px;
-        bottom: 84px;
+        top: 60px;
+        bottom: 74px;
         left: 20px;
-        right: 20px;
+        right: 330px; /* leaves room on right for the bubbly narrator sidebox */
         z-index: 5;
         pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: right 0.3s ease;
       }
 
       .interactive-surface {
@@ -86,13 +90,13 @@
       .surface-viewport {
         position: absolute;
         width: 100%;
-        max-width: 1080px;
+        max-width: 960px;
         height: 100%;
-        max-height: 640px;
+        max-height: calc(100vh - 150px);
         display: none;
         opacity: 0;
-        transform: scale(0.97) translateY(10px);
-        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: scale(0.96) translateY(12px);
+        transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       .surface-viewport.active {
@@ -101,16 +105,108 @@
         transform: scale(1) translateY(0);
       }
 
-      /* ------------------------------------------------------------- 1. TELEGRAM PHONE */
+      /* ------------------------------------------------------------- 0. INTRO CARD */
+      .intro-card {
+        margin: auto;
+        width: 100%;
+        max-width: 720px;
+        background: rgba(15, 17, 23, 0.92);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--line-light);
+        border-radius: 20px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85);
+        padding: 32px 36px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .intro-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .intro-chip {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        background: rgba(53, 208, 186, 0.12);
+        color: var(--accent);
+        border: 1px solid rgba(53, 208, 186, 0.3);
+      }
+
+      .intro-title {
+        font-family: var(--bubbly);
+        font-size: 32px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+      }
+
+      .intro-desc {
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .intro-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 6px;
+      }
+
+      .intro-feature {
+        background: #13161f;
+        border: 1px solid #1f2533;
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .intro-icon {
+        font-size: 18px;
+        background: #191e2b;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .intro-feat-text strong {
+        display: block;
+        font-size: 13px;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+
+      .intro-feat-text span {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+        display: block;
+      }
+
+      /* ------------------------------------------------------------- 1. REALISTIC TELEGRAM PHONE */
       .phone-wrapper {
         margin: auto;
-        width: 370px;
-        height: 590px;
-        max-height: calc(100vh - 170px);
-        background: #0f141c;
-        border-radius: 36px;
+        width: 340px;
+        height: 570px;
+        max-height: calc(100vh - 160px);
+        background: #0e1621; /* Authentic Telegram dark background */
+        border-radius: 38px;
         border: 4px solid #232b3c;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(53, 208, 186, 0.15);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 0, 0, 0.5);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -118,7 +214,7 @@
       }
 
       .phone-notch {
-        width: 120px;
+        width: 110px;
         height: 18px;
         background: #232b3c;
         border-bottom-left-radius: 12px;
@@ -130,28 +226,34 @@
         z-index: 20;
       }
 
+      /* Telegram Header */
       .tg-header {
-        background: #17212b;
-        border-bottom: 1px solid #232e3c;
-        padding: 24px 14px 10px;
+        background: #17212b; /* Authentic Telegram header color */
+        border-bottom: 1px solid #0f141d;
+        padding: 22px 12px 10px;
         display: flex;
         align-items: center;
         gap: 10px;
         z-index: 10;
       }
 
+      .tg-back-arrow {
+        color: #6c7883;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
       .tg-avatar {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #35d0ba, #0284c7);
+        background: linear-gradient(135deg, #2aabee, #229ed9);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 16px;
-        color: #07090e;
-        box-shadow: 0 0 10px rgba(53, 208, 186, 0.4);
+        font-size: 15px;
+        color: #fff;
       }
 
       .tg-meta {
@@ -161,7 +263,7 @@
       .tg-name-row {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
       }
 
       .tg-name {
@@ -171,39 +273,38 @@
       }
 
       .tg-badge {
-        background: #38bdf8;
-        color: #07090e;
+        background: #2aabee;
+        color: #fff;
         border-radius: 50%;
-        width: 13px;
-        height: 13px;
+        width: 12px;
+        height: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 8px;
+        font-size: 7.5px;
         font-weight: 900;
       }
 
       .tg-status {
         font-size: 11px;
-        color: var(--accent);
+        color: #708499;
       }
 
+      /* Telegram Chat Canvas */
       .tg-body {
         flex: 1;
         background: #0e1621;
-        padding: 14px 10px;
+        padding: 12px 10px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-        background-size: 20px 20px;
+        gap: 8px;
       }
 
       .tg-bubble {
         max-width: 86%;
-        padding: 9px 12px;
-        border-radius: 14px;
+        padding: 8px 12px;
+        border-radius: 12px;
         font-size: 12px;
         line-height: 1.45;
         position: relative;
@@ -211,23 +312,33 @@
       }
 
       @keyframes bubblePop {
-        from { opacity: 0; transform: translateY(8px) scale(0.97); }
+        from { opacity: 0; transform: translateY(6px) scale(0.97); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
+      /* Telegram authentic user bubble */
       .tg-user {
         align-self: flex-end;
-        background: #2b5278;
+        background: #2b5278; /* Authentic Telegram sent bubble */
         color: #fff;
-        border-bottom-right-radius: 4px;
+        border-bottom-right-radius: 2px;
       }
 
+      /* Telegram authentic bot/incoming bubble */
       .tg-bot {
         align-self: flex-start;
-        background: #182533;
-        color: #e5ecf5;
-        border-bottom-left-radius: 4px;
-        border: 1px solid #283747;
+        background: #182533; /* Authentic Telegram incoming bubble */
+        color: #f5f5f5;
+        border-bottom-left-radius: 2px;
+        border: 1px solid #1f2e3d;
+      }
+
+      .tg-time {
+        font-size: 10px;
+        color: #8da4be;
+        float: right;
+        margin-left: 8px;
+        margin-top: 2px;
       }
 
       .tg-voice-note {
@@ -241,43 +352,42 @@
         width: 28px;
         height: 28px;
         border-radius: 50%;
-        background: var(--accent);
-        color: #07090e;
+        background: #2aabee;
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
-        cursor: pointer;
+        font-size: 11px;
       }
 
       .tg-waveform {
         display: flex;
         align-items: center;
         gap: 2px;
-        height: 20px;
+        height: 18px;
       }
 
       .tg-wave-bar {
         width: 3px;
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.45);
         border-radius: 2px;
         animation: waveAnim 1s infinite ease-in-out;
       }
 
       @keyframes waveAnim {
         0%, 100% { height: 4px; }
-        50% { height: 18px; background: var(--accent); }
+        50% { height: 16px; background: #2aabee; }
       }
 
       .tg-tool-pill {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: rgba(53, 208, 186, 0.15);
-        border: 1px solid rgba(53, 208, 186, 0.4);
-        color: var(--accent);
-        padding: 3px 7px;
-        border-radius: 6px;
+        background: rgba(42, 171, 238, 0.12);
+        border: 1px solid rgba(42, 171, 238, 0.35);
+        color: #2aabee;
+        padding: 3px 6px;
+        border-radius: 5px;
         font-size: 10px;
         font-family: var(--mono);
         margin-bottom: 5px;
@@ -285,17 +395,17 @@
 
       .tg-inline-btn-group {
         display: flex;
-        gap: 5px;
+        gap: 4px;
         margin-top: 6px;
       }
 
       .tg-inline-btn {
         flex: 1;
         background: #243447;
-        border: 1px solid #334458;
-        color: var(--accent-blue);
+        border: 1px solid #2d3f54;
+        color: #2aabee;
         padding: 5px;
-        border-radius: 6px;
+        border-radius: 5px;
         font-size: 10px;
         font-weight: 600;
         text-align: center;
@@ -304,16 +414,15 @@
       }
 
       .tg-inline-btn.clicked {
-        background: var(--accent-blue);
-        color: #07090e;
-        box-shadow: 0 0 10px var(--accent-blue);
+        background: #2aabee;
+        color: #fff;
       }
 
       .tg-typing-box {
         display: flex;
         align-items: center;
         gap: 5px;
-        color: var(--muted);
+        color: #708499;
         font-size: 11px;
         font-style: italic;
       }
@@ -326,7 +435,7 @@
       .tg-dot-pulse span {
         width: 4px;
         height: 4px;
-        background: var(--accent);
+        background: #2aabee;
         border-radius: 50%;
         animation: dotPulse 1.2s infinite;
       }
@@ -341,11 +450,11 @@
 
       .tg-input-bar {
         background: #17212b;
-        padding: 8px 12px;
+        padding: 8px 10px;
         display: flex;
         align-items: center;
         gap: 8px;
-        border-top: 1px solid #232e3c;
+        border-top: 1px solid #0f141d;
       }
 
       .tg-input-field {
@@ -353,31 +462,32 @@
         background: #242f3d;
         border: 0;
         border-radius: 16px;
-        padding: 7px 12px;
+        padding: 6px 12px;
         color: #fff;
         font-size: 12px;
         outline: none;
       }
 
-      /* ------------------------------------------------------------- 2. LINUX CLI TERMINAL */
+      /* ------------------------------------------------------------- 2. AUTHENTIC LINUX TERMINAL */
       .terminal-window {
         margin: auto;
-        width: 860px;
-        height: 540px;
-        max-height: calc(100vh - 170px);
-        background: #0d1117;
-        border: 1px solid #262c36;
-        border-radius: 10px;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.1);
+        width: 100%;
+        max-width: 820px;
+        height: 520px;
+        max-height: calc(100vh - 160px);
+        background: #0c0d10; /* Pure deep charcoal terminal */
+        border: 1px solid #1f232d;
+        border-radius: 8px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
 
       .terminal-titlebar {
-        background: #161b22;
-        border-bottom: 1px solid #21262d;
-        padding: 9px 14px;
+        background: #16181f;
+        border-bottom: 1px solid #1f232d;
+        padding: 8px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -386,12 +496,12 @@
       .term-buttons {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
       }
 
       .term-btn {
-        width: 11px;
-        height: 11px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
       }
 
@@ -402,40 +512,33 @@
       .term-title {
         font-family: var(--mono);
         font-size: 11px;
-        color: var(--muted);
+        color: #8b949e;
       }
 
       .terminal-body {
         flex: 1;
-        padding: 16px 20px;
+        padding: 16px 18px;
         overflow-y: auto;
         font-family: var(--mono);
-        font-size: 12.5px;
+        font-size: 12px;
         line-height: 1.55;
-        color: #e6edf3;
+        color: #d1d5db;
       }
 
-      .term-prompt {
-        color: #38bdf8;
-        font-weight: 700;
-      }
-
-      .term-prompt-dir {
-        color: #ffbe3b;
-      }
-
-      .term-cmd {
-        color: #fff;
-        font-weight: 600;
-      }
+      /* Realistic Bash Prompt */
+      .term-user { color: #22c55e; font-weight: 700; }
+      .term-colon { color: #8b949e; }
+      .term-path { color: #38bdf8; font-weight: 600; }
+      .term-dollar { color: #fff; }
+      .term-cmd { color: #f3f4f6; font-weight: 600; }
 
       .term-cursor {
         display: inline-block;
         width: 7px;
-        height: 14px;
-        background: var(--accent);
+        height: 13px;
+        background: #e2e8f0;
         vertical-align: middle;
-        margin-left: 3px;
+        margin-left: 2px;
         animation: cursorBlink 0.8s infinite;
       }
 
@@ -445,23 +548,23 @@
       }
 
       .term-table {
-        margin: 8px 0;
+        margin: 6px 0;
         border-collapse: collapse;
         width: 100%;
-        color: #cbd5e1;
-        font-size: 11.5px;
+        color: #9ca3af;
+        font-size: 11px;
       }
 
       .term-table th {
         text-align: left;
-        color: var(--accent);
-        border-bottom: 1px solid #30363d;
+        color: #e5e7eb;
+        border-bottom: 1px solid #272d3b;
         padding: 4px 6px;
       }
 
       .term-table td {
-        padding: 5px 6px;
-        border-bottom: 1px solid #21262d;
+        padding: 4px 6px;
+        border-bottom: 1px solid #1a1e28;
       }
 
       .badge-synced {
@@ -469,44 +572,41 @@
         font-weight: 700;
       }
 
-      /* ------------------------------------------------------------- 3. BROWSER EXTENSION & WEBMCP */
+      /* ------------------------------------------------------------- 3. REALISTIC DESKTOP BROWSER */
       .browser-window {
         margin: auto;
-        width: 960px;
-        height: 560px;
-        max-height: calc(100vh - 170px);
-        background: #0f141d;
-        border: 1px solid #252e42;
-        border-radius: 10px;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(53, 208, 186, 0.12);
+        width: 100%;
+        max-width: 920px;
+        height: 540px;
+        max-height: calc(100vh - 160px);
+        background: #13161f;
+        border: 1px solid #222736;
+        border-radius: 8px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        position: relative;
       }
 
-      .browser-topbar {
-        background: #141a26;
-        border-bottom: 1px solid #20283b;
-        padding: 7px 10px 0;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .browser-tab-row {
+      /* Real Chrome/Firefox Tabs */
+      .browser-tabs-bar {
+        background: #191c26;
+        padding: 6px 8px 0;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
+        border-bottom: 1px solid #222736;
       }
 
       .browser-tab {
         padding: 5px 12px;
         border-radius: 6px 6px 0 0;
-        background: #0f141d;
-        border: 1px solid #20283b;
+        background: #13161f;
+        border: 1px solid #222736;
         border-bottom: 0;
         color: #fff;
-        font-size: 11.5px;
+        font-size: 11px;
         font-weight: 600;
         display: flex;
         align-items: center;
@@ -516,31 +616,53 @@
       .browser-tab.inactive {
         background: transparent;
         border: 0;
-        color: var(--muted);
+        color: #717d91;
       }
 
-      .browser-nav-row {
+      .tab-close {
+        color: #556275;
+        font-size: 10px;
+        margin-left: 4px;
+      }
+
+      /* Omnibox & Toolbar */
+      .browser-nav-bar {
+        background: #13161f;
+        padding: 6px 10px;
         display: flex;
         align-items: center;
         gap: 8px;
-        padding-bottom: 7px;
+        border-bottom: 1px solid #222736;
       }
 
-      .browser-url-bar {
+      .browser-nav-btns {
+        display: flex;
+        gap: 6px;
+        color: #6b778d;
+        font-size: 12px;
+      }
+
+      .browser-omnibox {
         flex: 1;
-        background: #090c12;
-        border: 1px solid #20283b;
-        border-radius: 5px;
-        padding: 4px 10px;
+        background: #0a0b0e;
+        border: 1px solid #222736;
+        border-radius: 14px;
+        padding: 4px 12px;
         font-family: var(--mono);
-        font-size: 11.5px;
-        color: #94a3b8;
+        font-size: 11px;
+        color: #8b949e;
         display: flex;
         align-items: center;
         gap: 6px;
       }
 
-      .browser-ext-icon {
+      .browser-toolbar-ext {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .ext-icon-btn {
         width: 26px;
         height: 26px;
         border-radius: 5px;
@@ -549,156 +671,124 @@
         align-items: center;
         justify-content: center;
         font-weight: 900;
-        font-size: 12px;
+        font-size: 11.5px;
         color: #07090e;
-        box-shadow: 0 0 10px var(--accent-glow);
+        cursor: pointer;
+        box-shadow: 0 0 8px rgba(53, 208, 186, 0.3);
       }
 
-      .browser-content-area {
+      /* Animated Cursor for Browser Extension Opening */
+      .virtual-cursor {
+        position: absolute;
+        width: 16px;
+        height: 22px;
+        pointer-events: none;
+        z-index: 50;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        opacity: 0;
+      }
+
+      .virtual-cursor svg {
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+      }
+
+      /* Split Viewport */
+      .browser-viewport {
         flex: 1;
         display: flex;
         overflow: hidden;
       }
 
-      /* Left: In-Page zaMaker interactive pizza */
-      .browser-page-view {
+      .browser-page {
         flex: 6;
-        background: #111723;
-        padding: 20px;
+        background: #0f121a;
+        padding: 18px;
         display: flex;
         flex-direction: column;
-        border-right: 1px solid #20283b;
+        border-right: 1px solid #202636;
         overflow-y: auto;
       }
 
-      .page-banner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-      }
-
-      .page-banner h3 {
-        font-size: 16px;
-        color: #fff;
-      }
-
-      .page-pill {
-        font-size: 10px;
-        background: rgba(255, 190, 59, 0.15);
-        color: var(--accent-gold);
-        border: 1px solid rgba(255, 190, 59, 0.4);
-        padding: 2px 7px;
-        border-radius: 5px;
-        font-weight: 700;
-      }
-
       .pizza-plate {
-        width: 190px;
-        height: 190px;
+        width: 180px;
+        height: 180px;
         border-radius: 50%;
-        background: #e2a053;
+        background: #df974b;
         margin: 10px auto;
         position: relative;
-        border: 8px solid #c27f33;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+        border: 8px solid #ba7730;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
       .pizza-cheese {
-        width: 150px;
-        height: 150px;
+        width: 140px;
+        height: 140px;
         border-radius: 50%;
-        background: #ffd966;
+        background: #fcd34d;
         position: relative;
       }
 
       .topping-pep {
         position: absolute;
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         background: #dc2626;
         border: 2px solid #991b1b;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
         animation: dropTopping 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       .topping-mush {
         position: absolute;
-        width: 22px;
-        height: 16px;
+        width: 20px;
+        height: 14px;
         background: #d6d3d1;
-        border-radius: 10px 10px 3px 3px;
+        border-radius: 8px 8px 3px 3px;
         border: 2px solid #78716c;
         animation: dropTopping 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       @keyframes dropTopping {
-        from { transform: translateY(-35px) scale(0.4); opacity: 0; }
+        from { transform: translateY(-30px) scale(0.4); opacity: 0; }
         to { transform: translateY(0) scale(1); opacity: 1; }
       }
 
-      /* Right: Actual Cheta Extension Sidepanel */
+      /* Sliding Sidepanel Extension */
       .browser-sidepanel {
-        flex: 4;
-        background: #0b0f16;
+        flex: 0;
+        width: 0;
+        background: #0a0b0e;
         display: flex;
         flex-direction: column;
-        border-left: 1px solid #1a2233;
+        border-left: 1px solid #1c2230;
+        overflow: hidden;
+        transition: flex 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .browser-sidepanel.open {
+        flex: 4;
       }
 
       .sp-header {
-        padding: 9px 12px;
-        background: #101520;
-        border-bottom: 1px solid #1a2233;
+        padding: 8px 10px;
+        background: #11141c;
+        border-bottom: 1px solid #1c2230;
         display: flex;
         align-items: center;
         justify-content: space-between;
-      }
-
-      .sp-brand {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #fff;
-      }
-
-      .sp-status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 7px var(--accent);
-      }
-
-      .sp-chip {
-        font-size: 10px;
-        padding: 2px 7px;
-        border-radius: 5px;
-        background: #182030;
-        color: var(--muted);
-        border: 1px solid #232d42;
-        cursor: pointer;
-      }
-
-      .sp-chip.active {
-        color: var(--accent);
-        border-color: var(--accent);
       }
 
       .sp-tab-badge {
-        padding: 7px 10px;
-        background: #131a26;
-        border-bottom: 1px solid #1a2233;
+        padding: 6px 10px;
+        background: #141722;
+        border-bottom: 1px solid #1c2230;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 10.5px;
+        font-size: 10px;
       }
 
       .sp-read-btn {
@@ -723,8 +813,8 @@
       }
 
       .sp-memories-drawer {
-        background: #111824;
-        border-top: 1px solid #1f293d;
+        background: #10131a;
+        border-top: 1px solid #1c2230;
         padding: 8px;
         display: none;
         flex-direction: column;
@@ -736,8 +826,8 @@
       }
 
       .sp-memory-card {
-        background: #182232;
-        border: 1px solid #26344d;
+        background: #151924;
+        border: 1px solid #232a3d;
         border-radius: 5px;
         padding: 6px 8px;
         display: flex;
@@ -745,16 +835,11 @@
         gap: 3px;
       }
 
-      .sp-card-fact {
-        font-size: 10px;
-        color: #e2e8f0;
-      }
-
       .sp-mini-btn {
         font-size: 9px;
         padding: 2px 5px;
         border-radius: 3px;
-        background: #233047;
+        background: #202638;
         color: var(--muted);
         border: 0;
         cursor: pointer;
@@ -763,98 +848,77 @@
       /* ------------------------------------------------------------- 4. WEB PORTAL & WIDGET */
       .portal-window {
         margin: auto;
-        width: 920px;
-        height: 540px;
-        max-height: calc(100vh - 170px);
-        background: #0d111a;
-        border: 1px solid #222a3d;
-        border-radius: 12px;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 40px rgba(168, 85, 247, 0.15);
+        width: 100%;
+        max-width: 880px;
+        height: 520px;
+        max-height: calc(100vh - 160px);
+        background: #0c0e14;
+        border: 1px solid #1c212e;
+        border-radius: 10px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
 
       .portal-navbar {
-        background: #131926;
-        border-bottom: 1px solid #20293d;
-        padding: 10px 18px;
+        background: #121520;
+        border-bottom: 1px solid #1c212e;
+        padding: 10px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
 
-      .portal-brand {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 800;
-        font-size: 14px;
-        color: #fff;
-      }
-
-      .portal-links {
-        display: flex;
-        gap: 16px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .portal-links span.active {
-        color: var(--accent);
-        font-weight: 600;
-      }
-
       .portal-body {
         flex: 1;
         display: grid;
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 240px 1fr;
         overflow: hidden;
       }
 
       .portal-sidebar {
-        background: #0f1420;
-        border-right: 1px solid #1e2638;
-        padding: 14px;
+        background: #0f121a;
+        border-right: 1px solid #1a1e2b;
+        padding: 12px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
       }
 
       .portal-main-panel {
-        padding: 16px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
         overflow-y: auto;
         position: relative;
       }
 
       .portal-slash-menu {
         position: absolute;
-        bottom: 64px;
-        left: 16px;
-        right: 16px;
-        background: #141c2b;
-        border: 1px solid #28354d;
-        border-radius: 7px;
+        bottom: 58px;
+        left: 14px;
+        right: 14px;
+        background: #141824;
+        border: 1px solid #232b3d;
+        border-radius: 6px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-        padding: 5px;
+        padding: 4px;
         display: none;
         flex-direction: column;
-        gap: 3px;
+        gap: 2px;
         z-index: 30;
       }
 
       .slash-item {
-        padding: 6px 10px;
-        border-radius: 5px;
+        padding: 5px 8px;
+        border-radius: 4px;
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 11.5px;
+        font-size: 11px;
         color: #e2e8f0;
-        cursor: pointer;
       }
 
       .slash-item.selected {
@@ -862,14 +926,66 @@
         color: var(--accent);
       }
 
-      .slash-item code {
-        font-family: var(--mono);
-        color: var(--accent-gold);
+      .pairing-card {
+        background: #141824;
+        border: 1px solid #22293b;
+        border-radius: 7px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
       }
 
-      .pairing-card {
-        background: #131a26;
-        border: 1px solid #232d42;
+      .pairing-code-box {
+        display: flex;
+        gap: 5px;
+        margin: 4px 0;
+      }
+
+      .code-digit {
+        width: 28px;
+        height: 38px;
+        background: #0a0b0e;
+        border: 1px solid var(--accent);
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-family: var(--mono);
+      }
+
+      /* ------------------------------------------------------------- 5. WALRUS MEMORY FABRIC */
+      .walrus-overview-window {
+        margin: auto;
+        width: 100%;
+        max-width: 920px;
+        height: 520px;
+        max-height: calc(100vh - 160px);
+        background: rgba(14, 17, 24, 0.9);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid #222736;
+        border-radius: 12px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85);
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+        gap: 12px;
+      }
+
+      .surfaces-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        flex: 1;
+      }
+
+      .surface-card-mini {
+        background: #10131c;
+        border: 1px solid #1a202c;
         border-radius: 8px;
         padding: 12px;
         display: flex;
@@ -877,127 +993,137 @@
         gap: 6px;
       }
 
-      .pairing-code-box {
-        display: flex;
-        gap: 6px;
-        margin: 6px 0;
+      .surface-card-mini.synced {
+        border-color: var(--accent);
+        box-shadow: 0 0 14px rgba(53, 208, 186, 0.12);
       }
 
-      .code-digit {
-        width: 32px;
-        height: 42px;
-        background: #090c12;
-        border: 1px solid var(--accent);
-        border-radius: 6px;
-        font-size: 18px;
-        font-weight: 800;
+      /* ------------------------------------------------------------- BUBBLY DISNEY NARRATOR SIDEBOX */
+      .bubbly-narrator-panel {
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        width: 290px;
+        z-index: 15;
+        background: rgba(15, 18, 25, 0.94);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid #262e40;
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+      }
+
+      .narrator-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .narrator-mascot-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #35d0ba, #0284c7);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #fff;
-        font-family: var(--mono);
-      }
-
-      /* ------------------------------------------------------------- 5. WALRUS NETWORK FABRIC OVERVIEW */
-      .walrus-overview-window {
-        margin: auto;
-        width: 1000px;
-        height: 560px;
-        max-height: calc(100vh - 170px);
-        background: rgba(14, 18, 27, 0.88);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid #232d42;
-        border-radius: 14px;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
-        display: flex;
-        flex-direction: column;
-        padding: 20px;
-        gap: 14px;
-      }
-
-      .walrus-hero-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .walrus-title h2 {
+        font-family: var(--bubbly);
+        font-weight: 700;
         font-size: 20px;
-        font-weight: 800;
-        color: #fff;
+        color: #07090e;
+        box-shadow: 0 4px 14px rgba(53, 208, 186, 0.4);
+        animation: floatAvatar 2.5s infinite ease-in-out;
       }
 
-      .walrus-title p {
-        font-size: 12px;
-        color: var(--muted);
+      @keyframes floatAvatar {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
       }
 
-      .surfaces-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
+      .narrator-speaker-meta {
         flex: 1;
       }
 
-      .surface-card-mini {
-        background: #111724;
-        border: 1px solid #1e283d;
-        border-radius: 10px;
-        padding: 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .surface-card-mini.synced {
-        border-color: var(--accent);
-        box-shadow: 0 0 16px rgba(53, 208, 186, 0.15);
-      }
-
-      .card-icon-badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      .narrator-speaker-name {
+        font-family: var(--bubbly);
         font-size: 15px;
-        background: #1a2336;
-        color: var(--accent);
-      }
-
-      .card-name {
-        font-size: 13px;
         font-weight: 700;
         color: #fff;
       }
 
-      .card-desc {
-        font-size: 11px;
-        color: var(--muted);
-        line-height: 1.4;
+      .narrator-badge {
+        font-size: 10px;
+        color: var(--accent);
+        font-weight: 600;
       }
 
-      .card-live-log {
-        margin-top: auto;
-        background: #090d14;
-        border: 1px solid #1c2436;
-        border-radius: 5px;
-        padding: 6px;
-        font-family: var(--mono);
-        font-size: 10px;
+      .narrator-speech-bubble {
+        background: #141824;
+        border: 1px solid #202738;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-family: var(--bubbly);
+        font-size: 13.5px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #f1f5f9;
+        position: relative;
+        animation: speechBubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes speechBubblePop {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      .narrator-speech-bubble strong {
         color: var(--accent);
       }
 
-      /* ------------------------------------------------------------- HUD HEADER */
+      .narrator-active-tools {
+        background: #0d1017;
+        border: 1px solid #1a202c;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 10px;
+        color: #8b949e;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .tools-tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .tool-tag {
+        background: #181d29;
+        color: #94a3b8;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 9.5px;
+      }
+
+      .tool-tag.active {
+        background: rgba(53, 208, 186, 0.15);
+        color: var(--accent);
+        border: 1px solid rgba(53, 208, 186, 0.35);
+      }
+
+      /* ------------------------------------------------------------- TOP HUD */
       .hud-header {
         position: absolute;
-        top: 12px;
-        left: 18px;
-        right: 18px;
+        top: 10px;
+        left: 16px;
+        right: 16px;
         z-index: 20;
         display: flex;
         align-items: center;
@@ -1012,32 +1138,24 @@
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-light);
         border-radius: 9999px;
-        padding: 6px 14px 6px 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+        padding: 6px 14px 6px 10px;
       }
 
       .brand-dot {
-        width: 9px;
-        height: 9px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 0 10px var(--accent);
       }
 
       .brand-name {
         font-size: 13px;
         font-weight: 800;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         color: #fff;
-      }
-
-      .brand-sub {
-        font-size: 10.5px;
-        font-weight: 600;
-        color: var(--accent);
       }
 
       .surface-nav-bar {
@@ -1047,7 +1165,7 @@
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-light);
         border-radius: 9999px;
         padding: 3px;
       }
@@ -1056,15 +1174,12 @@
         background: transparent;
         border: 0;
         color: var(--muted);
-        padding: 6px 12px;
+        padding: 5px 11px;
         border-radius: 9999px;
-        font-size: 11.5px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 5px;
       }
 
       .surface-tab-btn:hover {
@@ -1075,7 +1190,6 @@
         background: var(--accent);
         color: #07090e;
         font-weight: 700;
-        box-shadow: 0 3px 12px var(--accent-glow);
       }
 
       .hud-actions {
@@ -1088,7 +1202,7 @@
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-light);
         color: var(--text);
         padding: 6px 12px;
         border-radius: 9999px;
@@ -1107,28 +1221,12 @@
         color: var(--accent);
       }
 
-      .action-pill-btn.record-btn {
-        color: var(--accent-red);
-        border-color: rgba(244, 63, 94, 0.4);
-      }
-
-      .action-pill-btn.record-btn.recording {
-        background: var(--accent-red);
-        color: #fff;
-        animation: pulseRecord 1s infinite alternate;
-      }
-
-      @keyframes pulseRecord {
-        from { transform: scale(0.97); }
-        to { transform: scale(1.03); }
-      }
-
-      /* ------------------------------------------------------------- HUD FOOTER */
+      /* ------------------------------------------------------------- BOTTOM CONTROLLER */
       .hud-footer {
         position: absolute;
-        bottom: 12px;
-        left: 18px;
-        right: 18px;
+        bottom: 10px;
+        left: 16px;
+        right: 16px;
         z-index: 20;
         display: flex;
         flex-direction: column;
@@ -1144,7 +1242,7 @@
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-light);
         border-radius: 9999px;
         padding: 6px 14px;
       }
@@ -1154,7 +1252,7 @@
         font-size: 11px;
         font-weight: 700;
         color: var(--accent);
-        min-width: 90px;
+        min-width: 85px;
       }
 
       .progress-track {
@@ -1172,7 +1270,7 @@
         left: 0;
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+        background: var(--accent);
         border-radius: 9999px;
       }
 
@@ -1180,11 +1278,10 @@
         position: absolute;
         top: 50%;
         left: 0%;
-        width: 12px;
-        height: 12px;
+        width: 11px;
+        height: 11px;
         border-radius: 50%;
         background: #fff;
-        box-shadow: 0 0 8px var(--accent);
         transform: translate(-50%, -50%);
         pointer-events: none;
       }
@@ -1205,101 +1302,95 @@
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-light);
         color: #fff;
-        padding: 6px 12px;
+        padding: 5px 11px;
         border-radius: 9999px;
         font-size: 11px;
         font-weight: 600;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        transition: all 0.15s ease;
       }
 
-      .ctrl-btn:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      /* Mascot Subtitle Bubble */
-      .mascot-narration-box {
-        position: absolute;
-        bottom: 74px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 15;
-        background: rgba(14, 18, 27, 0.94);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--accent-glow);
-        border-radius: 12px;
-        padding: 9px 18px;
-        max-width: 620px;
-        width: 90%;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-        pointer-events: none;
-      }
-
-      .mascot-badge {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #07090e;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        font-size: 14px;
-        flex-shrink: 0;
-      }
-
-      .mascot-speech-text {
-        font-size: 12px;
-        line-height: 1.4;
-        color: #f1f5f9;
-      }
-
-      .mascot-speech-text strong {
-        color: var(--accent);
-      }
-
-      @media (max-width: 920px) {
-        .surface-nav-bar {
+      /* Responsive Adjustments */
+      @media (max-width: 980px) {
+        .presentation-stage {
+          right: 20px;
+        }
+        .bubbly-narrator-panel {
           display: none;
         }
-        .phone-wrapper {
-          width: 310px;
-          height: 480px;
-        }
-        .terminal-window, .browser-window, .portal-window, .walrus-overview-window {
-          width: 96%;
-          height: 460px;
+        .surface-nav-bar {
+          display: none;
         }
       }
     </style>
   </head>
   <body>
-    <!-- 3D Studio Canvas -->
+    <!-- 3D Studio Background Canvas -->
     <canvas id="webgl-canvas"></canvas>
 
-    <!-- Ambient Vignette -->
+    <!-- Subtle Ambient Vignette -->
     <div class="ambient-overlay"></div>
 
-    <!-- Presentation Stage (Houses the Photorealistic Simulated Surfaces) -->
+    <!-- Presentation Stage -->
     <main class="presentation-stage">
 
-      <!-- SURFACE 1: TELEGRAM BOT INTERFACE -->
-      <section id="surface-telegram" class="surface-viewport active interactive-surface">
+      <!-- SCENE 0: INTRO CARD -->
+      <section id="surface-intro" class="surface-viewport active interactive-surface">
+        <div class="intro-card">
+          <div class="intro-badge-row">
+            <span class="intro-chip">Decentralized AI Agent</span>
+            <span class="intro-chip" style="color: var(--accent-gold); border-color: rgba(234, 179, 8, 0.3);">Walrus Protocol</span>
+          </div>
+
+          <h1 class="intro-title">Meet Cheta: One Mind Across Every Device.</h1>
+          <p class="intro-desc">
+            Most AI assistants forget who you are the second you switch apps. Cheta gives you a unified, permanent memory space committed to decentralized Walrus storage. Everything you say in Telegram is instantly recalled in your Linux terminal, browser extension, and web portal.
+          </p>
+
+          <div class="intro-grid">
+            <div class="intro-feature">
+              <div class="intro-icon">&#128241;</div>
+              <div class="intro-feat-text">
+                <strong>Telegram Bot</strong>
+                <span>Voice notes, documents, calendar scheduling &amp; natural language memory extraction.</span>
+              </div>
+            </div>
+
+            <div class="intro-feature">
+              <div class="intro-icon">&#128187;</div>
+              <div class="intro-feat-text">
+                <strong>Linux Terminal</strong>
+                <span>Developer CLI, instant token streaming, offline caching &amp; one-time pairing.</span>
+              </div>
+            </div>
+
+            <div class="intro-feature">
+              <div class="intro-icon">&#127760;</div>
+              <div class="intro-feat-text">
+                <strong>Browser Extension</strong>
+                <span>Active tab inspection, in-page WebMCP automation &amp; memory drawer.</span>
+              </div>
+            </div>
+
+            <div class="intro-feature">
+              <div class="intro-icon">&#128172;</div>
+              <div class="intro-feat-text">
+                <strong>Web Portal &amp; Widget</strong>
+                <span>Slash command suggestions, device linking &amp; full-text Walrus search.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCENE 1: TELEGRAM BOT INTERFACE -->
+      <section id="surface-telegram" class="surface-viewport interactive-surface">
         <div class="phone-wrapper">
           <div class="phone-notch"></div>
           
           <div class="tg-header">
+            <span class="tg-back-arrow">&#8592;</span>
             <div class="tg-avatar">C</div>
             <div class="tg-meta">
               <div class="tg-name-row">
@@ -1323,11 +1414,11 @@
                   <div class="tg-wave-bar"></div>
                   <div class="tg-wave-bar"></div>
                   <div class="tg-wave-bar"></div>
-                  <div class="tg-wave-bar"></div>
                 </div>
                 <span style="font-size: 11px; color: #a5c3e8;">0:14</span>
               </div>
-              <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;">Voice Note: "Cheta, remember I build on Solana &amp; Rust, and remind me tomorrow at 9 AM to check node status."</div>
+              <div style="font-size: 11px; margin-top: 3px; opacity: 0.9;">Voice Note: "Cheta, remember I build on Solana &amp; Rust, and remind me tomorrow at 9 AM to check node status."</div>
+              <span class="tg-time">15:42 &#10003;&#10003;</span>
             </div>
 
             <!-- Typing indicator -->
@@ -1340,35 +1431,39 @@
             <div id="tg-reply-1" class="tg-bubble tg-bot" style="display: none;">
               <div class="tg-tool-pill">&#9881; Tool: set_reminder({"time": "09:00", "task": "Check node status"})</div>
               <div>Reminder scheduled for <strong>9:00 AM tomorrow</strong>!</div>
-              <div style="margin-top: 5px; font-size: 11px; color: #35d0ba;">&#129504; Committed durable fact to Walrus storage: <em>"Builds with Solana &amp; Rust"</em> (Blob 0x9f82b1).</div>
+              <div style="margin-top: 4px; font-size: 11px; color: #35d0ba;">&#129504; Committed durable fact to Walrus storage: <em>"Builds with Solana &amp; Rust"</em> (Blob 0x9f82b1).</div>
               <div class="tg-inline-btn-group">
                 <div id="tg-btn-cal" class="tg-inline-btn">&#128197; View in Calendar</div>
                 <div id="tg-btn-blobs" class="tg-inline-btn">&#129504; Walrus Blobs (14)</div>
                 <div id="tg-btn-pair" class="tg-inline-btn">&#128279; Pair Web/CLI</div>
               </div>
+              <span class="tg-time">15:42</span>
             </div>
 
             <!-- 3. Calendar Event Card -->
-            <div id="tg-cal-card" class="tg-bubble tg-bot" style="display: none; border-left: 3px solid #ffbe3b;">
-              <div style="font-size: 11px; color: #ffbe3b; font-weight: 700;">&#128197; CALENDAR EVENT CREATED</div>
-              <div style="font-size: 12px; font-weight: 700; color: #fff; margin-top: 2px;">Node Deployment Check</div>
-              <div style="font-size: 11px; color: #94a3b8;">Tomorrow &bull; 09:00 AM - 09:30 AM &bull; Synced with CalDAV / Google Calendar</div>
+            <div id="tg-cal-card" class="tg-bubble tg-bot" style="display: none; border-left: 3px solid #eab308;">
+              <div style="font-size: 10.5px; color: #eab308; font-weight: 700;">&#128197; CALENDAR EVENT CREATED</div>
+              <div style="font-size: 11.5px; font-weight: 700; color: #fff; margin-top: 2px;">Node Deployment Check</div>
+              <div style="font-size: 10.5px; color: #8b949e;">Tomorrow &bull; 09:00 AM - 09:30 AM &bull; Added to CalDAV</div>
+              <span class="tg-time">15:42</span>
             </div>
 
             <!-- 4. Document upload & analysis -->
             <div id="tg-doc-bubble" class="tg-bubble tg-user" style="display: none;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="font-size: 20px;">&#128196;</div>
+                <div style="font-size: 18px;">&#128196;</div>
                 <div>
-                  <div style="font-size: 11.5px; font-weight: 700;">architecture_spec.pdf</div>
-                  <div style="font-size: 10px; opacity: 0.7;">1.2 MB &bull; Uploaded</div>
+                  <div style="font-size: 11px; font-weight: 700;">architecture_spec.pdf</div>
+                  <div style="font-size: 9.5px; opacity: 0.7;">1.2 MB &bull; Uploaded</div>
                 </div>
               </div>
+              <span class="tg-time">15:43 &#10003;&#10003;</span>
             </div>
 
             <div id="tg-doc-reply" class="tg-bubble tg-bot" style="display: none;">
               <div class="tg-tool-pill">&#128269; Tool: parse_attachment("architecture_spec.pdf")</div>
               <div>Extracted 14 pages. Key constraints found: <em>SQLite local caching, Walrus blob proofs, and pure ASCII compliance</em>. Indexed to memory!</div>
+              <span class="tg-time">15:43</span>
             </div>
           </div>
 
@@ -1378,7 +1473,7 @@
         </div>
       </section>
 
-      <!-- SURFACE 2: REALISTIC LINUX CLI TERMINAL -->
+      <!-- SCENE 2: REALISTIC LINUX CLI TERMINAL -->
       <section id="surface-cli" class="surface-viewport interactive-surface">
         <div class="terminal-window">
           <div class="terminal-titlebar">
@@ -1388,12 +1483,14 @@
               <div class="term-btn green"></div>
             </div>
             <div class="term-title">kss@cheta-box: ~/workspace (bash)</div>
-            <div style="font-size: 11px; color: #35d0ba; font-family: var(--mono);">&#9679; WALRUS CONNECTED</div>
+            <div style="font-size: 10.5px; color: #35d0ba; font-family: var(--mono);">&#9679; WALRUS CONNECTED</div>
           </div>
 
           <div id="term-content" class="terminal-body">
-            <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti status</span></div>
-            <div style="color: #94a3b8; margin: 4px 0 10px;">
+            <div>
+              <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta status</span>
+            </div>
+            <div style="color: #9ca3af; margin: 3px 0 8px;">
               [+] Cheta CLI v2.4.0 (Linux x86_64)<br>
               [+] Walrus Network: CONNECTED (epoch 42, latency 32ms)<br>
               [+] Storage Provider: Sui Testnet Decentralized Blob Network<br>
@@ -1402,7 +1499,9 @@
             </div>
 
             <div id="term-step-table" style="display: none;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti memory list --recent 3</span></div>
+              <div>
+                <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta memory list --recent 3</span>
+              </div>
               <table class="term-table">
                 <thead>
                   <tr>
@@ -1435,26 +1534,22 @@
               </table>
             </div>
 
-            <div id="term-step-search" style="display: none; margin-top: 8px;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti memory search "Solana"</span></div>
-              <div style="color: #35d0ba; margin: 3px 0;">
-                [+] Vector match (score: 0.94, latency: 4ms):<br>
-                &nbsp;&nbsp;&bull; Blob 0x9f82b1: "Builds with Solana &amp; Rust" (Learned via Telegram 2m ago)
-              </div>
-            </div>
-
             <div id="term-step-chat" style="display: none; margin-top: 8px;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti chat</span></div>
-              <div style="color: #64748b;">Starting zero-latency streaming REPL session...</div>
-              <div style="color: #38bdf8; margin-top: 4px;">Cheta CLI&gt; What tools do you have available right now?</div>
-              <div id="term-stream-text" style="color: #e2e8f0; margin-top: 3px;"></div>
+              <div>
+                <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta chat</span>
+              </div>
+              <div style="color: #6b7280;">Starting zero-latency streaming REPL session...</div>
+              <div style="color: #38bdf8; margin-top: 3px;">Cheta CLI&gt; What tools do you have available right now?</div>
+              <div id="term-stream-text" style="color: #e5e7eb; margin-top: 2px;"></div>
             </div>
 
             <div id="term-step-pair" style="display: none; margin-top: 8px;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti pairing code</span></div>
-              <div style="background: #161f2e; border: 1px solid #2d3b55; padding: 8px 12px; border-radius: 6px; margin-top: 4px;">
-                <span style="color: #ffbe3b; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
-                <span style="color: #94a3b8; font-size: 11px;">Enter this code on your Web Portal or Mobile to link your Walrus memory realm.</span>
+              <div>
+                <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span class="term-cmd">cheta pairing code</span>
+              </div>
+              <div style="background: #141722; border: 1px solid #232a3d; padding: 7px 10px; border-radius: 5px; margin-top: 4px;">
+                <span style="color: #eab308; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
+                <span style="color: #8b949e; font-size: 10.5px;">Enter this code on your Web Portal or Mobile to link your Walrus memory realm.</span>
               </div>
               <div id="term-paired-toast" style="color: #22c55e; font-weight: 700; margin-top: 4px; display: none;">
                 [+] CONNECTED: Browser Extension &amp; Web Portal authenticated successfully!
@@ -1462,79 +1557,91 @@
             </div>
 
             <div id="term-live-line" style="margin-top: 8px;">
-              <span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span id="term-typed-cmd"></span><span class="term-cursor"></span>
+              <span class="term-user">kss@cheta-box</span><span class="term-colon">:</span><span class="term-path">~</span><span class="term-dollar">$</span> <span id="term-typed-cmd"></span><span class="term-cursor"></span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SURFACE 3: BROWSER EXTENSION & IN-PAGE WEBMCP TOOLS -->
+      <!-- SCENE 3: REALISTIC BROWSER + CHETA EXTENSION SIDEPANEL -->
       <section id="surface-extension" class="surface-viewport interactive-surface">
         <div class="browser-window">
-          <div class="browser-topbar">
-            <div class="browser-tab-row">
-              <div class="browser-tab">
-                <span>&#127829; zaMaker! - Pizza Creator</span>
-              </div>
-              <div class="browser-tab inactive">
-                <span>GitHub - Ksschkw/ranti</span>
-              </div>
-              <div class="browser-tab inactive">
-                <span>Sui Explorer</span>
-              </div>
-            </div>
+          <!-- Animated Virtual Cursor to demonstrate clicking the extension icon -->
+          <div id="virtual-cursor" class="virtual-cursor">
+            <svg width="18" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 3l7 18 3-7 7-3L3 3z" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
 
-            <div class="browser-nav-row">
-              <div class="browser-url-bar">
-                <span>&#128274;</span>
-                <span>https://<strong style="color: #38bdf8;">googlechromelabs.github.io</strong>/webmcp-pizza/</span>
-              </div>
-              <div class="browser-ext-icon" title="Cheta Chrome Extension Active">C</div>
+          <div class="browser-tabs-bar">
+            <div class="browser-tab">
+              <span>&#127829; zaMaker! - Pizza Creator</span>
+              <span class="tab-close">&#10005;</span>
+            </div>
+            <div class="browser-tab inactive">
+              <span>GitHub</span>
+              <span class="tab-close">&#10005;</span>
+            </div>
+            <div class="browser-tab inactive">
+              <span>Sui Explorer</span>
+              <span class="tab-close">&#10005;</span>
             </div>
           </div>
 
-          <div class="browser-content-area">
-            <!-- Left: Active Web Page Viewport -->
-            <div class="browser-page-view">
-              <div class="page-banner">
+          <div class="browser-nav-bar">
+            <div class="browser-nav-btns">
+              <span>&#8592;</span><span>&#8594;</span><span>&#8635;</span>
+            </div>
+            <div class="browser-omnibox">
+              <span>&#128274;</span>
+              <span>https://<strong style="color: #fff;">googlechromelabs.github.io</strong>/webmcp-pizza/</span>
+            </div>
+            <div class="browser-toolbar-ext">
+              <div id="ext-toolbar-icon" class="ext-icon-btn" title="Cheta Extension">C</div>
+            </div>
+          </div>
+
+          <div class="browser-viewport">
+            <!-- Left: Active Web Page -->
+            <div class="browser-page">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div>
-                  <h3>zaMaker! WebMCP Pizza Maker</h3>
-                  <div style="font-size: 11px; color: #94a3b8;">Demonstrating in-page DOM tools registered via WebMCP</div>
+                  <h3 style="font-size: 15px; color: #fff;">zaMaker! WebMCP Pizza Maker</h3>
+                  <div style="font-size: 11px; color: #8b949e;">Demonstrating in-page DOM tools registered via WebMCP</div>
                 </div>
-                <div class="page-pill">&#9889; 7 Page Tools Detected</div>
+                <div style="font-size: 10px; background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 6px; border-radius: 4px; font-weight: 700;">
+                  &#9889; 7 Page Tools
+                </div>
               </div>
 
-              <!-- Interactive Pizza Canvas -->
               <div class="pizza-plate">
-                <div id="pizza-cheese" class="pizza-cheese">
-                  <!-- Animated falling toppings get appended here dynamically -->
-                </div>
+                <div id="pizza-cheese" class="pizza-cheese"></div>
               </div>
 
-              <div style="background: #0b0f16; border: 1px solid #1a2233; border-radius: 6px; padding: 10px; margin-top: auto;">
-                <div style="font-size: 11px; color: #35d0ba; font-weight: 700; margin-bottom: 2px;">WEBMCP EVENT BUS</div>
-                <div id="page-tool-status" style="font-size: 11px; font-family: var(--mono); color: #cbd5e1;">Awaiting agent in-page tool invocation...</div>
+              <div style="background: #090b10; border: 1px solid #1a202c; border-radius: 6px; padding: 8px; margin-top: auto;">
+                <div style="font-size: 10.5px; color: #35d0ba; font-weight: 700;">WEBMCP EVENT BUS</div>
+                <div id="page-tool-status" style="font-size: 10.5px; font-family: var(--mono); color: #9ca3af;">Awaiting agent tool invocation...</div>
               </div>
             </div>
 
-            <!-- Right: Real Cheta Sidepanel Extension Interface -->
-            <div class="browser-sidepanel">
+            <!-- Right: Sliding Cheta Sidepanel Extension -->
+            <div id="browser-sidepanel" class="browser-sidepanel">
               <div class="sp-header">
-                <div class="sp-brand">
-                  <div class="sp-status-dot"></div>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: #fff;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent);"></span>
                   <span>Cheta Extension</span>
                 </div>
-                <div class="sp-actions-row">
-                  <div class="sp-chip active" id="sp-btn-newchat">+ New</div>
-                  <div class="sp-chip" id="sp-btn-chats">Chats 3</div>
-                  <div class="sp-chip" id="sp-btn-memories">Memories 14</div>
+                <div style="display: flex; gap: 4px;">
+                  <span class="sp-mini-btn">+ New</span>
+                  <span class="sp-mini-btn">Chats 3</span>
+                  <span id="sp-btn-memories" class="sp-mini-btn" style="color: var(--accent);">Memories 14</span>
                 </div>
               </div>
 
               <div class="sp-tab-badge">
                 <div>
                   <strong style="color: #fff;">WebMCP zaMaker!</strong>
-                  <div style="color: #64748b;">googlechromelabs.github.io &bull; 34 chars</div>
+                  <div style="color: #717d91;">googlechromelabs.github.io</div>
                 </div>
                 <button id="sp-read-tab-btn" class="sp-read-btn">Read Tab</button>
               </div>
@@ -1549,32 +1656,20 @@
                 </div>
 
                 <div id="sp-bot-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11px;">
-                  Action executed successfully! Pepperoni and mushrooms baked directly into the active page DOM.
-                </div>
-
-                <div id="sp-tools-list-bubble" class="tg-bubble tg-bot" style="display: none; font-size: 10.5px; border-left: 2px solid #38bdf8;">
-                  <strong style="color: #38bdf8;">Available page tools:</strong>
-                  <div>&bull; page_find_text &bull; page_highlight_text &bull; page_scroll_to &bull; page_summarize &bull; add_topping &bull; share_pizza</div>
+                  Baked onto the active pizza via WebMCP!
                 </div>
 
                 <!-- Slide-out Memories Drawer -->
                 <div id="sp-drawer" class="sp-memories-drawer">
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--accent);">
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--accent);">
                     <strong>Decentralized Memories</strong>
                     <span>14 stored</span>
                   </div>
                   <div class="sp-memory-card">
-                    <span class="sp-card-fact">Builds with Solana &amp; Rust</span>
+                    <span style="font-size: 10px; color: #e5e7eb;">Builds with Solana &amp; Rust</span>
                     <div style="display: flex; gap: 4px; margin-top: 2px;">
                       <button class="sp-mini-btn">Forget this one</button>
                       <button class="sp-mini-btn" style="color: var(--accent);">Correct this one</button>
-                    </div>
-                  </div>
-                  <div class="sp-memory-card">
-                    <span class="sp-card-fact">AWS Certified Generative AI Developer - Professional</span>
-                    <div style="display: flex; gap: 4px; margin-top: 2px;">
-                      <button class="sp-mini-btn">Forget this one</button>
-                      <button class="sp-mini-btn">Correct this one</button>
                     </div>
                   </div>
                 </div>
@@ -1584,16 +1679,16 @@
         </div>
       </section>
 
-      <!-- SURFACE 4: WEB PORTAL & EMBEDDED WIDGET -->
+      <!-- SCENE 4: WEB PORTAL & DEVICE PAIRING -->
       <section id="surface-portal" class="surface-viewport interactive-surface">
         <div class="portal-window">
           <div class="portal-navbar">
-            <div class="portal-brand">
-              <div class="brand-dot"></div>
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #fff;">
+              <span class="brand-dot"></span>
               <span>Cheta Web Portal</span>
             </div>
-            <div class="portal-links">
-              <span class="active">Chat &amp; Widget</span>
+            <div style="display: flex; gap: 14px; font-size: 11.5px; color: #8b949e;">
+              <span style="color: var(--accent); font-weight: 600;">Chat &amp; Widget</span>
               <span>Walrus Memories</span>
               <span>Device Pairing</span>
               <span>Documentation</span>
@@ -1602,20 +1697,17 @@
 
           <div class="portal-body">
             <div class="portal-sidebar">
-              <div style="font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Chat Sessions</div>
-              <div style="background: #162132; border: 1px solid #23324d; padding: 7px 10px; border-radius: 5px; font-size: 11.5px; color: #fff;">
+              <div style="font-size: 10px; font-weight: 700; color: #8b949e; text-transform: uppercase;">Chat Sessions</div>
+              <div style="background: #141824; border: 1px solid #232b3d; padding: 6px 8px; border-radius: 4px; font-size: 11px; color: #fff;">
                 &#128172; Web Research &amp; Rust Stack
               </div>
-              <div style="padding: 7px 10px; font-size: 11.5px; color: var(--muted);">
+              <div style="padding: 6px 8px; font-size: 11px; color: #6b7280;">
                 &#128172; zaMaker Pizza Automation
-              </div>
-              <div style="padding: 7px 10px; font-size: 11.5px; color: var(--muted);">
-                &#128172; Daily Reminders &amp; Schedule
               </div>
 
               <div style="margin-top: auto;" class="pairing-card">
                 <div style="font-size: 10.5px; font-weight: 700; color: #35d0ba;">DEVICE PAIRING</div>
-                <div style="font-size: 10px; color: #94a3b8;">Link your Linux CLI or Mobile with a 6-digit one-time code:</div>
+                <div style="font-size: 10px; color: #8b949e;">Linking Linux CLI via 6-digit code:</div>
                 <div class="pairing-code-box">
                   <div class="code-digit">8</div>
                   <div class="code-digit">4</div>
@@ -1624,29 +1716,29 @@
                   <div class="code-digit">9</div>
                   <div class="code-digit">5</div>
                 </div>
-                <div style="font-size: 10px; color: #22c55e;">&#10003; Terminal kss@cheta-box verified &amp; linked</div>
+                <div style="font-size: 10px; color: #22c55e;">&#10003; Terminal kss@cheta-box authenticated &amp; linked</div>
               </div>
             </div>
 
             <div class="portal-main-panel">
-              <div class="tg-bubble tg-bot" style="font-size: 12px; max-width: 90%;">
-                Welcome back Kosisochukwu! Your Walrus memory space is active. You have 14 durable memories synchronized across your Telegram, Linux terminal, and browser extension.
+              <div class="tg-bubble tg-bot" style="font-size: 11.5px; max-width: 90%;">
+                Welcome back Kosisochukwu! Your Walrus memory space is active. You have 14 durable memories synchronized across your devices.
               </div>
 
-              <div id="portal-user-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 12px;">
+              <div id="portal-user-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 11.5px;">
                 /remember Prefers building on Solana, Rust, and Python.
               </div>
 
-              <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 12px; max-width: 90%;">
+              <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 11.5px; max-width: 90%;">
                 <div class="tg-tool-pill">&#129504; Walrus Put: Commit durable fact blob</div>
-                <div>Memory successfully committed to Walrus decentralized storage (Blob <code>blob_wal_0x3a91...</code>). Immediately accessible to your CLI and Extension!</div>
+                <div>Memory committed to Walrus decentralized storage (Blob <code>blob_wal_0x3a91...</code>). Immediately accessible to your CLI and Extension!</div>
               </div>
 
-              <div id="portal-query-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 12px;">
+              <div id="portal-query-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 11.5px;">
                 What did I tell you on Telegram about my preferred deployment language?
               </div>
 
-              <div id="portal-query-reply" class="tg-bubble tg-bot" style="display: none; font-size: 12px; max-width: 90%;">
+              <div id="portal-query-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11.5px; max-width: 90%;">
                 <div class="tg-tool-pill">&#129504; Walrus Query: Cross-surface memory recall</div>
                 <div>On Telegram, you told me that you prefer building with Solana and Rust, and deploy to Sui testnet. (Blob 0x9f82b1 verified from Walrus decentralized storage).</div>
               </div>
@@ -1658,74 +1750,66 @@
                   <span>Store permanent durable fact to Walrus</span>
                 </div>
                 <div class="slash-item">
-                  <code>/forget &lt;query&gt;</code>
-                  <span>Remove or correct a stored memory blob</span>
-                </div>
-                <div class="slash-item">
                   <code>/pair &lt;code&gt;</code>
                   <span>Link another device using a 6-digit code</span>
                 </div>
-                <div class="slash-item">
-                  <code>/tools</code>
-                  <span>Inspect all 13 native agent tools</span>
-                </div>
               </div>
 
-              <div style="margin-top: auto; display: flex; gap: 8px;">
-                <input id="portal-input" type="text" style="flex: 1; background: #121824; border: 1px solid #232d40; border-radius: 7px; padding: 9px 12px; color: #fff; font-size: 12px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
+              <div style="margin-top: auto; display: flex; gap: 6px;">
+                <input id="portal-input" type="text" style="flex: 1; background: #10131a; border: 1px solid #1f2533; border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 11.5px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SURFACE 5: WALRUS DECENTRALIZED MEMORY FABRIC (UNIFIED) -->
+      <!-- SCENE 5: WALRUS DECENTRALIZED MEMORY FABRIC (UNIFIED) -->
       <section id="surface-walrus" class="surface-viewport interactive-surface">
         <div class="walrus-overview-window">
-          <div class="walrus-hero-row">
-            <div class="walrus-title">
-              <h2>Walrus Decentralized Memory Fabric</h2>
-              <p>One unified cryptographic memory state shared instantaneously across all user surfaces.</p>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Walrus Decentralized Memory Fabric</h2>
+              <p style="font-size: 11.5px; color: #8b949e;">One unified cryptographic memory state shared instantaneously across all user surfaces.</p>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <span class="page-pill">&#9679; Sui Epoch 42 Verified</span>
-              <span class="page-pill" style="border-color: #35d0ba; color: #35d0ba;">14 Blobs Stored</span>
+            <div style="display: flex; gap: 6px;">
+              <span style="font-size: 10px; background: rgba(53, 208, 186, 0.15); color: #35d0ba; border: 1px solid rgba(53, 208, 186, 0.35); padding: 2px 7px; border-radius: 4px; font-weight: 700;">&#9679; Sui Epoch 42 Verified</span>
+              <span style="font-size: 10px; background: rgba(234, 179, 8, 0.15); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 7px; border-radius: 4px; font-weight: 700;">14 Blobs Stored</span>
             </div>
           </div>
 
           <div class="surfaces-grid">
             <div class="surface-card-mini synced">
-              <div class="card-icon-badge">&#128241;</div>
-              <div class="card-name">Telegram Bot</div>
-              <div class="card-desc">Voice notes, PDF documents, calendar events &amp; instant reminders on mobile.</div>
-              <div class="card-live-log">&#10003; Memory written: Rust on Sui</div>
+              <div style="font-size: 16px;">&#128241;</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Telegram Bot</div>
+              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Voice notes, PDF documents, calendar events &amp; reminders on mobile.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Memory written: Rust on Sui</div>
             </div>
 
             <div class="surface-card-mini synced">
-              <div class="card-icon-badge">&#128187;</div>
-              <div class="card-name">Linux CLI</div>
-              <div class="card-desc">Streaming REPL tokens, formatted ASCII tables, local offline fallbacks &amp; pairing.</div>
-              <div class="card-live-log">&#10003; Synced from Walrus: 32ms</div>
+              <div style="font-size: 16px;">&#128187;</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Linux Terminal</div>
+              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Streaming tokens, formatted ASCII tables &amp; one-time pairing codes.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Synced from Walrus: 32ms</div>
             </div>
 
             <div class="surface-card-mini synced">
-              <div class="card-icon-badge">&#127760;</div>
-              <div class="card-name">Browser Extension</div>
-              <div class="card-desc">Reads active tab DOM, executes in-page WebMCP tools, and manages memories drawer.</div>
-              <div class="card-live-log">&#10003; In-page WebMCP executed</div>
+              <div style="font-size: 16px;">&#127760;</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Browser Extension</div>
+              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Reads active tab DOM, executes in-page WebMCP tools &amp; memory drawer.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; In-page WebMCP executed</div>
             </div>
 
             <div class="surface-card-mini synced">
-              <div class="card-icon-badge">&#128172;</div>
-              <div class="card-name">Web Portal &amp; Widget</div>
-              <div class="card-desc">Slash command suggestions, device pairing, and instant full-text memory explorer.</div>
-              <div class="card-live-log">&#10003; Real-time sync verified</div>
+              <div style="font-size: 16px;">&#128172;</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Web Portal &amp; Widget</div>
+              <div style="font-size: 11px; color: #8b949e; line-height: 1.4;">Slash command suggestions, device pairing &amp; full-text search.</div>
+              <div style="margin-top: auto; font-family: var(--mono); font-size: 10px; color: #35d0ba;">&#10003; Real-time sync verified</div>
             </div>
           </div>
 
-          <div style="background: #090d14; border: 1px solid #1c2436; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-size: 11.5px; color: #94a3b8;">
-              <strong style="color: #35d0ba;">Zero Fragmentation Guarantee:</strong> Traditional assistants forget everything across apps. Cheta keeps your context durable, encrypted, and accessible everywhere.
+          <div style="background: #090b10; border: 1px solid #1a202c; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 11px; color: #8b949e;">
+              <strong style="color: #35d0ba;">Zero Fragmentation:</strong> Cheta gives you One Decentralized Mind that lives with you anywhere.
             </div>
             <a href="/app/portal.html" class="action-pill-btn" style="background: var(--accent); color: #07090e; font-weight: 700;">Open Portal</a>
           </div>
@@ -1734,49 +1818,61 @@
 
     </main>
 
-    <!-- Mascot Speech Narration Subtitle -->
-    <div class="mascot-narration-box">
-      <div class="mascot-badge">C</div>
-      <div id="narration-text" class="mascot-speech-text">
-        <strong>Cheta Multi-Surface Agent:</strong> Initializing live multi-surface demonstration...
+    <!-- Bubbly Disney-Style Narrator Sidebox (Positioned on the Right Side) -->
+    <aside class="bubbly-narrator-panel">
+      <div class="narrator-header">
+        <div class="narrator-mascot-avatar">C</div>
+        <div class="narrator-speaker-meta">
+          <div id="narrator-speaker" class="narrator-speaker-name">Cheta</div>
+          <span class="narrator-badge">&#9679; Autonomous AI Agent</span>
+        </div>
       </div>
-    </div>
 
-    <!-- HUD Header -->
+      <div id="bubbly-speech" class="narrator-speech-bubble">
+        Welcome! I am Cheta. I connect all your devices into one durable decentralized memory space!
+      </div>
+
+      <div class="narrator-active-tools">
+        <span style="font-weight: 700; color: #cbd5e1;">NATIVE AGENT TOOLS (13 ACTIVE)</span>
+        <div id="tool-pills-row" class="tools-tag-row">
+          <span class="tool-tag" data-tool="walrus_put">walrus_put</span>
+          <span class="tool-tag" data-tool="walrus_query">walrus_query</span>
+          <span class="tool-tag" data-tool="set_reminder">set_reminder</span>
+          <span class="tool-tag" data-tool="create_calendar_event">create_calendar_event</span>
+          <span class="tool-tag" data-tool="parse_attachment">parse_attachment</span>
+          <span class="tool-tag" data-tool="add_topping">add_topping</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Top Navigation HUD -->
     <header class="hud-header">
       <div class="hud-brand interactive-surface">
         <div class="brand-dot"></div>
         <span class="brand-name">Cheta</span>
-        <span class="brand-sub">Multi-Surface AI Agent</span>
       </div>
 
-      <!-- Surface navigation pills for direct switching -->
       <nav class="surface-nav-bar interactive-surface">
-        <button class="surface-tab-btn active" data-surface="0" type="button">&#128241; Telegram</button>
-        <button class="surface-tab-btn" data-surface="1" type="button">&#128187; Linux CLI</button>
-        <button class="surface-tab-btn" data-surface="2" type="button">&#127760; Browser Extension</button>
-        <button class="surface-tab-btn" data-surface="3" type="button">&#128172; Web Portal</button>
-        <button class="surface-tab-btn" data-surface="4" type="button">&#129504; Walrus Fabric</button>
+        <button class="surface-tab-btn active" data-surface="0" type="button">Intro</button>
+        <button class="surface-tab-btn" data-surface="1" type="button">&#128241; Telegram</button>
+        <button class="surface-tab-btn" data-surface="2" type="button">&#128187; Linux CLI</button>
+        <button class="surface-tab-btn" data-surface="3" type="button">&#127760; Extension</button>
+        <button class="surface-tab-btn" data-surface="4" type="button">&#128172; Web Portal</button>
+        <button class="surface-tab-btn" data-surface="5" type="button">&#129504; Walrus</button>
       </nav>
 
       <div class="hud-actions interactive-surface">
-        <button id="btn-camera-mode" class="action-pill-btn" type="button" title="Toggle between auto-directed camera and free orbit">
-          <span>Cam: Auto Director</span>
-        </button>
-        <button id="btn-sound-toggle" class="action-pill-btn" type="button" title="Toggle synthesized sound FX">
-          <span id="sound-label">Sound: ON</span>
-        </button>
-        <button id="btn-record-video" class="action-pill-btn record-btn" type="button" title="Export showcase to WebM video">
-          <span id="record-label">&#9679; Record Video</span>
-        </button>
+        <button id="btn-camera-mode" class="action-pill-btn" type="button">Cam: Auto Director</button>
+        <button id="btn-sound-toggle" class="action-pill-btn" type="button"><span id="sound-label">Sound: ON</span></button>
+        <button id="btn-record-video" class="action-pill-btn" style="color: var(--accent-red); border-color: rgba(239, 68, 68, 0.4);">&#9679; Record Video</button>
         <a class="action-pill-btn" href="/app/portal.html">Portal</a>
       </div>
     </header>
 
-    <!-- HUD Footer Timeline Controller -->
+    <!-- Bottom Controller HUD -->
     <footer class="hud-footer">
       <div class="progress-track-wrap interactive-surface">
-        <span id="time-display" class="time-counter">00:00 / 02:30</span>
+        <span id="time-display" class="time-counter">00:00 / 02:40</span>
         <div id="timeline-track" class="progress-track">
           <div id="timeline-fill" class="progress-fill"></div>
           <div id="timeline-handle" class="progress-handle"></div>
@@ -1790,8 +1886,8 @@
           <button id="btn-speed" class="ctrl-btn" type="button">1.0x</button>
         </div>
 
-        <div style="font-size: 11px; color: var(--dim); font-family: var(--mono);">
-          Press <kbd style="color: var(--muted);">Space</kbd> pause &bull; <kbd style="color: var(--muted);">1 - 5</kbd> switch surfaces &bull; <kbd style="color: var(--muted);">M</kbd> mute
+        <div style="font-size: 10.5px; color: var(--dim); font-family: var(--mono);">
+          <kbd style="color: var(--muted);">Space</kbd> pause &bull; <kbd style="color: var(--muted);">0 - 5</kbd> jump scene &bull; <kbd style="color: var(--muted);">M</kbd> mute
         </div>
       </div>
     </footer>
@@ -1801,68 +1897,91 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <!-- Core Motion Showcase Script -->
+    <!-- Motion Engine -->
     <script>
       (function () {
         "use strict";
 
-        // Total demo length calibrated to 150s (2m 30s) so EVERY 2-3 SECONDS has a vivid, dynamic action!
-        var TOTAL_DURATION = 150;
+        // Total duration: 160 seconds (2 mins 40 secs)
+        var TOTAL_DURATION = 160;
 
-        var SURFACES = [
+        var SCENES = [
           {
             id: 0,
+            key: "intro",
+            name: "World Intro",
+            startTime: 0,
+            endTime: 20,
+            speaker: "Cheta (AI Agent)",
+            speech: "Hi there! I am Cheta. Most AI assistants forget everything when you switch tabs. I give you One Unified Mind across all your devices, backed by Walrus decentralized storage!",
+            activeTool: "walrus_query",
+            camPos: { x: 0, y: 1.8, z: 6.2 },
+            camTarget: { x: 0, y: 0.8, z: 0 },
+            elementId: "surface-intro"
+          },
+          {
+            id: 1,
             key: "telegram",
             name: "Telegram Bot",
-            startTime: 0,
-            endTime: 30,
-            narration: "On Telegram, speak via voice notes or drop files. Cheta extracts durable memories, creates calendar events, and commits verified blobs to Walrus.",
-            camPos: { x: 0, y: 1.8, z: 5.4 },
+            startTime: 20,
+            endTime: 55,
+            speaker: "Cheta (Telegram)",
+            speech: "On Telegram, speak to me with voice notes or drop files. I transcribe audio waveforms, parse attachments, schedule calendar events, and commit durable fact blobs to Walrus.",
+            activeTool: "set_reminder",
+            camPos: { x: 0, y: 1.8, z: 5.2 },
             camTarget: { x: 0, y: 0.6, z: 0 },
             elementId: "surface-telegram"
           },
           {
-            id: 1,
+            id: 2,
             key: "cli",
-            name: "Linux CLI",
-            startTime: 30,
-            endTime: 65,
-            narration: "In any Linux terminal, 'ranti chat' streams zero-latency tokens, queries Walrus embeddings offline or online, and generates one-time pairing codes.",
-            camPos: { x: 0, y: 2.2, z: 6.0 },
+            name: "Linux Terminal",
+            startTime: 55,
+            endTime: 90,
+            speaker: "Cheta (Linux CLI)",
+            speech: "Inside any Linux terminal, 'cheta chat' streams zero-latency tokens, queries Walrus embeddings offline or online, and issues one-time pairing codes.",
+            activeTool: "walrus_query",
+            camPos: { x: 0, y: 2.2, z: 5.8 },
             camTarget: { x: 0, y: 0.8, z: 0 },
             elementId: "surface-cli"
           },
           {
-            id: 2,
+            id: 3,
             key: "extension",
             name: "Browser Extension",
-            startTime: 65,
-            endTime: 100,
-            narration: "In Chrome & Firefox, Cheta inspects active tab DOM and executes in-page WebMCP tools directly without scraping, like adding pizza toppings on zaMaker!",
-            camPos: { x: 0, y: 2.3, z: 6.4 },
+            startTime: 90,
+            endTime: 125,
+            speaker: "Cheta (Web Extension)",
+            speech: "In Chrome & Firefox, click my toolbar icon to open the sidepanel. I read the active tab DOM and execute in-page WebMCP tools directly without scraping, like adding pizza toppings!",
+            activeTool: "add_topping",
+            camPos: { x: 0, y: 2.3, z: 6.2 },
             camTarget: { x: 0, y: 0.9, z: 0 },
             elementId: "surface-extension"
           },
           {
-            id: 3,
+            id: 4,
             key: "portal",
-            name: "Web Portal & Widget",
-            startTime: 100,
-            endTime: 125,
-            narration: "The Web Portal provides slash command suggestions, device pairing code verification, and real-time full-text Walrus memory recall.",
-            camPos: { x: 0, y: 2.2, z: 6.2 },
+            name: "Web Portal & Pairing",
+            startTime: 125,
+            endTime: 145,
+            speaker: "Cheta (Web Portal)",
+            speech: "The Web Portal links your devices using a 6-digit code. Notice how asking about what you said on Telegram recalls the exact memory instantly across surfaces!",
+            activeTool: "walrus_put",
+            camPos: { x: 0, y: 2.2, z: 6.0 },
             camTarget: { x: 0, y: 0.8, z: 0 },
             elementId: "surface-portal"
           },
           {
-            id: 4,
+            id: 5,
             key: "walrus",
             name: "Walrus Memory Fabric",
-            startTime: 125,
-            endTime: 150,
-            narration: "Powered by Walrus decentralized protocol: a single immutable cryptographic memory layer connecting all surfaces with zero vendor lock-in.",
-            camPos: { x: 0, y: 3.4, z: 8.2 },
-            camTarget: { x: 0, y: 1.2, z: 0 },
+            startTime: 145,
+            endTime: 160,
+            speaker: "Cheta (Walrus Fabric)",
+            speech: "One immutable, decentralized cryptographic memory layer connecting all your surfaces with zero vendor lock-in. Your memory, truly yours!",
+            activeTool: "walrus_put",
+            camPos: { x: 0, y: 3.2, z: 7.8 },
+            camTarget: { x: 0, y: 1.0, z: 0 },
             elementId: "surface-walrus"
           }
         ];
@@ -1874,13 +1993,9 @@
         function getAudioContext() {
           if (!audioCtx) {
             var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) {
-              audioCtx = new AudioContextClass();
-            }
+            if (AudioContextClass) audioCtx = new AudioContextClass();
           }
-          if (audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume();
-          }
+          if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           return audioCtx;
         }
 
@@ -1905,120 +2020,64 @@
         // 3D Scene Setup
         var canvas = document.getElementById("webgl-canvas");
         var scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x07090e, 0.04);
+        scene.fog = new THREE.FogExp2(0x090a0d, 0.04);
 
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 2.4, 7.2);
+        camera.position.set(0, 2.2, 6.8);
 
         var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x07090e, 1);
+        renderer.setClearColor(0x090a0d, 1);
 
         var controls = new THREE.OrbitControls(camera, canvas);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxDistance = 25;
-        controls.minDistance = 2;
         controls.enabled = false;
 
-        var ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+        var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
 
-        var dirLight1 = new THREE.DirectionalLight(0x35d0ba, 1.2);
+        var dirLight1 = new THREE.DirectionalLight(0x35d0ba, 1.0);
         dirLight1.position.set(5, 10, 7);
         scene.add(dirLight1);
 
-        var dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.8);
-        dirLight2.position.set(-6, -4, -5);
-        scene.add(dirLight2);
-
-        var grid = new THREE.GridHelper(40, 40, 0x35d0ba, 0x161e2e);
+        var grid = new THREE.GridHelper(30, 30, 0x1f2533, 0x121520);
         grid.position.y = -1.2;
         scene.add(grid);
 
         // Walrus Core
         var coreGroup = new THREE.Group();
-        coreGroup.position.set(0, 1.5, -2);
+        coreGroup.position.set(0, 1.5, -2.5);
         scene.add(coreGroup);
 
-        var octGeo = new THREE.OctahedronGeometry(1.2, 0);
-        var octMat = new THREE.MeshStandardMaterial({
-          color: 0x35d0ba,
-          emissive: 0x0f5044,
-          roughness: 0.2,
-          metalness: 0.8,
-          wireframe: true
-        });
-        var octMesh = new THREE.Mesh(octGeo, octMat);
+        var octMesh = new THREE.Mesh(
+          new THREE.OctahedronGeometry(1.1, 0),
+          new THREE.MeshStandardMaterial({ color: 0x35d0ba, emissive: 0x072b25, roughness: 0.3, metalness: 0.7, wireframe: true })
+        );
         coreGroup.add(octMesh);
 
-        var ring1Geo = new THREE.TorusGeometry(1.8, 0.03, 16, 64);
-        var ring1 = new THREE.Mesh(ring1Geo, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        var ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.025, 16, 64), new THREE.MeshBasicMaterial({ color: 0x2a364f }));
         coreGroup.add(ring1);
 
-        var ring2Geo = new THREE.TorusGeometry(2.2, 0.03, 16, 64);
-        var ring2 = new THREE.Mesh(ring2Geo, new THREE.MeshBasicMaterial({ color: 0xffbe3b }));
+        var ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.025, 16, 64), new THREE.MeshBasicMaterial({ color: 0x3f4d6b }));
         ring2.rotation.x = Math.PI / 2;
         coreGroup.add(ring2);
 
-        // Particles
-        var pCount = 140;
-        var pGeo = new THREE.BufferGeometry();
-        var pPos = new Float32Array(pCount * 3);
-        for (var i = 0; i < pCount; i++) {
-          pPos[i * 3] = (Math.random() - 0.5) * 16;
-          pPos[i * 3 + 1] = Math.random() * 8 - 1;
-          pPos[i * 3 + 2] = (Math.random() - 0.5) * 16;
-        }
-        pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
-        var particleSystem = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x35d0ba, size: 0.07, transparent: true, opacity: 0.6 }));
-        scene.add(particleSystem);
-
-        // Mascot "Cheta"
-        var mascotGroup = new THREE.Group();
-        mascotGroup.position.set(3.2, 0.5, 2.5);
-        scene.add(mascotGroup);
-
-        var mascotHead = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0x1a2638, roughness: 0.3, metalness: 0.6 }));
-        mascotGroup.add(mascotHead);
-
-        var mascotVisor = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.22, 0.08), new THREE.MeshBasicMaterial({ color: 0x35d0ba }));
-        mascotVisor.position.set(0, 0.05, 0.31);
-        mascotHead.add(mascotVisor);
-
-        var antGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.3);
-        var antMat = new THREE.MeshStandardMaterial({ color: 0xffbe3b });
-        var ant1 = new THREE.Mesh(antGeo, antMat);
-        ant1.position.set(-0.25, 0.42, 0); ant1.rotation.z = 0.2;
-        mascotHead.add(ant1);
-
-        var ant2 = new THREE.Mesh(antGeo, antMat);
-        ant2.position.set(0.25, 0.42, 0); ant2.rotation.z = -0.2;
-        mascotHead.add(ant2);
-
-        var handMat = new THREE.MeshStandardMaterial({ color: 0x35d0ba, metalness: 0.5 });
-        var leftHand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
-        leftHand.position.set(-0.55, -0.2, 0.2);
-        mascotGroup.add(leftHand);
-
-        var rightHand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
-        rightHand.position.set(0.55, -0.2, 0.2);
-        mascotGroup.add(rightHand);
-
-        // State & DOM Handles
+        // State & DOM
         var isPlaying = true;
         var playbackSpeed = 1.0;
         var currentTime = 0;
         var lastTimestamp = performance.now();
-        var currentSurfaceIndex = 0;
+        var currentSceneIndex = 0;
         var isFreeOrbit = false;
 
         var timeDisplay = document.getElementById("time-display");
         var timelineFill = document.getElementById("timeline-fill");
         var timelineHandle = document.getElementById("timeline-handle");
         var timelineTrack = document.getElementById("timeline-track");
-        var narrationText = document.getElementById("narration-text");
+        var narratorSpeaker = document.getElementById("narrator-speaker");
+        var bubblySpeech = document.getElementById("bubbly-speech");
         var surfaceButtons = document.querySelectorAll(".surface-tab-btn");
         var surfaceViews = document.querySelectorAll(".surface-viewport");
         var btnPlayPause = document.getElementById("btn-play-pause");
@@ -2027,6 +2086,7 @@
         var btnCameraMode = document.getElementById("btn-camera-mode");
         var btnSoundToggle = document.getElementById("btn-sound-toggle");
         var soundLabel = document.getElementById("sound-label");
+        var toolTags = document.querySelectorAll(".tool-tag");
 
         function formatTime(sec) {
           var m = Math.floor(sec / 60);
@@ -2034,10 +2094,10 @@
           return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
         }
 
-        function activateSurface(index) {
-          if (index < 0 || index >= SURFACES.length) return;
-          currentSurfaceIndex = index;
-          var surf = SURFACES[index];
+        function activateScene(index) {
+          if (index < 0 || index >= SCENES.length) return;
+          currentSceneIndex = index;
+          var sc = SCENES[index];
 
           for (var i = 0; i < surfaceButtons.length; i++) {
             if (i === index) surfaceButtons[i].classList.add("active");
@@ -2045,37 +2105,45 @@
           }
 
           for (var j = 0; j < surfaceViews.length; j++) {
-            if (surfaceViews[j].id === surf.elementId) surfaceViews[j].classList.add("active");
+            if (surfaceViews[j].id === sc.elementId) surfaceViews[j].classList.add("active");
             else surfaceViews[j].classList.remove("active");
           }
 
-          narrationText.innerHTML = "<strong>" + surf.name + ":</strong> " + surf.narration;
+          // Bubbly Narrator update
+          narratorSpeaker.textContent = sc.speaker;
+          bubblySpeech.textContent = sc.speech;
 
-          if (!isFreeOrbit && typeof TWEEN !== "undefined") {
-            new TWEEN.Tween(camera.position).to(surf.camPos, 900).easing(TWEEN.Easing.Cubic.Out).start();
-            new TWEEN.Tween(controls.target).to(surf.camTarget, 900).easing(TWEEN.Easing.Cubic.Out).start();
-
-            var mascotTargetX = (index % 2 === 0) ? 3.0 : -3.0;
-            new TWEEN.Tween(mascotGroup.position).to({ x: mascotTargetX, y: 0.5, z: 2.3 }, 800).easing(TWEEN.Easing.Quadratic.Out).start();
+          // Highlight tool tag
+          for (var k = 0; k < toolTags.length; k++) {
+            if (toolTags[k].getAttribute("data-tool") === sc.activeTool) {
+              toolTags[k].classList.add("active");
+            } else {
+              toolTags[k].classList.remove("active");
+            }
           }
 
-          playChirp(460 + index * 60, "sine", 0.12);
+          if (!isFreeOrbit && typeof TWEEN !== "undefined") {
+            new TWEEN.Tween(camera.position).to(sc.camPos, 800).easing(TWEEN.Easing.Cubic.Out).start();
+            new TWEEN.Tween(controls.target).to(sc.camTarget, 800).easing(TWEEN.Easing.Cubic.Out).start();
+          }
+
+          playChirp(460 + index * 50, "sine", 0.1);
         }
 
         for (var b = 0; b < surfaceButtons.length; b++) {
           (function (idx) {
             surfaceButtons[idx].addEventListener("click", function () {
-              currentTime = SURFACES[idx].startTime;
-              activateSurface(idx);
+              currentTime = SCENES[idx].startTime;
+              activateScene(idx);
             });
           })(b);
         }
 
-        // Fast-Paced Dynamic Simulation Driver (Continuous action every 2-3 seconds)
-        function updateSurfaceSimulations(time) {
-          // ================= Surface 0: Telegram Bot (0 - 30s) =================
-          if (time >= 0 && time < 30) {
-            var tgRel = time;
+        // Live Dynamic Actions Every 2-3 Seconds
+        function updateSceneActions(time) {
+          // ================= Scene 1: Telegram (20 - 55s) =================
+          if (time >= 20 && time < 55) {
+            var tgRel = time - 20;
             var tgTyping = document.getElementById("tg-typing");
             var tgReply1 = document.getElementById("tg-reply-1");
             var tgBtnCal = document.getElementById("tg-btn-cal");
@@ -2084,8 +2152,6 @@
             var tgDocReply = document.getElementById("tg-doc-reply");
             var tgStatusText = document.getElementById("tg-status-text");
 
-            // 0 - 2s: Voice note playing
-            // 2.5 - 5s: Typing...
             if (tgRel >= 2.5 && tgRel < 5.5) {
               tgTyping.style.display = "flex";
               tgStatusText.textContent = "bot • typing...";
@@ -2094,163 +2160,122 @@
               tgStatusText.textContent = "bot • 13 tools active • online";
             }
 
-            // 5.5s: Reminder + durable memory reply appears
-            if (tgRel >= 5.5) {
-              tgReply1.style.display = "block";
-            } else {
-              tgReply1.style.display = "none";
-            }
+            if (tgRel >= 5.5) tgReply1.style.display = "block";
+            else tgReply1.style.display = "none";
 
-            // 9s: Simulated user taps "View in Calendar"
-            if (tgRel >= 9 && tgRel < 12) {
-              tgBtnCal.classList.add("clicked");
-            } else {
-              tgBtnCal.classList.remove("clicked");
-            }
+            if (tgRel >= 9 && tgRel < 12) tgBtnCal.classList.add("clicked");
+            else tgBtnCal.classList.remove("clicked");
 
-            // 11s: Calendar Event card pops in
-            if (tgRel >= 11) {
-              tgCalCard.style.display = "block";
-            } else {
-              tgCalCard.style.display = "none";
-            }
+            if (tgRel >= 11) tgCalCard.style.display = "block";
+            else tgCalCard.style.display = "none";
 
-            // 16s: User drops architecture_spec.pdf
-            if (tgRel >= 16) {
-              tgDocBubble.style.display = "block";
-            } else {
-              tgDocBubble.style.display = "none";
-            }
+            if (tgRel >= 16) tgDocBubble.style.display = "block";
+            else tgDocBubble.style.display = "none";
 
-            // 20s: Attachment parsing tool output pops in
-            if (tgRel >= 20) {
-              tgDocReply.style.display = "block";
-            } else {
-              tgDocReply.style.display = "none";
-            }
+            if (tgRel >= 20) tgDocReply.style.display = "block";
+            else tgDocReply.style.display = "none";
           }
 
-          // ================= Surface 1: Linux CLI (30 - 65s) =================
-          if (time >= 30 && time < 65) {
-            var cliRel = time - 30;
+          // ================= Scene 2: Linux CLI (55 - 90s) =================
+          if (time >= 55 && time < 90) {
+            var cliRel = time - 55;
             var termStepTable = document.getElementById("term-step-table");
-            var termStepSearch = document.getElementById("term-step-search");
             var termStepChat = document.getElementById("term-step-chat");
             var termStepPair = document.getElementById("term-step-pair");
             var termPairedToast = document.getElementById("term-paired-toast");
             var termStreamText = document.getElementById("term-stream-text");
             var termTypedCmd = document.getElementById("term-typed-cmd");
 
-            // 0 - 4s: Typing "ranti memory list --recent 3"
             if (cliRel < 4) {
-              termTypedCmd.textContent = "ranti memory list --recent 3".slice(0, Math.floor(cliRel * 7));
-            } else if (cliRel >= 4 && cliRel < 10) {
+              termTypedCmd.textContent = "cheta memory list --recent 3".slice(0, Math.floor(cliRel * 7));
+            } else {
               termTypedCmd.textContent = "";
             }
 
-            // 4s: Table renders
-            if (cliRel >= 4) {
-              termStepTable.style.display = "block";
-            } else {
-              termStepTable.style.display = "none";
-            }
+            if (cliRel >= 4) termStepTable.style.display = "block";
+            else termStepTable.style.display = "none";
 
-            // 10s: Search "Solana" matches in 4ms
-            if (cliRel >= 10) {
-              termStepSearch.style.display = "block";
-            } else {
-              termStepSearch.style.display = "none";
-            }
-
-            // 16s: ranti chat starts streaming tokens
-            if (cliRel >= 16) {
+            if (cliRel >= 12) {
               termStepChat.style.display = "block";
               var fullTokens = "I have 13 active agent tools (Wikipedia, Web Search, Weather, Calculator, Calendar, Reminders, Walrus Query, Walrus Put, Page Inspect...). Everything you share is instantly synchronized with your Telegram & Browser Extension via Walrus decentralized blobs.";
-              var tokenCount = Math.min(fullTokens.length, Math.floor((cliRel - 16) * 18));
+              var tokenCount = Math.min(fullTokens.length, Math.floor((cliRel - 12) * 18));
               termStreamText.textContent = fullTokens.slice(0, tokenCount);
             } else {
               termStepChat.style.display = "none";
             }
 
-            // 26s: Pairing code generation
-            if (cliRel >= 26) {
-              termStepPair.style.display = "block";
-            } else {
-              termStepPair.style.display = "none";
-            }
+            if (cliRel >= 22) termStepPair.style.display = "block";
+            else termStepPair.style.display = "none";
 
-            // 31s: Paired toast appears
-            if (cliRel >= 31) {
-              termPairedToast.style.display = "block";
-            } else {
-              termPairedToast.style.display = "none";
-            }
+            if (cliRel >= 28) termPairedToast.style.display = "block";
+            else termPairedToast.style.display = "none";
           }
 
-          // ================= Surface 2: Browser Extension & WebMCP (65 - 100s) =================
-          if (time >= 65 && time < 100) {
-            var extRel = time - 65;
+          // ================= Scene 3: Browser Extension (90 - 125s) =================
+          if (time >= 90 && time < 125) {
+            var extRel = time - 90;
+            var vCursor = document.getElementById("virtual-cursor");
+            var sidepanel = document.getElementById("browser-sidepanel");
+            var extToolbarIcon = document.getElementById("ext-toolbar-icon");
             var spToolBadge = document.getElementById("sp-tool-badge");
             var spBotReply = document.getElementById("sp-bot-reply");
-            var spToolsList = document.getElementById("sp-tools-list-bubble");
             var spDrawer = document.getElementById("sp-drawer");
             var pizzaCheese = document.getElementById("pizza-cheese");
             var pageToolStatus = document.getElementById("page-tool-status");
-            var spReadBtn = document.getElementById("sp-read-tab-btn");
 
-            // 3s: "Read Tab" button pulses
-            if (extRel >= 3 && extRel < 6) {
-              spReadBtn.style.boxShadow = "0 0 12px var(--accent)";
+            // 0 - 3s: Cursor glides up to extension icon and clicks it
+            if (extRel < 4) {
+              vCursor.style.opacity = "1";
+              if (extRel < 2.5) {
+                vCursor.style.transform = "translate(200px, 200px)";
+              } else {
+                vCursor.style.transform = "translate(860px, 32px)";
+              }
             } else {
-              spReadBtn.style.boxShadow = "none";
+              vCursor.style.opacity = "0";
             }
 
-            // 5s: In-page tool badge executes
-            if (extRel >= 5) {
+            // 3s: Extension sidepanel slides open!
+            if (extRel >= 3) {
+              sidepanel.classList.add("open");
+              extToolbarIcon.style.boxShadow = "0 0 10px var(--accent)";
+            } else {
+              sidepanel.classList.remove("open");
+              extToolbarIcon.style.boxShadow = "none";
+            }
+
+            // 7s: In-page WebMCP tool fires
+            if (extRel >= 7) {
               spToolBadge.style.display = "inline-flex";
               pageToolStatus.textContent = "[WebMCP] add_topping({'topping': ['pepperoni', 'mushrooms']}) executed";
             } else {
               spToolBadge.style.display = "none";
-              pageToolStatus.textContent = "Awaiting agent in-page tool invocation...";
+              pageToolStatus.textContent = "Awaiting agent tool invocation...";
             }
 
-            // 7s: Pepperoni and mushrooms fall onto pizza
-            if (extRel >= 7 && pizzaCheese.children.length === 0) {
+            // 9s: Pepperoni and mushrooms fall onto pizza
+            if (extRel >= 9 && pizzaCheese.children.length === 0) {
               var p1 = document.createElement("div"); p1.className = "topping-pep"; p1.style.top = "20px"; p1.style.left = "30px"; pizzaCheese.appendChild(p1);
-              var p2 = document.createElement("div"); p2.className = "topping-pep"; p2.style.top = "65px"; p2.style.left = "65px"; pizzaCheese.appendChild(p2);
-              var p3 = document.createElement("div"); p3.className = "topping-pep"; p3.style.top = "30px"; p3.style.left = "95px"; pizzaCheese.appendChild(p3);
-              var m1 = document.createElement("div"); m1.className = "topping-mush"; m1.style.top = "95px"; m1.style.left = "25px"; pizzaCheese.appendChild(m1);
-              var m2 = document.createElement("div"); m2.className = "topping-mush"; m2.style.top = "100px"; m2.style.left = "95px"; pizzaCheese.appendChild(m2);
-              playChirp(720, "triangle", 0.15);
-            } else if (extRel < 7 && pizzaCheese.children.length > 0) {
+              var p2 = document.createElement("div"); p2.className = "topping-pep"; p2.style.top = "60px"; p2.style.left = "60px"; pizzaCheese.appendChild(p2);
+              var p3 = document.createElement("div"); p3.className = "topping-pep"; p3.style.top = "25px"; p3.style.left = "90px"; pizzaCheese.appendChild(p3);
+              var m1 = document.createElement("div"); m1.className = "topping-mush"; m1.style.top = "85px"; m1.style.left = "25px"; pizzaCheese.appendChild(m1);
+              var m2 = document.createElement("div"); m2.className = "topping-mush"; m2.style.top = "90px"; m2.style.left = "90px"; pizzaCheese.appendChild(m2);
+              playChirp(700, "triangle", 0.15);
+            } else if (extRel < 9 && pizzaCheese.children.length > 0) {
               pizzaCheese.innerHTML = "";
             }
 
-            // 8s: Reply confirms
-            if (extRel >= 8) {
-              spBotReply.style.display = "block";
-            } else {
-              spBotReply.style.display = "none";
-            }
+            if (extRel >= 10) spBotReply.style.display = "block";
+            else spBotReply.style.display = "none";
 
-            // 14s: List tools on page
-            if (extRel >= 14) {
-              spToolsList.style.display = "block";
-            } else {
-              spToolsList.style.display = "none";
-            }
-
-            // 20s: Open memories drawer
-            if (extRel >= 20) {
-              spDrawer.classList.add("open");
-            } else {
-              spDrawer.classList.remove("open");
-            }
+            // 18s: Memories drawer slides open
+            if (extRel >= 18) spDrawer.classList.add("open");
+            else spDrawer.classList.remove("open");
           }
 
-          // ================= Surface 3: Web Portal (100 - 125s) =================
-          if (time >= 100 && time < 125) {
-            var portRel = time - 100;
+          // ================= Scene 4: Web Portal (125 - 145s) =================
+          if (time >= 125 && time < 145) {
+            var portRel = time - 125;
             var slashPopup = document.getElementById("slash-popup");
             var portalUserMsg = document.getElementById("portal-user-msg");
             var portalBotMsg = document.getElementById("portal-bot-msg");
@@ -2258,46 +2283,32 @@
             var portalQueryReply = document.getElementById("portal-query-reply");
             var portalInput = document.getElementById("portal-input");
 
-            // 2 - 6s: Typing / and slash commands open
-            if (portRel >= 2 && portRel < 6) {
+            if (portRel >= 2 && portRel < 5) {
               slashPopup.style.display = "flex";
               portalInput.value = "/rem";
             } else {
               slashPopup.style.display = "none";
             }
 
-            // 6s: /remember message appears
-            if (portRel >= 6) {
+            if (portRel >= 5) {
               portalUserMsg.style.display = "block";
               portalInput.value = "";
             } else {
               portalUserMsg.style.display = "none";
             }
 
-            // 9s: Walrus Put confirmed
-            if (portRel >= 9) {
-              portalBotMsg.style.display = "block";
-            } else {
-              portalBotMsg.style.display = "none";
-            }
+            if (portRel >= 8) portalBotMsg.style.display = "block";
+            else portalBotMsg.style.display = "none";
 
-            // 14s: Cross-device query
-            if (portRel >= 14) {
-              portalQueryMsg.style.display = "block";
-            } else {
-              portalQueryMsg.style.display = "none";
-            }
+            if (portRel >= 12) portalQueryMsg.style.display = "block";
+            else portalQueryMsg.style.display = "none";
 
-            // 17s: Instant cross-surface recall
-            if (portRel >= 17) {
-              portalQueryReply.style.display = "block";
-            } else {
-              portalQueryReply.style.display = "none";
-            }
+            if (portRel >= 15) portalQueryReply.style.display = "block";
+            else portalQueryReply.style.display = "none";
           }
         }
 
-        // Timeline & Controls Event Handlers
+        // Timeline Controls
         btnPlayPause.addEventListener("click", function () {
           isPlaying = !isPlaying;
           btnPlayPause.textContent = isPlaying ? "Pause" : "Play";
@@ -2307,7 +2318,7 @@
           currentTime = 0;
           isPlaying = true;
           btnPlayPause.textContent = "Pause";
-          activateSurface(0);
+          activateScene(0);
         });
 
         btnSpeed.addEventListener("click", function () {
@@ -2320,16 +2331,14 @@
         btnCameraMode.addEventListener("click", function () {
           isFreeOrbit = !isFreeOrbit;
           controls.enabled = isFreeOrbit;
-          btnCameraMode.querySelector("span").textContent = isFreeOrbit ? "Cam: Free 3D Orbit" : "Cam: Auto Director";
-          if (!isFreeOrbit) {
-            activateSurface(currentSurfaceIndex);
-          }
+          btnCameraMode.textContent = isFreeOrbit ? "Cam: Free 3D Orbit" : "Cam: Auto Director";
+          if (!isFreeOrbit) activateScene(currentSceneIndex);
         });
 
         btnSoundToggle.addEventListener("click", function () {
           soundEnabled = !soundEnabled;
           soundLabel.textContent = soundEnabled ? "Sound: ON" : "Sound: Muted";
-          if (soundEnabled) playChirp(600, "sine", 0.1);
+          if (soundEnabled) playChirp(600, "sine", 0.08);
         });
 
         timelineTrack.addEventListener("click", function (e) {
@@ -2337,9 +2346,9 @@
           var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
           currentTime = ratio * TOTAL_DURATION;
 
-          for (var k = 0; k < SURFACES.length; k++) {
-            if (currentTime >= SURFACES[k].startTime && currentTime < SURFACES[k].endTime) {
-              activateSurface(k);
+          for (var k = 0; k < SCENES.length; k++) {
+            if (currentTime >= SCENES[k].startTime && currentTime < SCENES[k].endTime) {
+              activateScene(k);
               break;
             }
           }
@@ -2350,10 +2359,12 @@
           if (e.code === "Space") {
             e.preventDefault();
             btnPlayPause.click();
-          } else if (e.key >= "1" && e.key <= "5") {
-            var idx = parseInt(e.key, 10) - 1;
-            currentTime = SURFACES[idx].startTime;
-            activateSurface(idx);
+          } else if (e.key >= "0" && e.key <= "5") {
+            var idx = parseInt(e.key, 10);
+            if (idx < SCENES.length) {
+              currentTime = SCENES[idx].startTime;
+              activateScene(idx);
+            }
           } else if (e.code === "KeyM") {
             btnSoundToggle.click();
           } else if (e.code === "KeyR") {
@@ -2361,58 +2372,8 @@
           }
         });
 
-        // Direct Video Recording
-        var btnRecord = document.getElementById("btn-record-video");
-        var recordLabel = document.getElementById("record-label");
-        var mediaRecorder = null;
-        var recordedChunks = [];
-        var isRecording = false;
-
-        btnRecord.addEventListener("click", function () {
-          if (!isRecording) {
-            try {
-              var stream = canvas.captureStream(30);
-              recordedChunks = [];
-              var mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-              mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
-
-              mediaRecorder.ondataavailable = function (e) {
-                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
-              };
-
-              mediaRecorder.onstop = function () {
-                var blob = new Blob(recordedChunks, { type: "video/webm" });
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement("a");
-                a.href = url;
-                a.download = "cheta-multi-surface-showcase.webm";
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(function () {
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }, 100);
-              };
-
-              mediaRecorder.start();
-              isRecording = true;
-              btnRecord.classList.add("recording");
-              recordLabel.textContent = "&#9632; Stop & Save";
-            } catch (err) {
-              alert("Video recording could not start: " + err.message);
-            }
-          } else {
-            if (mediaRecorder && isRecording) {
-              mediaRecorder.stop();
-              isRecording = false;
-              btnRecord.classList.remove("recording");
-              recordLabel.textContent = "&#9679; Record Video";
-            }
-          }
-        });
-
-        // Main Render Loop
-        activateSurface(0);
+        // Main Loop
+        activateScene(0);
 
         function animate(timestamp) {
           requestAnimationFrame(animate);
@@ -2420,29 +2381,22 @@
           var deltaSec = (timestamp - lastTimestamp) / 1000;
           lastTimestamp = timestamp;
 
-          if (typeof TWEEN !== "undefined") {
-            TWEEN.update();
-          }
+          if (typeof TWEEN !== "undefined") TWEEN.update();
 
           if (isPlaying) {
             currentTime += deltaSec * playbackSpeed;
-            if (currentTime >= TOTAL_DURATION) {
-              currentTime = 0;
-            }
+            if (currentTime >= TOTAL_DURATION) currentTime = 0;
 
             var activeIdx = 0;
-            for (var i = 0; i < SURFACES.length; i++) {
-              if (currentTime >= SURFACES[i].startTime && currentTime < SURFACES[i].endTime) {
+            for (var i = 0; i < SCENES.length; i++) {
+              if (currentTime >= SCENES[i].startTime && currentTime < SCENES[i].endTime) {
                 activeIdx = i;
                 break;
               }
             }
 
-            if (activeIdx !== currentSurfaceIndex) {
-              activateSurface(activeIdx);
-            }
-
-            updateSurfaceSimulations(currentTime);
+            if (activeIdx !== currentSceneIndex) activateScene(activeIdx);
+            updateSceneActions(currentTime);
 
             var pct = (currentTime / TOTAL_DURATION) * 100;
             timelineFill.style.width = pct + "%";
@@ -2451,35 +2405,14 @@
           }
 
           var t = timestamp * 0.001;
-
           if (octMesh) {
-            octMesh.rotation.x = t * 0.4;
-            octMesh.rotation.y = t * 0.6;
+            octMesh.rotation.x = t * 0.3;
+            octMesh.rotation.y = t * 0.5;
           }
-          if (ring1) ring1.rotation.z = -t * 0.5;
-          if (ring2) ring2.rotation.y = t * 0.35;
+          if (ring1) ring1.rotation.z = -t * 0.4;
+          if (ring2) ring2.rotation.y = t * 0.3;
 
-          if (particleSystem) {
-            particleSystem.rotation.y = t * 0.05;
-          }
-
-          if (mascotGroup) {
-            mascotGroup.position.y = 0.5 + Math.sin(t * 2.5) * 0.1;
-            mascotHead.rotation.y = Math.sin(t * 1.5) * 0.12;
-            mascotHead.rotation.x = Math.sin(t * 2.0) * 0.06;
-
-            leftHand.position.y = -0.2 + Math.sin(t * 4.0) * 0.04;
-            rightHand.position.y = -0.2 + Math.cos(t * 4.0) * 0.04;
-
-            var blinkCycle = t % 4;
-            if (blinkCycle > 3.85) mascotVisor.scale.y = 0.1;
-            else mascotVisor.scale.y = 1.0;
-          }
-
-          if (controls && controls.enabled) {
-            controls.update();
-          }
-
+          if (controls && controls.enabled) controls.update();
           renderer.render(scene, camera);
         }
 
