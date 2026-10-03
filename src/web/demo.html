@@ -209,23 +209,28 @@
 
     #flash.on { opacity: 0.08; }
 
-    /* ── Scene visibility & centering ─────────────────────────────────── */
+    /* ── Scene visibility & centering (Absolute overlay, perfectly centered) ── */
     .scene {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      max-width: 1040px;
       display: none;
       align-items: center;
       justify-content: center;
       opacity: 0;
       transform: scale(0.97);
       transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
+      pointer-events: none;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
     .scene.active {
       display: flex;
       opacity: 1;
       transform: scale(1);
+      pointer-events: auto;
     }
 
     /* ====================================================================
@@ -233,10 +238,8 @@
     ==================================================================== */
     #s0 {
       flex-direction: column;
-      max-width: 760px;
       text-align: center;
       gap: 0;
-      position: relative;
     }
 
     .intro-eyebrow {
@@ -247,8 +250,7 @@
       text-transform: uppercase;
       color: var(--gold);
       margin-bottom: 16px;
-      opacity: 0;
-      animation: fadeUp 0.6s ease 0.3s forwards;
+      animation: fadeUp 0.6s ease 0.1s forwards;
     }
 
     @keyframes fadeUp {
@@ -270,8 +272,18 @@
 
     .intro-hero-title span {
       display: inline-block;
-      opacity: 0;
-      transform: translateY(100%);
+      animation: letterPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    #c-letter { animation-delay: 0.05s; }
+    #h-letter { animation-delay: 0.12s; }
+    #e-letter { animation-delay: 0.19s; }
+    #t-letter { animation-delay: 0.26s; }
+    #a-letter { animation-delay: 0.33s; }
+
+    @keyframes letterPop {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .intro-sub {
@@ -353,7 +365,6 @@
     /* ====================================================================
        SCENE 1 — TELEGRAM (Centered phone device)
     ==================================================================== */
-    #s1 { display: flex; align-items: center; justify-content: center; }
 
     .tg-device {
       width: min(350px, 90vw);
@@ -523,7 +534,6 @@
     /* ====================================================================
        SCENE 2 — CLI TERMINAL (Full centered window, NO sinking)
     ==================================================================== */
-    #s2 { display: flex; align-items: center; justify-content: center; }
 
     .term-window {
       width: min(940px, 96%);
@@ -588,7 +598,6 @@
     /* ====================================================================
        SCENE 3 — CHROME MULTI-TAB & WEBMCP (Centered browser window)
     ==================================================================== */
-    #s3 { display: flex; align-items: center; justify-content: center; }
 
     .chrome-window {
       width: min(980px, 98%);
@@ -1167,7 +1176,6 @@
     /* ====================================================================
        SCENE 4 — WEB PORTAL (Centered dashboard)
     ==================================================================== */
-    #s4 { display: flex; align-items: center; justify-content: center; }
 
     .portal-window {
       width: min(960px, 96%);
@@ -1380,9 +1388,38 @@
         <h1 class="intro-hero-title">
           <span id="c-letter">C</span><span id="h-letter">h</span><span id="e-letter">e</span><span id="t-letter">t</span><span id="a-letter">a</span>
         </h1>
-        <p class="intro-sub" id="intro-sub-text">&nbsp;</p>
-        <p class="intro-desc" id="intro-desc-text">&nbsp;</p>
-        <div class="face-cards" id="face-cards"></div>
+        <p class="intro-sub" id="intro-sub-text">One Mind. Every Surface.</p>
+        <p class="intro-desc" id="intro-desc-text">Cheta is an autonomous memory-first AI agent. It keeps one private, encrypted memory space across Telegram, Linux Terminal, Chromium Extension, and Web Portal using Walrus decentralized storage. Zero memory rot.</p>
+        <div class="face-cards" id="face-cards">
+          <div class="face-card" onclick="window.goToScene(1)">
+            <div class="face-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="face-card-name">Telegram</div>
+            <div class="face-card-desc">Natural fact extraction, slash commands, voice notes &amp; reminders</div>
+          </div>
+          <div class="face-card" onclick="window.goToScene(2)">
+            <div class="face-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>
+            </div>
+            <div class="face-card-name">Terminal</div>
+            <div class="face-card-desc">Interactive chat REPL, salience scoring, pair &amp; passport backup</div>
+          </div>
+          <div class="face-card" onclick="window.goToScene(3)">
+            <div class="face-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>
+            </div>
+            <div class="face-card-name">Extension</div>
+            <div class="face-card-desc">Active tab inspection, in-page WebMCP tool automation &amp; memories</div>
+          </div>
+          <div class="face-card" onclick="window.goToScene(4)">
+            <div class="face-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="face-card-name">Web Portal</div>
+            <div class="face-card-desc">Full web assistant, memory management, pairing &amp; evidence audit</div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══ SCENE 1: TELEGRAM ═══ -->
@@ -1564,7 +1601,7 @@
               <div class="chrome-dot cd-y"></div>
               <div class="chrome-dot cd-g"></div>
             </div>
-            <div class="portal-url">ranti-gkn7.onrender.com/app/portal.html</div>
+            <div class="portal-url">cheta.app/portal</div>
           </div>
           <div class="portal-body">
             <div class="portal-sidebar">
@@ -1617,102 +1654,146 @@
 
   </div><!-- end #stage -->
 
-  <!-- Three.js + TWEEN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <!-- Three.js local + fallback -->
+  <script src="vendor/three.min.js"></script>
 
   <script>
+  window.addEventListener('error', function(e) {
+    window.__SCRIPT_ERROR = e.message + ' at line ' + e.lineno + ':' + e.colno;
+  });
+
   (function() {
     'use strict';
 
     /* ================================================================
-       PARTICLE CANVAS (Three.js background)
+       PARTICLE CANVAS (Robust WebGL Three.js with 2D Canvas fallback)
     ================================================================ */
-    var canvas = document.getElementById('c');
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x070708, 1);
+    try {
+      if (typeof THREE !== 'undefined') {
+        var canvas = document.getElementById('c');
+        var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x070708, 1);
 
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 60);
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 60);
 
-    var pCount = 750;
-    var pGeo = new THREE.BufferGeometry();
-    var pPos = new Float32Array(pCount * 3);
-    var pVel = new Float32Array(pCount * 3);
+        var pCount = 500;
+        var pGeo = new THREE.BufferGeometry();
+        var pPos = new Float32Array(pCount * 3);
+        var pVel = new Float32Array(pCount * 3);
 
-    for (var i = 0; i < pCount; i++) {
-      pPos[i * 3]     = (Math.random() - 0.5) * 200;
-      pPos[i * 3 + 1] = (Math.random() - 0.5) * 120;
-      pPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      pVel[i * 3]     = (Math.random() - 0.5) * 0.01;
-      pVel[i * 3 + 1] = (Math.random() - 0.5) * 0.007;
-      pVel[i * 3 + 2] = (Math.random() - 0.5) * 0.005;
-    }
+        for (var i = 0; i < pCount; i++) {
+          pPos[i * 3]     = (Math.random() - 0.5) * 200;
+          pPos[i * 3 + 1] = (Math.random() - 0.5) * 120;
+          pPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+          pVel[i * 3]     = (Math.random() - 0.5) * 0.01;
+          pVel[i * 3 + 1] = (Math.random() - 0.5) * 0.007;
+          pVel[i * 3 + 2] = (Math.random() - 0.5) * 0.005;
+        }
 
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-    var pMat = new THREE.PointsMaterial({
-      color: 0x383840,
-      size: 0.65,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.7
-    });
-    var particles = new THREE.Points(pGeo, pMat);
-    scene.add(particles);
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        var pMat = new THREE.PointsMaterial({
+          color: 0x383840,
+          size: 0.7,
+          sizeAttenuation: true,
+          transparent: true,
+          opacity: 0.7
+        });
+        var particles = new THREE.Points(pGeo, pMat);
+        scene.add(particles);
 
-    // Warm gold accent points
-    var gCount = 50;
-    var gGeo = new THREE.BufferGeometry();
-    var gPos = new Float32Array(gCount * 3);
-    for (var gi = 0; gi < gCount; gi++) {
-      gPos[gi * 3]     = (Math.random() - 0.5) * 160;
-      gPos[gi * 3 + 1] = (Math.random() - 0.5) * 90;
-      gPos[gi * 3 + 2] = (Math.random() - 0.5) * 60;
-    }
-    gGeo.setAttribute('position', new THREE.BufferAttribute(gPos, 3));
-    var gMat = new THREE.PointsMaterial({
-      color: 0xd4a853,
-      size: 1.1,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.55
-    });
-    var goldParticles = new THREE.Points(gGeo, gMat);
-    scene.add(goldParticles);
+        var gCount = 45;
+        var gGeo = new THREE.BufferGeometry();
+        var gPos = new Float32Array(gCount * 3);
+        for (var gi = 0; gi < gCount; gi++) {
+          gPos[gi * 3]     = (Math.random() - 0.5) * 160;
+          gPos[gi * 3 + 1] = (Math.random() - 0.5) * 90;
+          gPos[gi * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+        gGeo.setAttribute('position', new THREE.BufferAttribute(gPos, 3));
+        var gMat = new THREE.PointsMaterial({
+          color: 0xd4a853,
+          size: 1.2,
+          sizeAttenuation: true,
+          transparent: true,
+          opacity: 0.55
+        });
+        var goldParticles = new THREE.Points(gGeo, gMat);
+        scene.add(goldParticles);
 
-    function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onResize);
-    onResize();
+        function onResize() {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onResize);
+        onResize();
 
-    var t0 = performance.now();
-    function animate(now) {
-      requestAnimationFrame(animate);
-      TWEEN.update(now);
-      var dt = (now - t0) * 0.001;
-      t0 = now;
-
-      var pos = pGeo.attributes.position.array;
-      for (var j = 0; j < pCount; j++) {
-        pos[j * 3]     += pVel[j * 3];
-        pos[j * 3 + 1] += pVel[j * 3 + 1];
-        pos[j * 3 + 2] += pVel[j * 3 + 2];
-        if (Math.abs(pos[j * 3])     > 100) pVel[j * 3]     *= -1;
-        if (Math.abs(pos[j * 3 + 1]) >  60) pVel[j * 3 + 1] *= -1;
-        if (Math.abs(pos[j * 3 + 2]) >  40) pVel[j * 3 + 2] *= -1;
+        function animate3D(now) {
+          requestAnimationFrame(animate3D);
+          if (typeof TWEEN !== 'undefined' && TWEEN.update) {
+            TWEEN.update(now);
+          }
+          var pos = pGeo.attributes.position.array;
+          for (var j = 0; j < pCount; j++) {
+            pos[j * 3]     += pVel[j * 3];
+            pos[j * 3 + 1] += pVel[j * 3 + 1];
+            pos[j * 3 + 2] += pVel[j * 3 + 2];
+            if (Math.abs(pos[j * 3])     > 100) pVel[j * 3]     *= -1;
+            if (Math.abs(pos[j * 3 + 1]) >  60) pVel[j * 3 + 1] *= -1;
+            if (Math.abs(pos[j * 3 + 2]) >  40) pVel[j * 3 + 2] *= -1;
+          }
+          pGeo.attributes.position.needsUpdate = true;
+          goldParticles.rotation.y += 0.0003;
+          particles.rotation.y += 0.00008;
+          renderer.render(scene, camera);
+        }
+        animate3D(performance.now());
+      } else {
+        throw new Error('THREE not available');
       }
-      pGeo.attributes.position.needsUpdate = true;
-
-      goldParticles.rotation.y += 0.0003;
-      particles.rotation.y += 0.00008;
-      renderer.render(scene, camera);
+    } catch (e) {
+      // Robust 2D Canvas Fallback
+      var cvs = document.getElementById('c');
+      if (cvs && cvs.getContext) {
+        var ctx = cvs.getContext('2d');
+        var w = cvs.width = window.innerWidth;
+        var h = cvs.height = window.innerHeight;
+        window.addEventListener('resize', function() {
+          w = cvs.width = window.innerWidth;
+          h = cvs.height = window.innerHeight;
+        });
+        var pts = [];
+        for (var pi = 0; pi < 110; pi++) {
+          pts.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: (Math.random() - 0.5) * 0.35,
+            r: Math.random() * 1.5 + 0.5,
+            gold: Math.random() > 0.85
+          });
+        }
+        function animate2D() {
+          requestAnimationFrame(animate2D);
+          ctx.fillStyle = '#070708';
+          ctx.fillRect(0, 0, w, h);
+          pts.forEach(function(p) {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+            if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+            ctx.fillStyle = p.gold ? '#d4a853' : '#333338';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+        animate2D();
+      }
     }
-    animate(performance.now());
 
     /* ================================================================
        STREAMING TYPEWRITER & TIMING ENGINE
@@ -1830,56 +1911,10 @@
       if (introRan) return;
       introRan = true;
 
-      narrate('What is Cheta?', '');
+      narrate('What is Cheta?',
+        'Cheta is an autonomous memory-first AI agent. Tell it something in Telegram, and your Terminal and Browser immediately know it. Consolidation prevents old facts from competing with fresh updates.', 22);
 
-      var letters = ['c-letter','h-letter','e-letter','t-letter','a-letter'];
-      letters.forEach(function(id, i) {
-        var el = document.getElementById(id);
-        el.style.transition = 'opacity 0.4s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-        el.style.transform = 'translateY(60px)';
-        setTimeout(function() {
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
-        }, 250 + i * 100);
-      });
-
-      sleep(900).then(function() {
-        return typeInto(document.getElementById('intro-sub-text'),
-          'One Mind. Every Surface.', 28);
-      }).then(function() {
-        return sleep(350);
-      }).then(function() {
-        return typeInto(document.getElementById('intro-desc-text'),
-          'Cheta is an autonomous memory-first AI agent. It keeps one private, encrypted memory space across Telegram, Linux Terminal, Chromium Extension, and Web Portal using Walrus decentralized storage. Zero memory rot.', 18);
-      }).then(function() {
-        return sleep(300);
-      }).then(function() {
-        var faces = [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', name: 'Telegram', desc: 'Natural fact extraction, slash commands, voice notes & reminders' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>', name: 'Terminal', desc: 'Interactive chat REPL, salience scoring, pair & passport backup' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>', name: 'Extension', desc: 'Active tab inspection, in-page WebMCP tool automation & memories' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>', name: 'Web Portal', desc: 'Full web assistant, memory management, pairing & evidence audit' },
-        ];
-
-        var container = document.getElementById('face-cards');
-        container.innerHTML = '';
-        faces.forEach(function(f, i) {
-          var card = document.createElement('div');
-          card.className = 'face-card';
-          card.style.animationDelay = (0.05 + i * 0.1) + 's';
-          card.innerHTML =
-            '<div class="face-card-icon">' + f.icon + '</div>' +
-            '<div class="face-card-name">' + f.name + '</div>' +
-            '<div class="face-card-desc">' + f.desc + '</div>';
-          card.addEventListener('click', function() { goToScene(i + 1); });
-          container.appendChild(card);
-        });
-
-        return narrate('What is Cheta?',
-          'Tell Cheta something in Telegram, and your Terminal and Browser immediately know it. Consolidation prevents old facts from competing with fresh updates.', 22);
-      }).then(function() {
-        return sleep(5000);
-      }).then(function() {
+      sleep(5500).then(function() {
         goToScene(1);
       });
     }
@@ -2078,7 +2113,7 @@
         return termOutput([
           'Cheta v1.0.0 (Memory-First Autonomous Agent)',
           'Identity : Kosi (kosi@arch)',
-          'Backend  : https://ranti-gkn7.onrender.com',
+          'Backend  : https://cheta.app (connected)',
           'Walrus   : connected (blob namespace: active)',
           'Memories : 14 stored (salience-ranked)',
           'Reminders: 1 pending (review scheduler PR at 12:34)',
@@ -2512,13 +2547,12 @@
       var letters = ['c-letter','h-letter','e-letter','t-letter','a-letter'];
       letters.forEach(function(id) {
         var el = document.getElementById(id);
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(60px)';
+        if (el) {
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        }
       });
 
-      document.getElementById('intro-sub-text').textContent = '';
-      document.getElementById('intro-desc-text').textContent = '';
-      document.getElementById('face-cards').innerHTML = '';
       document.getElementById('nar-title').textContent = '';
       document.getElementById('nar-text').textContent = '';
     }
@@ -2531,7 +2565,27 @@
       _goToScene(idx);
     };
 
-    runIntro();
+    window.goToScene = goToScene;
+
+    var initialScene = 0;
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('scene')) {
+        initialScene = parseInt(params.get('scene'), 10) || 0;
+      } else if (window.location.hash) {
+        var h = window.location.hash.replace('#', '').toLowerCase();
+        if (h === 'telegram' || h === '1') initialScene = 1;
+        else if (h === 'terminal' || h === 'cli' || h === '2') initialScene = 2;
+        else if (h === 'browser' || h === 'extension' || h === '3') initialScene = 3;
+        else if (h === 'portal' || h === 'web' || h === '4') initialScene = 4;
+      }
+    } catch(e) {}
+
+    if (initialScene > 0 && initialScene < 5) {
+      goToScene(initialScene);
+    } else {
+      runIntro();
+    }
 
   })();
   </script>
