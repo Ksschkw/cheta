@@ -98,6 +98,8 @@ def create_app(container: Container | None = None, settings: Settings | None = N
         # must show it rather than a JSON 404. Declared after the API routes are
         # registered so it can never shadow them, and it only matches the root.
         @app.get("/", include_in_schema=False)
+        @app.get("/portal", include_in_schema=False)
+        @app.get("/portal.html", include_in_schema=False)
         async def landing() -> FileResponse:
             candidate = WEB_ROOT / "portal.html"
             if not candidate.is_file():
@@ -108,6 +110,12 @@ def create_app(container: Container | None = None, settings: Settings | None = N
         @app.get("/demo.html", include_in_schema=False)
         async def demo_page() -> FileResponse:
             candidate = WEB_ROOT / "demo.html"
+            return FileResponse(candidate)
+
+        @app.get("/extension-help", include_in_schema=False)
+        @app.get("/extension-help.html", include_in_schema=False)
+        async def extension_help_page() -> FileResponse:
+            candidate = WEB_ROOT / "extension-help.html"
             return FileResponse(candidate)
 
     return app

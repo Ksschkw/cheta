@@ -4,16 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Cheta - Continuous Multi-Surface AI Agent Motion Showcase. Demonstrating Telegram, Linux CLI, Browser Extension, Web Portal, and Decentralized Walrus Memory.">
+    <meta name="description" content="Cheta: Continuous Multi-Surface AI Agent Showcase across Telegram, Linux CLI, Web Extension, Web Portal, and Walrus Decentralized Memory.">
     <title>Cheta: The Multi-Surface AI Agent Showcase</title>
     <style>
       :root {
         --bg: #07090e;
         --surface: #0e121b;
-        --surface-card: #131824;
-        --surface-glass: rgba(14, 18, 27, 0.92);
+        --surface-glass: rgba(14, 18, 27, 0.94);
         --line: #1e2536;
-        --line-active: #35d0ba;
         --text: #f1f5f9;
         --muted: #8b95a5;
         --dim: #556075;
@@ -25,7 +23,7 @@
         --accent-purple: #a855f7;
         --accent-red: #f43f5e;
         --accent-green: #22c55e;
-        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         --mono: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
       }
 
@@ -45,7 +43,6 @@
         user-select: none;
       }
 
-      /* 3D Background Canvas */
       #webgl-canvas {
         position: absolute;
         top: 0;
@@ -56,7 +53,6 @@
         outline: none;
       }
 
-      /* Ambient Vignette & Scanline */
       .ambient-overlay {
         position: absolute;
         top: 0;
@@ -66,39 +62,37 @@
         z-index: 2;
         pointer-events: none;
         box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
-        background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(7, 9, 14, 0.6) 100%);
+        background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(7, 9, 14, 0.65) 100%);
       }
 
-      /* Dynamic UI Presentation Stage */
+      /* Stage Layer */
       .presentation-stage {
         position: absolute;
-        top: 68px;
+        top: 64px;
         bottom: 84px;
-        left: 24px;
-        right: 24px;
+        left: 20px;
+        right: 20px;
         z-index: 5;
         pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: opacity 0.35s ease, transform 0.35s ease;
       }
 
       .interactive-surface {
         pointer-events: auto;
       }
 
-      /* Surface Frames Common */
       .surface-viewport {
         position: absolute;
         width: 100%;
-        max-width: 1100px;
+        max-width: 1080px;
         height: 100%;
-        max-height: 680px;
+        max-height: 640px;
         display: none;
         opacity: 0;
-        transform: scale(0.96) translateY(12px);
-        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: scale(0.97) translateY(10px);
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       .surface-viewport.active {
@@ -107,15 +101,16 @@
         transform: scale(1) translateY(0);
       }
 
-      /* ------------------------------------------------------------- 1. TELEGRAM MOBILE PHONE */
+      /* ------------------------------------------------------------- 1. TELEGRAM PHONE */
       .phone-wrapper {
         margin: auto;
-        width: 380px;
-        height: 640px;
+        width: 370px;
+        height: 590px;
+        max-height: calc(100vh - 170px);
         background: #0f141c;
-        border-radius: 42px;
+        border-radius: 36px;
         border: 4px solid #232b3c;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(53, 208, 186, 0.15);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(53, 208, 186, 0.15);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -123,11 +118,11 @@
       }
 
       .phone-notch {
-        width: 130px;
-        height: 20px;
+        width: 120px;
+        height: 18px;
         background: #232b3c;
-        border-bottom-left-radius: 14px;
-        border-bottom-right-radius: 14px;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
         position: absolute;
         top: 0;
         left: 50%;
@@ -138,25 +133,25 @@
       .tg-header {
         background: #17212b;
         border-bottom: 1px solid #232e3c;
-        padding: 28px 16px 12px;
+        padding: 24px 14px 10px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         z-index: 10;
       }
 
       .tg-avatar {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         background: linear-gradient(135deg, #35d0ba, #0284c7);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 18px;
+        font-size: 16px;
         color: #07090e;
-        box-shadow: 0 0 12px rgba(53, 208, 186, 0.4);
+        box-shadow: 0 0 10px rgba(53, 208, 186, 0.4);
       }
 
       .tg-meta {
@@ -166,12 +161,12 @@
       .tg-name-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
       }
 
       .tg-name {
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
         color: #fff;
       }
 
@@ -179,12 +174,12 @@
         background: #38bdf8;
         color: #07090e;
         border-radius: 50%;
-        width: 14px;
-        height: 14px;
+        width: 13px;
+        height: 13px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 900;
       }
 
@@ -196,27 +191,27 @@
       .tg-body {
         flex: 1;
         background: #0e1621;
-        padding: 16px 12px;
+        padding: 14px 10px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
         background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
         background-size: 20px 20px;
       }
 
       .tg-bubble {
-        max-width: 82%;
-        padding: 10px 14px;
-        border-radius: 16px;
-        font-size: 13px;
+        max-width: 86%;
+        padding: 9px 12px;
+        border-radius: 14px;
+        font-size: 12px;
         line-height: 1.45;
         position: relative;
-        animation: bubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: bubblePop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       @keyframes bubblePop {
-        from { opacity: 0; transform: translateY(10px) scale(0.96); }
+        from { opacity: 0; transform: translateY(8px) scale(0.97); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
@@ -238,60 +233,60 @@
       .tg-voice-note {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 4px 0;
+        gap: 8px;
+        padding: 2px 0;
       }
 
       .tg-play-icon {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: var(--accent);
         color: #07090e;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 12px;
         cursor: pointer;
       }
 
       .tg-waveform {
         display: flex;
         align-items: center;
-        gap: 3px;
-        height: 24px;
+        gap: 2px;
+        height: 20px;
       }
 
       .tg-wave-bar {
         width: 3px;
         background: rgba(255, 255, 255, 0.5);
         border-radius: 2px;
-        animation: waveAnim 1.2s infinite ease-in-out;
+        animation: waveAnim 1s infinite ease-in-out;
       }
 
       @keyframes waveAnim {
-        0%, 100% { height: 6px; }
-        50% { height: 22px; background: var(--accent); }
+        0%, 100% { height: 4px; }
+        50% { height: 18px; background: var(--accent); }
       }
 
       .tg-tool-pill {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         background: rgba(53, 208, 186, 0.15);
         border: 1px solid rgba(53, 208, 186, 0.4);
         color: var(--accent);
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 11px;
+        padding: 3px 7px;
+        border-radius: 6px;
+        font-size: 10px;
         font-family: var(--mono);
-        margin-bottom: 6px;
+        margin-bottom: 5px;
       }
 
       .tg-inline-btn-group {
         display: flex;
-        gap: 6px;
-        margin-top: 8px;
+        gap: 5px;
+        margin-top: 6px;
       }
 
       .tg-inline-btn {
@@ -299,25 +294,27 @@
         background: #243447;
         border: 1px solid #334458;
         color: var(--accent-blue);
-        padding: 6px;
-        border-radius: 8px;
-        font-size: 11px;
+        padding: 5px;
+        border-radius: 6px;
+        font-size: 10px;
         font-weight: 600;
         text-align: center;
         cursor: pointer;
-        transition: background 0.15s ease;
+        transition: all 0.15s ease;
       }
 
-      .tg-inline-btn:hover {
-        background: #2e435c;
+      .tg-inline-btn.clicked {
+        background: var(--accent-blue);
+        color: #07090e;
+        box-shadow: 0 0 10px var(--accent-blue);
       }
 
       .tg-typing-box {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 11px;
         font-style: italic;
       }
 
@@ -344,10 +341,10 @@
 
       .tg-input-bar {
         background: #17212b;
-        padding: 10px 14px;
+        padding: 8px 12px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         border-top: 1px solid #232e3c;
       }
 
@@ -355,10 +352,10 @@
         flex: 1;
         background: #242f3d;
         border: 0;
-        border-radius: 18px;
-        padding: 8px 14px;
+        border-radius: 16px;
+        padding: 7px 12px;
         color: #fff;
-        font-size: 13px;
+        font-size: 12px;
         outline: none;
       }
 
@@ -366,10 +363,11 @@
       .terminal-window {
         margin: auto;
         width: 860px;
-        height: 560px;
+        height: 540px;
+        max-height: calc(100vh - 170px);
         background: #0d1117;
         border: 1px solid #262c36;
-        border-radius: 12px;
+        border-radius: 10px;
         box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.1);
         display: flex;
         flex-direction: column;
@@ -379,7 +377,7 @@
       .terminal-titlebar {
         background: #161b22;
         border-bottom: 1px solid #21262d;
-        padding: 10px 16px;
+        padding: 9px 14px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -388,12 +386,12 @@
       .term-buttons {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
       }
 
       .term-btn {
-        width: 12px;
-        height: 12px;
+        width: 11px;
+        height: 11px;
         border-radius: 50%;
       }
 
@@ -403,18 +401,17 @@
 
       .term-title {
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 11px;
         color: var(--muted);
-        letter-spacing: 0.05em;
       }
 
       .terminal-body {
         flex: 1;
-        padding: 18px 22px;
+        padding: 16px 20px;
         overflow-y: auto;
         font-family: var(--mono);
-        font-size: 13px;
-        line-height: 1.6;
+        font-size: 12.5px;
+        line-height: 1.55;
         color: #e6edf3;
       }
 
@@ -434,12 +431,12 @@
 
       .term-cursor {
         display: inline-block;
-        width: 8px;
-        height: 15px;
+        width: 7px;
+        height: 14px;
         background: var(--accent);
         vertical-align: middle;
-        margin-left: 4px;
-        animation: cursorBlink 0.9s infinite;
+        margin-left: 3px;
+        animation: cursorBlink 0.8s infinite;
       }
 
       @keyframes cursorBlink {
@@ -448,22 +445,22 @@
       }
 
       .term-table {
-        margin: 10px 0;
+        margin: 8px 0;
         border-collapse: collapse;
         width: 100%;
         color: #cbd5e1;
-        font-size: 12px;
+        font-size: 11.5px;
       }
 
       .term-table th {
         text-align: left;
         color: var(--accent);
         border-bottom: 1px solid #30363d;
-        padding: 5px 8px;
+        padding: 4px 6px;
       }
 
       .term-table td {
-        padding: 6px 8px;
+        padding: 5px 6px;
         border-bottom: 1px solid #21262d;
       }
 
@@ -472,19 +469,15 @@
         font-weight: 700;
       }
 
-      .badge-walrus {
-        color: #ffbe3b;
-        font-weight: 700;
-      }
-
       /* ------------------------------------------------------------- 3. BROWSER EXTENSION & WEBMCP */
       .browser-window {
         margin: auto;
-        width: 980px;
-        height: 600px;
+        width: 960px;
+        height: 560px;
+        max-height: calc(100vh - 170px);
         background: #0f141d;
         border: 1px solid #252e42;
-        border-radius: 12px;
+        border-radius: 10px;
         box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(53, 208, 186, 0.12);
         display: flex;
         flex-direction: column;
@@ -494,30 +487,30 @@
       .browser-topbar {
         background: #141a26;
         border-bottom: 1px solid #20283b;
-        padding: 8px 12px 0;
+        padding: 7px 10px 0;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
       }
 
       .browser-tab-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
       }
 
       .browser-tab {
-        padding: 6px 14px;
-        border-radius: 8px 8px 0 0;
+        padding: 5px 12px;
+        border-radius: 6px 6px 0 0;
         background: #0f141d;
         border: 1px solid #20283b;
         border-bottom: 0;
         color: #fff;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
 
       .browser-tab.inactive {
@@ -529,47 +522,36 @@
       .browser-nav-row {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding-bottom: 8px;
-      }
-
-      .browser-nav-arrows {
-        display: flex;
-        gap: 6px;
-        color: var(--muted);
+        gap: 8px;
+        padding-bottom: 7px;
       }
 
       .browser-url-bar {
         flex: 1;
         background: #090c12;
         border: 1px solid #20283b;
-        border-radius: 6px;
-        padding: 5px 12px;
+        border-radius: 5px;
+        padding: 4px 10px;
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 11.5px;
         color: #94a3b8;
         display: flex;
         align-items: center;
-        gap: 8px;
-      }
-
-      .browser-url-bar span.active-domain {
-        color: #38bdf8;
-        font-weight: 600;
+        gap: 6px;
       }
 
       .browser-ext-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
+        width: 26px;
+        height: 26px;
+        border-radius: 5px;
         background: linear-gradient(135deg, #35d0ba, #0284c7);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 900;
-        font-size: 13px;
+        font-size: 12px;
         color: #07090e;
-        box-shadow: 0 0 12px var(--accent-glow);
+        box-shadow: 0 0 10px var(--accent-glow);
       }
 
       .browser-content-area {
@@ -582,7 +564,7 @@
       .browser-page-view {
         flex: 6;
         background: #111723;
-        padding: 24px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
         border-right: 1px solid #20283b;
@@ -593,41 +575,41 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
       }
 
       .page-banner h3 {
-        font-size: 18px;
+        font-size: 16px;
         color: #fff;
       }
 
       .page-pill {
-        font-size: 11px;
+        font-size: 10px;
         background: rgba(255, 190, 59, 0.15);
         color: var(--accent-gold);
         border: 1px solid rgba(255, 190, 59, 0.4);
-        padding: 3px 8px;
-        border-radius: 6px;
+        padding: 2px 7px;
+        border-radius: 5px;
         font-weight: 700;
       }
 
       .pizza-plate {
-        width: 220px;
-        height: 220px;
+        width: 190px;
+        height: 190px;
         border-radius: 50%;
         background: #e2a053;
-        margin: 12px auto;
+        margin: 10px auto;
         position: relative;
-        border: 10px solid #c27f33;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+        border: 8px solid #c27f33;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
       .pizza-cheese {
-        width: 170px;
-        height: 170px;
+        width: 150px;
+        height: 150px;
         border-radius: 50%;
         background: #ffd966;
         position: relative;
@@ -635,27 +617,27 @@
 
       .topping-pep {
         position: absolute;
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         background: #dc2626;
         border: 2px solid #991b1b;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-        animation: dropTopping 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        animation: dropTopping 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       .topping-mush {
         position: absolute;
-        width: 24px;
-        height: 18px;
+        width: 22px;
+        height: 16px;
         background: #d6d3d1;
-        border-radius: 12px 12px 4px 4px;
+        border-radius: 10px 10px 3px 3px;
         border: 2px solid #78716c;
-        animation: dropTopping 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: dropTopping 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       @keyframes dropTopping {
-        from { transform: translateY(-40px) scale(0.4); opacity: 0; }
+        from { transform: translateY(-35px) scale(0.4); opacity: 0; }
         to { transform: translateY(0) scale(1); opacity: 1; }
       }
 
@@ -669,7 +651,7 @@
       }
 
       .sp-header {
-        padding: 10px 14px;
+        padding: 9px 12px;
         background: #101520;
         border-bottom: 1px solid #1a2233;
         display: flex;
@@ -680,29 +662,24 @@
       .sp-brand {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
+        gap: 6px;
+        font-size: 12px;
         font-weight: 700;
         color: #fff;
       }
 
       .sp-status-dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 0 8px var(--accent);
-      }
-
-      .sp-actions-row {
-        display: flex;
-        gap: 6px;
+        box-shadow: 0 0 7px var(--accent);
       }
 
       .sp-chip {
-        font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 6px;
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 5px;
         background: #182030;
         color: var(--muted);
         border: 1px solid #232d42;
@@ -715,13 +692,13 @@
       }
 
       .sp-tab-badge {
-        padding: 8px 12px;
+        padding: 7px 10px;
         background: #131a26;
         border-bottom: 1px solid #1a2233;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 11px;
+        font-size: 10.5px;
       }
 
       .sp-read-btn {
@@ -729,29 +706,29 @@
         color: #07090e;
         border: 0;
         border-radius: 4px;
-        padding: 3px 8px;
+        padding: 3px 7px;
         font-weight: 700;
-        font-size: 11px;
+        font-size: 10px;
         cursor: pointer;
       }
 
       .sp-chat-body {
         flex: 1;
-        padding: 12px;
+        padding: 10px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        font-size: 12px;
+        gap: 8px;
+        font-size: 11px;
       }
 
       .sp-memories-drawer {
         background: #111824;
         border-top: 1px solid #1f293d;
-        padding: 10px;
+        padding: 8px;
         display: none;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
 
       .sp-memories-drawer.open {
@@ -761,27 +738,22 @@
       .sp-memory-card {
         background: #182232;
         border: 1px solid #26344d;
-        border-radius: 6px;
-        padding: 8px;
+        border-radius: 5px;
+        padding: 6px 8px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
       }
 
       .sp-card-fact {
-        font-size: 11px;
+        font-size: 10px;
         color: #e2e8f0;
       }
 
-      .sp-card-actions {
-        display: flex;
-        gap: 6px;
-      }
-
       .sp-mini-btn {
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
+        font-size: 9px;
+        padding: 2px 5px;
+        border-radius: 3px;
         background: #233047;
         color: var(--muted);
         border: 0;
@@ -791,11 +763,12 @@
       /* ------------------------------------------------------------- 4. WEB PORTAL & WIDGET */
       .portal-window {
         margin: auto;
-        width: 940px;
-        height: 580px;
+        width: 920px;
+        height: 540px;
+        max-height: calc(100vh - 170px);
         background: #0d111a;
         border: 1px solid #222a3d;
-        border-radius: 14px;
+        border-radius: 12px;
         box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85), 0 0 40px rgba(168, 85, 247, 0.15);
         display: flex;
         flex-direction: column;
@@ -805,7 +778,7 @@
       .portal-navbar {
         background: #131926;
         border-bottom: 1px solid #20293d;
-        padding: 12px 20px;
+        padding: 10px 18px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -814,16 +787,16 @@
       .portal-brand {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         font-weight: 800;
-        font-size: 15px;
+        font-size: 14px;
         color: #fff;
       }
 
       .portal-links {
         display: flex;
-        gap: 18px;
-        font-size: 13px;
+        gap: 16px;
+        font-size: 12px;
         color: var(--muted);
       }
 
@@ -835,51 +808,51 @@
       .portal-body {
         flex: 1;
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: 260px 1fr;
         overflow: hidden;
       }
 
       .portal-sidebar {
         background: #0f1420;
         border-right: 1px solid #1e2638;
-        padding: 16px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 12px;
       }
 
       .portal-main-panel {
-        padding: 20px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         overflow-y: auto;
         position: relative;
       }
 
       .portal-slash-menu {
         position: absolute;
-        bottom: 74px;
-        left: 20px;
-        right: 20px;
+        bottom: 64px;
+        left: 16px;
+        right: 16px;
         background: #141c2b;
         border: 1px solid #28354d;
-        border-radius: 8px;
+        border-radius: 7px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-        padding: 6px;
+        padding: 5px;
         display: none;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
         z-index: 30;
       }
 
       .slash-item {
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 6px 10px;
+        border-radius: 5px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 12px;
+        gap: 8px;
+        font-size: 11.5px;
         color: #e2e8f0;
         cursor: pointer;
       }
@@ -897,26 +870,26 @@
       .pairing-card {
         background: #131a26;
         border: 1px solid #232d42;
-        border-radius: 10px;
-        padding: 16px;
+        border-radius: 8px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
 
       .pairing-code-box {
         display: flex;
-        gap: 8px;
-        margin: 8px 0;
+        gap: 6px;
+        margin: 6px 0;
       }
 
       .code-digit {
-        width: 38px;
-        height: 48px;
+        width: 32px;
+        height: 42px;
         background: #090c12;
         border: 1px solid var(--accent);
-        border-radius: 8px;
-        font-size: 20px;
+        border-radius: 6px;
+        font-size: 18px;
         font-weight: 800;
         display: flex;
         align-items: center;
@@ -928,18 +901,19 @@
       /* ------------------------------------------------------------- 5. WALRUS NETWORK FABRIC OVERVIEW */
       .walrus-overview-window {
         margin: auto;
-        width: 1040px;
-        height: 600px;
-        background: rgba(14, 18, 27, 0.85);
+        width: 1000px;
+        height: 560px;
+        max-height: calc(100vh - 170px);
+        background: rgba(14, 18, 27, 0.88);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid #232d42;
-        border-radius: 16px;
+        border-radius: 14px;
         box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
         display: flex;
         flex-direction: column;
-        padding: 24px;
-        gap: 18px;
+        padding: 20px;
+        gap: 14px;
       }
 
       .walrus-hero-row {
@@ -949,60 +923,60 @@
       }
 
       .walrus-title h2 {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 800;
         color: #fff;
       }
 
       .walrus-title p {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--muted);
       }
 
       .surfaces-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
+        gap: 12px;
         flex: 1;
       }
 
       .surface-card-mini {
         background: #111724;
         border: 1px solid #1e283d;
-        border-radius: 12px;
-        padding: 16px;
+        border-radius: 10px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         position: relative;
         overflow: hidden;
       }
 
       .surface-card-mini.synced {
         border-color: var(--accent);
-        box-shadow: 0 0 20px rgba(53, 208, 186, 0.15);
+        box-shadow: 0 0 16px rgba(53, 208, 186, 0.15);
       }
 
       .card-icon-badge {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 15px;
         background: #1a2336;
         color: var(--accent);
       }
 
       .card-name {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         color: #fff;
       }
 
       .card-desc {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--muted);
         line-height: 1.4;
       }
@@ -1011,19 +985,19 @@
         margin-top: auto;
         background: #090d14;
         border: 1px solid #1c2436;
-        border-radius: 6px;
-        padding: 8px;
+        border-radius: 5px;
+        padding: 6px;
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 10px;
         color: var(--accent);
       }
 
-      /* ------------------------------------------------------------- TOP HUD */
+      /* ------------------------------------------------------------- HUD HEADER */
       .hud-header {
         position: absolute;
-        top: 14px;
-        left: 20px;
-        right: 20px;
+        top: 12px;
+        left: 18px;
+        right: 18px;
         z-index: 20;
         display: flex;
         align-items: center;
@@ -1034,65 +1008,63 @@
       .hud-brand {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         border-radius: 9999px;
-        padding: 8px 18px 8px 14px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        padding: 6px 14px 6px 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
       }
 
       .brand-dot {
-        width: 10px;
-        height: 10px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 0 12px var(--accent);
+        box-shadow: 0 0 10px var(--accent);
       }
 
       .brand-name {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 800;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #fff;
       }
 
       .brand-sub {
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 600;
         color: var(--accent);
-        letter-spacing: 0.05em;
       }
 
-      /* Surface Navigation Pills */
       .surface-nav-bar {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         border-radius: 9999px;
-        padding: 4px;
+        padding: 3px;
       }
 
       .surface-tab-btn {
         background: transparent;
         border: 0;
         color: var(--muted);
-        padding: 6px 14px;
+        padding: 6px 12px;
         border-radius: 9999px;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: all 0.15s ease;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
       }
 
       .surface-tab-btn:hover {
@@ -1103,13 +1075,13 @@
         background: var(--accent);
         color: #07090e;
         font-weight: 700;
-        box-shadow: 0 4px 14px var(--accent-glow);
+        box-shadow: 0 3px 12px var(--accent-glow);
       }
 
       .hud-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
 
       .action-pill-btn {
@@ -1118,16 +1090,16 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         color: var(--text);
-        padding: 8px 14px;
+        padding: 6px 12px;
         border-radius: 9999px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         text-decoration: none;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
       }
 
       .action-pill-btn:hover {
@@ -1151,16 +1123,16 @@
         to { transform: scale(1.03); }
       }
 
-      /* ------------------------------------------------------------- BOTTOM CONTROLLER HUD */
+      /* ------------------------------------------------------------- HUD FOOTER */
       .hud-footer {
         position: absolute;
-        bottom: 14px;
-        left: 20px;
-        right: 20px;
+        bottom: 12px;
+        left: 18px;
+        right: 18px;
         z-index: 20;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         pointer-events: none;
       }
 
@@ -1168,26 +1140,26 @@
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         background: var(--surface-glass);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         border-radius: 9999px;
-        padding: 8px 16px;
+        padding: 6px 14px;
       }
 
       .time-counter {
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         color: var(--accent);
-        min-width: 95px;
+        min-width: 90px;
       }
 
       .progress-track {
         flex: 1;
-        height: 6px;
+        height: 5px;
         background: rgba(255, 255, 255, 0.08);
         border-radius: 9999px;
         position: relative;
@@ -1208,11 +1180,11 @@
         position: absolute;
         top: 50%;
         left: 0%;
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background: #fff;
-        box-shadow: 0 0 10px var(--accent);
+        box-shadow: 0 0 8px var(--accent);
         transform: translate(-50%, -50%);
         pointer-events: none;
       }
@@ -1226,7 +1198,7 @@
       .playback-buttons {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
 
       .ctrl-btn {
@@ -1235,15 +1207,15 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--line);
         color: #fff;
-        padding: 7px 14px;
+        padding: 6px 12px;
         border-radius: 9999px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
+        gap: 5px;
+        transition: all 0.15s ease;
       }
 
       .ctrl-btn:hover {
@@ -1251,10 +1223,10 @@
         color: var(--accent);
       }
 
-      /* Cheta Mascot Subtitle & Narration Bubble */
+      /* Mascot Subtitle Bubble */
       .mascot-narration-box {
         position: absolute;
-        bottom: 84px;
+        bottom: 74px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 15;
@@ -1262,20 +1234,20 @@
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid var(--accent-glow);
-        border-radius: 14px;
-        padding: 10px 20px;
-        max-width: 650px;
+        border-radius: 12px;
+        padding: 9px 18px;
+        max-width: 620px;
         width: 90%;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
         pointer-events: none;
       }
 
       .mascot-badge {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: var(--accent);
         color: #07090e;
@@ -1283,13 +1255,13 @@
         align-items: center;
         justify-content: center;
         font-weight: 900;
-        font-size: 15px;
+        font-size: 14px;
         flex-shrink: 0;
       }
 
       .mascot-speech-text {
-        font-size: 13px;
-        line-height: 1.45;
+        font-size: 12px;
+        line-height: 1.4;
         color: #f1f5f9;
       }
 
@@ -1297,24 +1269,23 @@
         color: var(--accent);
       }
 
-      /* Responsive Adjustments */
       @media (max-width: 920px) {
         .surface-nav-bar {
           display: none;
         }
         .phone-wrapper {
-          width: 320px;
-          height: 520px;
+          width: 310px;
+          height: 480px;
         }
         .terminal-window, .browser-window, .portal-window, .walrus-overview-window {
-          width: 95%;
-          height: 500px;
+          width: 96%;
+          height: 460px;
         }
       }
     </style>
   </head>
   <body>
-    <!-- 3D Three.js Studio Scene -->
+    <!-- 3D Studio Canvas -->
     <canvas id="webgl-canvas"></canvas>
 
     <!-- Ambient Vignette -->
@@ -1335,12 +1306,13 @@
                 <span class="tg-name">Cheta</span>
                 <span class="tg-badge">&#10003;</span>
               </div>
-              <span class="tg-status">bot &bull; 13 tools active &bull; online</span>
+              <span id="tg-status-text" class="tg-status">bot &bull; 13 tools active &bull; online</span>
             </div>
           </div>
 
           <div id="tg-messages" class="tg-body">
-            <div class="tg-bubble tg-user">
+            <!-- 1. Voice Note Bubble -->
+            <div id="tg-bubble-voice" class="tg-bubble tg-user">
               <div class="tg-voice-note">
                 <div class="tg-play-icon">&#9658;</div>
                 <div class="tg-waveform">
@@ -1355,28 +1327,48 @@
                 </div>
                 <span style="font-size: 11px; color: #a5c3e8;">0:14</span>
               </div>
-              <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;">Voice Note: "Cheta, remember that I deploy with Rust on Sui testnet, and remind me tomorrow at 9 AM to check node status."</div>
+              <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;">Voice Note: "Cheta, remember I build on Solana &amp; Rust, and remind me tomorrow at 9 AM to check node status."</div>
             </div>
 
+            <!-- Typing indicator -->
             <div id="tg-typing" class="tg-typing-box" style="display: none;">
               <span>Cheta is typing</span>
               <div class="tg-dot-pulse"><span></span><span></span><span></span></div>
             </div>
 
+            <!-- 2. Cheta Bot Confirmation -->
             <div id="tg-reply-1" class="tg-bubble tg-bot" style="display: none;">
-              <div class="tg-tool-pill">&#9881; Tool: set_reminder({"time": "09:00", "task": "Check Sui node"})</div>
-              <div>Got it Kosisochukwu! I've set your reminder for <strong>9:00 AM tomorrow</strong>.</div>
-              <div style="margin-top: 6px; font-size: 12px; color: #35d0ba;">&#129504; Committed new durable memory blob to Walrus decentralized storage: <em>"Deploys smart contracts with Rust on Sui testnet"</em>.</div>
+              <div class="tg-tool-pill">&#9881; Tool: set_reminder({"time": "09:00", "task": "Check node status"})</div>
+              <div>Reminder scheduled for <strong>9:00 AM tomorrow</strong>!</div>
+              <div style="margin-top: 5px; font-size: 11px; color: #35d0ba;">&#129504; Committed durable fact to Walrus storage: <em>"Builds with Solana &amp; Rust"</em> (Blob 0x9f82b1).</div>
               <div class="tg-inline-btn-group">
-                <div class="tg-inline-btn">&#128197; View in Calendar</div>
-                <div class="tg-inline-btn">&#129504; Walrus Blobs (14)</div>
-                <div class="tg-inline-btn">&#128279; Pair Web/CLI</div>
+                <div id="tg-btn-cal" class="tg-inline-btn">&#128197; View in Calendar</div>
+                <div id="tg-btn-blobs" class="tg-inline-btn">&#129504; Walrus Blobs (14)</div>
+                <div id="tg-btn-pair" class="tg-inline-btn">&#128279; Pair Web/CLI</div>
               </div>
             </div>
 
-            <div id="tg-reply-2" class="tg-bubble tg-bot" style="display: none;">
-              <div class="tg-tool-pill">&#128269; Tool: search_web({"query": "Sui testnet epoch status"})</div>
-              <div>Current Sui testnet epoch is active and healthy. Walrus storage epochs are synchronized with zero dropped blobs.</div>
+            <!-- 3. Calendar Event Card -->
+            <div id="tg-cal-card" class="tg-bubble tg-bot" style="display: none; border-left: 3px solid #ffbe3b;">
+              <div style="font-size: 11px; color: #ffbe3b; font-weight: 700;">&#128197; CALENDAR EVENT CREATED</div>
+              <div style="font-size: 12px; font-weight: 700; color: #fff; margin-top: 2px;">Node Deployment Check</div>
+              <div style="font-size: 11px; color: #94a3b8;">Tomorrow &bull; 09:00 AM - 09:30 AM &bull; Synced with CalDAV / Google Calendar</div>
+            </div>
+
+            <!-- 4. Document upload & analysis -->
+            <div id="tg-doc-bubble" class="tg-bubble tg-user" style="display: none;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="font-size: 20px;">&#128196;</div>
+                <div>
+                  <div style="font-size: 11.5px; font-weight: 700;">architecture_spec.pdf</div>
+                  <div style="font-size: 10px; opacity: 0.7;">1.2 MB &bull; Uploaded</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="tg-doc-reply" class="tg-bubble tg-bot" style="display: none;">
+              <div class="tg-tool-pill">&#128269; Tool: parse_attachment("architecture_spec.pdf")</div>
+              <div>Extracted 14 pages. Key constraints found: <em>SQLite local caching, Walrus blob proofs, and pure ASCII compliance</em>. Indexed to memory!</div>
             </div>
           </div>
 
@@ -1401,15 +1393,15 @@
 
           <div id="term-content" class="terminal-body">
             <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti status</span></div>
-            <div style="color: #94a3b8; margin: 4px 0 12px;">
+            <div style="color: #94a3b8; margin: 4px 0 10px;">
               [+] Cheta CLI v2.4.0 (Linux x86_64)<br>
-              [+] Walrus Network: CONNECTED (epoch 42, latency 38ms)<br>
-              [+] Storage Provider: Sui Testnet Blob Network (Decentralized)<br>
+              [+] Walrus Network: CONNECTED (epoch 42, latency 32ms)<br>
+              [+] Storage Provider: Sui Testnet Decentralized Blob Network<br>
               [+] Durable Memory Blobs: 14 indexed &amp; cryptographically verified<br>
-              [+] Active Surfaces Linked: Telegram, Web Extension, Web Portal
+              [+] Active Surfaces Linked: Telegram (@cheta_bot), Browser Extension, Web Portal
             </div>
 
-            <div id="term-cmd-2" style="display: none;">
+            <div id="term-step-table" style="display: none;">
               <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti memory list --recent 3</span></div>
               <table class="term-table">
                 <thead>
@@ -1423,7 +1415,7 @@
                 <tbody>
                   <tr>
                     <td>blob_wal_0x9f82b1...</td>
-                    <td>Deploys with Rust on Sui testnet</td>
+                    <td>Builds with Solana &amp; Rust</td>
                     <td>Telegram</td>
                     <td><span class="badge-synced">COMMITTED</span></td>
                   </tr>
@@ -1443,22 +1435,33 @@
               </table>
             </div>
 
-            <div id="term-cmd-3" style="display: none; margin-top: 10px;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti chat</span></div>
-              <div style="color: #64748b;">Starting interactive streaming REPL session...</div>
-              <div style="color: #38bdf8; margin-top: 6px;">Cheta CLI&gt; What do you know about my tech stack?</div>
-              <div id="term-stream-text" style="color: #e2e8f0; margin-top: 4px;"></div>
-            </div>
-
-            <div id="term-cmd-4" style="display: none; margin-top: 10px;">
-              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti pairing code</span></div>
-              <div style="background: #161f2e; border: 1px solid #2d3b55; padding: 10px; border-radius: 6px; margin-top: 6px;">
-                <span style="color: #ffbe3b; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
-                <span style="color: #94a3b8; font-size: 11px;">Enter this code on your Web Portal or Mobile to synchronize Walrus memory realm.</span>
+            <div id="term-step-search" style="display: none; margin-top: 8px;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti memory search "Solana"</span></div>
+              <div style="color: #35d0ba; margin: 3px 0;">
+                [+] Vector match (score: 0.94, latency: 4ms):<br>
+                &nbsp;&nbsp;&bull; Blob 0x9f82b1: "Builds with Solana &amp; Rust" (Learned via Telegram 2m ago)
               </div>
             </div>
 
-            <div id="term-live-line" style="margin-top: 10px;">
+            <div id="term-step-chat" style="display: none; margin-top: 8px;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti chat</span></div>
+              <div style="color: #64748b;">Starting zero-latency streaming REPL session...</div>
+              <div style="color: #38bdf8; margin-top: 4px;">Cheta CLI&gt; What tools do you have available right now?</div>
+              <div id="term-stream-text" style="color: #e2e8f0; margin-top: 3px;"></div>
+            </div>
+
+            <div id="term-step-pair" style="display: none; margin-top: 8px;">
+              <div><span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span class="term-cmd">ranti pairing code</span></div>
+              <div style="background: #161f2e; border: 1px solid #2d3b55; padding: 8px 12px; border-radius: 6px; margin-top: 4px;">
+                <span style="color: #ffbe3b; font-weight: 700;">PAIRING CODE: [ 842 - 195 ]</span> (valid for 10 minutes)<br>
+                <span style="color: #94a3b8; font-size: 11px;">Enter this code on your Web Portal or Mobile to link your Walrus memory realm.</span>
+              </div>
+              <div id="term-paired-toast" style="color: #22c55e; font-weight: 700; margin-top: 4px; display: none;">
+                [+] CONNECTED: Browser Extension &amp; Web Portal authenticated successfully!
+              </div>
+            </div>
+
+            <div id="term-live-line" style="margin-top: 8px;">
               <span class="term-prompt">kss@cheta-box</span>:<span class="term-prompt-dir">~</span>$ <span id="term-typed-cmd"></span><span class="term-cursor"></span>
             </div>
           </div>
@@ -1471,7 +1474,7 @@
           <div class="browser-topbar">
             <div class="browser-tab-row">
               <div class="browser-tab">
-                <span>&#127829; zaMaker! - Pizza Builder</span>
+                <span>&#127829; zaMaker! - Pizza Creator</span>
               </div>
               <div class="browser-tab inactive">
                 <span>GitHub - Ksschkw/ranti</span>
@@ -1482,12 +1485,9 @@
             </div>
 
             <div class="browser-nav-row">
-              <div class="browser-nav-arrows">
-                <span>&#8592;</span><span>&#8594;</span><span>&#8635;</span>
-              </div>
               <div class="browser-url-bar">
                 <span>&#128274;</span>
-                <span>https://<span class="active-domain">googlechromelabs.github.io</span>/webmcp-pizza/</span>
+                <span>https://<strong style="color: #38bdf8;">googlechromelabs.github.io</strong>/webmcp-pizza/</span>
               </div>
               <div class="browser-ext-icon" title="Cheta Chrome Extension Active">C</div>
             </div>
@@ -1499,21 +1499,21 @@
               <div class="page-banner">
                 <div>
                   <h3>zaMaker! WebMCP Pizza Maker</h3>
-                  <div style="font-size: 11px; color: #94a3b8;">Demonstrating in-page DOM tools registered directly via WebMCP</div>
+                  <div style="font-size: 11px; color: #94a3b8;">Demonstrating in-page DOM tools registered via WebMCP</div>
                 </div>
                 <div class="page-pill">&#9889; 7 Page Tools Detected</div>
               </div>
 
-              <!-- Interactive Pizza Canvas Visualizer -->
+              <!-- Interactive Pizza Canvas -->
               <div class="pizza-plate">
                 <div id="pizza-cheese" class="pizza-cheese">
                   <!-- Animated falling toppings get appended here dynamically -->
                 </div>
               </div>
 
-              <div style="background: #0b0f16; border: 1px solid #1a2233; border-radius: 8px; padding: 12px; margin-top: auto;">
-                <div style="font-size: 11px; color: #35d0ba; font-weight: 700; margin-bottom: 4px;">WEBMCP EVENT BUS</div>
-                <div id="page-tool-status" style="font-size: 11px; font-family: var(--mono); color: #cbd5e1;">Awaiting agent tool call...</div>
+              <div style="background: #0b0f16; border: 1px solid #1a2233; border-radius: 6px; padding: 10px; margin-top: auto;">
+                <div style="font-size: 11px; color: #35d0ba; font-weight: 700; margin-bottom: 2px;">WEBMCP EVENT BUS</div>
+                <div id="page-tool-status" style="font-size: 11px; font-family: var(--mono); color: #cbd5e1;">Awaiting agent in-page tool invocation...</div>
               </div>
             </div>
 
@@ -1545,29 +1545,34 @@
                 </div>
 
                 <div id="sp-tool-badge" class="tg-tool-pill" style="display: none; align-self: flex-start;">
-                  &#9881; In-Page Tool: add_topping({"topping": "pepperoni, mushrooms"})
+                  &#9881; In-Page Tool: add_topping({"topping": ["pepperoni", "mushrooms"]})
                 </div>
 
                 <div id="sp-bot-reply" class="tg-bubble tg-bot" style="display: none; font-size: 11px;">
-                  I executed the in-page WebMCP tool directly on <strong>googlechromelabs.github.io</strong>. Pepperoni and mushrooms have been baked onto the active pizza!
+                  Action executed successfully! Pepperoni and mushrooms baked directly into the active page DOM.
+                </div>
+
+                <div id="sp-tools-list-bubble" class="tg-bubble tg-bot" style="display: none; font-size: 10.5px; border-left: 2px solid #38bdf8;">
+                  <strong style="color: #38bdf8;">Available page tools:</strong>
+                  <div>&bull; page_find_text &bull; page_highlight_text &bull; page_scroll_to &bull; page_summarize &bull; add_topping &bull; share_pizza</div>
                 </div>
 
                 <!-- Slide-out Memories Drawer -->
                 <div id="sp-drawer" class="sp-memories-drawer">
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--accent);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--accent);">
                     <strong>Decentralized Memories</strong>
                     <span>14 stored</span>
                   </div>
                   <div class="sp-memory-card">
-                    <span class="sp-card-fact">Deploys with Rust on Sui testnet</span>
-                    <div class="sp-card-actions">
+                    <span class="sp-card-fact">Builds with Solana &amp; Rust</span>
+                    <div style="display: flex; gap: 4px; margin-top: 2px;">
                       <button class="sp-mini-btn">Forget this one</button>
-                      <button class="sp-mini-btn">Correct this one</button>
+                      <button class="sp-mini-btn" style="color: var(--accent);">Correct this one</button>
                     </div>
                   </div>
                   <div class="sp-memory-card">
                     <span class="sp-card-fact">AWS Certified Generative AI Developer - Professional</span>
-                    <div class="sp-card-actions">
+                    <div style="display: flex; gap: 4px; margin-top: 2px;">
                       <button class="sp-mini-btn">Forget this one</button>
                       <button class="sp-mini-btn">Correct this one</button>
                     </div>
@@ -1597,20 +1602,20 @@
 
           <div class="portal-body">
             <div class="portal-sidebar">
-              <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Chat Sessions</div>
-              <div style="background: #162132; border: 1px solid #23324d; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #fff;">
+              <div style="font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Chat Sessions</div>
+              <div style="background: #162132; border: 1px solid #23324d; padding: 7px 10px; border-radius: 5px; font-size: 11.5px; color: #fff;">
                 &#128172; Web Research &amp; Rust Stack
               </div>
-              <div style="padding: 8px 12px; font-size: 12px; color: var(--muted);">
+              <div style="padding: 7px 10px; font-size: 11.5px; color: var(--muted);">
                 &#128172; zaMaker Pizza Automation
               </div>
-              <div style="padding: 8px 12px; font-size: 12px; color: var(--muted);">
-                &#128172; General Reminders
+              <div style="padding: 7px 10px; font-size: 11.5px; color: var(--muted);">
+                &#128172; Daily Reminders &amp; Schedule
               </div>
 
               <div style="margin-top: auto;" class="pairing-card">
-                <div style="font-size: 11px; font-weight: 700; color: #35d0ba;">DEVICE PAIRING</div>
-                <div style="font-size: 11px; color: #94a3b8;">Link your Linux CLI or Mobile with a 6-digit one-time code:</div>
+                <div style="font-size: 10.5px; font-weight: 700; color: #35d0ba;">DEVICE PAIRING</div>
+                <div style="font-size: 10px; color: #94a3b8;">Link your Linux CLI or Mobile with a 6-digit one-time code:</div>
                 <div class="pairing-code-box">
                   <div class="code-digit">8</div>
                   <div class="code-digit">4</div>
@@ -1624,17 +1629,26 @@
             </div>
 
             <div class="portal-main-panel">
-              <div class="tg-bubble tg-bot" style="font-size: 13px; max-width: 90%;">
+              <div class="tg-bubble tg-bot" style="font-size: 12px; max-width: 90%;">
                 Welcome back Kosisochukwu! Your Walrus memory space is active. You have 14 durable memories synchronized across your Telegram, Linux terminal, and browser extension.
               </div>
 
-              <div id="portal-user-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 13px;">
+              <div id="portal-user-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 12px;">
                 /remember Prefers building on Solana, Rust, and Python.
               </div>
 
-              <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 13px; max-width: 90%;">
+              <div id="portal-bot-msg" class="tg-bubble tg-bot" style="display: none; font-size: 12px; max-width: 90%;">
                 <div class="tg-tool-pill">&#129504; Walrus Put: Commit durable fact blob</div>
                 <div>Memory successfully committed to Walrus decentralized storage (Blob <code>blob_wal_0x3a91...</code>). Immediately accessible to your CLI and Extension!</div>
+              </div>
+
+              <div id="portal-query-msg" class="tg-bubble tg-user" style="display: none; align-self: flex-end; font-size: 12px;">
+                What did I tell you on Telegram about my preferred deployment language?
+              </div>
+
+              <div id="portal-query-reply" class="tg-bubble tg-bot" style="display: none; font-size: 12px; max-width: 90%;">
+                <div class="tg-tool-pill">&#129504; Walrus Query: Cross-surface memory recall</div>
+                <div>On Telegram, you told me that you prefer building with Solana and Rust, and deploy to Sui testnet. (Blob 0x9f82b1 verified from Walrus decentralized storage).</div>
               </div>
 
               <!-- Slash command menu popup -->
@@ -1658,7 +1672,7 @@
               </div>
 
               <div style="margin-top: auto; display: flex; gap: 8px;">
-                <input id="portal-input" type="text" style="flex: 1; background: #121824; border: 1px solid #232d40; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
+                <input id="portal-input" type="text" style="flex: 1; background: #121824; border: 1px solid #232d40; border-radius: 7px; padding: 9px 12px; color: #fff; font-size: 12px;" placeholder="Type / for command suggestions, or ask Cheta anything..." readonly>
               </div>
             </div>
           </div>
@@ -1691,7 +1705,7 @@
               <div class="card-icon-badge">&#128187;</div>
               <div class="card-name">Linux CLI</div>
               <div class="card-desc">Streaming REPL tokens, formatted ASCII tables, local offline fallbacks &amp; pairing.</div>
-              <div class="card-live-log">&#10003; Synced from Walrus: 38ms</div>
+              <div class="card-live-log">&#10003; Synced from Walrus: 32ms</div>
             </div>
 
             <div class="surface-card-mini synced">
@@ -1709,11 +1723,11 @@
             </div>
           </div>
 
-          <div style="background: #090d14; border: 1px solid #1c2436; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-size: 12px; color: #94a3b8;">
+          <div style="background: #090d14; border: 1px solid #1c2436; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 11.5px; color: #94a3b8;">
               <strong style="color: #35d0ba;">Zero Fragmentation Guarantee:</strong> Traditional assistants forget everything across apps. Cheta keeps your context durable, encrypted, and accessible everywhere.
             </div>
-            <a href="portal.html" class="action-pill-btn" style="background: var(--accent); color: #07090e; font-weight: 700;">Open Portal</a>
+            <a href="/app/portal.html" class="action-pill-btn" style="background: var(--accent); color: #07090e; font-weight: 700;">Open Portal</a>
           </div>
         </div>
       </section>
@@ -1736,7 +1750,7 @@
         <span class="brand-sub">Multi-Surface AI Agent</span>
       </div>
 
-      <!-- Navigation tabs for direct surface jumping -->
+      <!-- Surface navigation pills for direct switching -->
       <nav class="surface-nav-bar interactive-surface">
         <button class="surface-tab-btn active" data-surface="0" type="button">&#128241; Telegram</button>
         <button class="surface-tab-btn" data-surface="1" type="button">&#128187; Linux CLI</button>
@@ -1755,14 +1769,14 @@
         <button id="btn-record-video" class="action-pill-btn record-btn" type="button" title="Export showcase to WebM video">
           <span id="record-label">&#9679; Record Video</span>
         </button>
-        <a class="action-pill-btn" href="portal.html">Portal</a>
+        <a class="action-pill-btn" href="/app/portal.html">Portal</a>
       </div>
     </header>
 
     <!-- HUD Footer Timeline Controller -->
     <footer class="hud-footer">
       <div class="progress-track-wrap interactive-surface">
-        <span id="time-display" class="time-counter">00:00 / 05:00</span>
+        <span id="time-display" class="time-counter">00:00 / 02:30</span>
         <div id="timeline-track" class="progress-track">
           <div id="timeline-fill" class="progress-fill"></div>
           <div id="timeline-handle" class="progress-handle"></div>
@@ -1777,7 +1791,7 @@
         </div>
 
         <div style="font-size: 11px; color: var(--dim); font-family: var(--mono);">
-          Press <kbd style="color: var(--muted);">Space</kbd> to pause &bull; <kbd style="color: var(--muted);">1 - 5</kbd> to switch surfaces &bull; <kbd style="color: var(--muted);">M</kbd> mute
+          Press <kbd style="color: var(--muted);">Space</kbd> pause &bull; <kbd style="color: var(--muted);">1 - 5</kbd> switch surfaces &bull; <kbd style="color: var(--muted);">M</kbd> mute
         </div>
       </div>
     </footer>
@@ -1792,19 +1806,18 @@
       (function () {
         "use strict";
 
-        // Total runtime: 300 seconds (5 full continuous minutes)
-        var TOTAL_DURATION = 300;
+        // Total demo length calibrated to 150s (2m 30s) so EVERY 2-3 SECONDS has a vivid, dynamic action!
+        var TOTAL_DURATION = 150;
 
-        // Five rich, continuous stages across all faces
         var SURFACES = [
           {
             id: 0,
             key: "telegram",
             name: "Telegram Bot",
             startTime: 0,
-            endTime: 60,
-            narration: "On Telegram, speak to Cheta via voice notes or drop documents. It extracts durable facts, sets calendar reminders, and synchronizes to your decentralized Walrus space.",
-            camPos: { x: 0, y: 1.8, z: 5.5 },
+            endTime: 30,
+            narration: "On Telegram, speak via voice notes or drop files. Cheta extracts durable memories, creates calendar events, and commits verified blobs to Walrus.",
+            camPos: { x: 0, y: 1.8, z: 5.4 },
             camTarget: { x: 0, y: 0.6, z: 0 },
             elementId: "surface-telegram"
           },
@@ -1812,10 +1825,10 @@
             id: 1,
             key: "cli",
             name: "Linux CLI",
-            startTime: 60,
-            endTime: 120,
-            narration: "Inside any Linux terminal, run 'ranti chat'. It streams tokens with zero latency, queries Walrus embeddings offline or online, and issues one-time pairing codes.",
-            camPos: { x: 0, y: 2.2, z: 6.2 },
+            startTime: 30,
+            endTime: 65,
+            narration: "In any Linux terminal, 'ranti chat' streams zero-latency tokens, queries Walrus embeddings offline or online, and generates one-time pairing codes.",
+            camPos: { x: 0, y: 2.2, z: 6.0 },
             camTarget: { x: 0, y: 0.8, z: 0 },
             elementId: "surface-cli"
           },
@@ -1823,38 +1836,38 @@
             id: 2,
             key: "extension",
             name: "Browser Extension",
-            startTime: 120,
-            endTime: 185,
-            narration: "In Chrome and Firefox, Cheta inspects the active tab and executes in-page WebMCP tools directly without scraping, like adding pizza toppings on zaMaker!",
-            camPos: { x: 0, y: 2.4, z: 6.8 },
-            camTarget: { x: 0, y: 1.0, z: 0 },
+            startTime: 65,
+            endTime: 100,
+            narration: "In Chrome & Firefox, Cheta inspects active tab DOM and executes in-page WebMCP tools directly without scraping, like adding pizza toppings on zaMaker!",
+            camPos: { x: 0, y: 2.3, z: 6.4 },
+            camTarget: { x: 0, y: 0.9, z: 0 },
             elementId: "surface-extension"
           },
           {
             id: 3,
             key: "portal",
             name: "Web Portal & Widget",
-            startTime: 185,
-            endTime: 245,
-            narration: "The Web Portal provides instant slash command auto-completion, 6-digit device pairing, and a full-text semantic memory search engine.",
-            camPos: { x: 0, y: 2.3, z: 6.5 },
-            camTarget: { x: 0, y: 0.9, z: 0 },
+            startTime: 100,
+            endTime: 125,
+            narration: "The Web Portal provides slash command suggestions, device pairing code verification, and real-time full-text Walrus memory recall.",
+            camPos: { x: 0, y: 2.2, z: 6.2 },
+            camTarget: { x: 0, y: 0.8, z: 0 },
             elementId: "surface-portal"
           },
           {
             id: 4,
             key: "walrus",
-            name: "Walrus Fabric",
-            startTime: 245,
-            endTime: 300,
-            narration: "Powered by Walrus decentralized protocol: a single, immutable, cryptographic memory layer connecting all your surfaces with zero vendor lock-in.",
-            camPos: { x: 0, y: 3.5, z: 8.5 },
+            name: "Walrus Memory Fabric",
+            startTime: 125,
+            endTime: 150,
+            narration: "Powered by Walrus decentralized protocol: a single immutable cryptographic memory layer connecting all surfaces with zero vendor lock-in.",
+            camPos: { x: 0, y: 3.4, z: 8.2 },
             camTarget: { x: 0, y: 1.2, z: 0 },
             elementId: "surface-walrus"
           }
         ];
 
-        // ------------------------------------------------------------- Web Audio FX Generator
+        // Web Audio Synthesizer
         var audioCtx = null;
         var soundEnabled = true;
 
@@ -1881,21 +1894,21 @@
             osc.type = type || "sine";
             osc.frequency.setValueAtTime(freq || 520, ctx.currentTime);
             gain.gain.setValueAtTime(0.04, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (duration || 0.1));
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (duration || 0.08));
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start();
-            osc.stop(ctx.currentTime + (duration || 0.1));
+            osc.stop(ctx.currentTime + (duration || 0.08));
           } catch (e) {}
         }
 
-        // ------------------------------------------------------------- Three.js 3D Studio Setup
+        // 3D Scene Setup
         var canvas = document.getElementById("webgl-canvas");
         var scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x07090e, 0.04);
 
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 2.5, 7.5);
+        camera.position.set(0, 2.4, 7.2);
 
         var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1907,9 +1920,8 @@
         controls.dampingFactor = 0.05;
         controls.maxDistance = 25;
         controls.minDistance = 2;
-        controls.enabled = false; // Director mode by default
+        controls.enabled = false;
 
-        // Lighting
         var ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
         scene.add(ambientLight);
 
@@ -1921,16 +1933,11 @@
         dirLight2.position.set(-6, -4, -5);
         scene.add(dirLight2);
 
-        var pointLightGold = new THREE.PointLight(0xffbe3b, 1.4, 20);
-        pointLightGold.position.set(0, 3, 2);
-        scene.add(pointLightGold);
-
-        // Studio Hex Grid Floor
         var grid = new THREE.GridHelper(40, 40, 0x35d0ba, 0x161e2e);
         grid.position.y = -1.2;
         scene.add(grid);
 
-        // ------------------------------------------------------------- Central Walrus Core (Octahedron & Gyro Rings)
+        // Walrus Core
         var coreGroup = new THREE.Group();
         coreGroup.position.set(0, 1.5, -2);
         scene.add(coreGroup);
@@ -1947,73 +1954,59 @@
         coreGroup.add(octMesh);
 
         var ring1Geo = new THREE.TorusGeometry(1.8, 0.03, 16, 64);
-        var ring1Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-        var ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+        var ring1 = new THREE.Mesh(ring1Geo, new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
         coreGroup.add(ring1);
 
         var ring2Geo = new THREE.TorusGeometry(2.2, 0.03, 16, 64);
-        var ring2Mat = new THREE.MeshBasicMaterial({ color: 0xffbe3b });
-        var ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+        var ring2 = new THREE.Mesh(ring2Geo, new THREE.MeshBasicMaterial({ color: 0xffbe3b }));
         ring2.rotation.x = Math.PI / 2;
         coreGroup.add(ring2);
 
-        // Cryptographic Data Particles
-        var particleCount = 140;
+        // Particles
+        var pCount = 140;
         var pGeo = new THREE.BufferGeometry();
-        var pPositions = new Float32Array(particleCount * 3);
-        for (var i = 0; i < particleCount; i++) {
-          pPositions[i * 3] = (Math.random() - 0.5) * 16;
-          pPositions[i * 3 + 1] = Math.random() * 8 - 1;
-          pPositions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+        var pPos = new Float32Array(pCount * 3);
+        for (var i = 0; i < pCount; i++) {
+          pPos[i * 3] = (Math.random() - 0.5) * 16;
+          pPos[i * 3 + 1] = Math.random() * 8 - 1;
+          pPos[i * 3 + 2] = (Math.random() - 0.5) * 16;
         }
-        pGeo.setAttribute("position", new THREE.BufferAttribute(pPositions, 3));
-        var pMat = new THREE.PointsMaterial({ color: 0x35d0ba, size: 0.07, transparent: true, opacity: 0.6 });
-        var particleSystem = new THREE.Points(pGeo, pMat);
+        pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+        var particleSystem = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0x35d0ba, size: 0.07, transparent: true, opacity: 0.6 }));
         scene.add(particleSystem);
 
-        // ------------------------------------------------------------- 3D Articulated Mascot "Cheta"
+        // Mascot "Cheta"
         var mascotGroup = new THREE.Group();
-        mascotGroup.position.set(3.4, 0.6, 2.5);
+        mascotGroup.position.set(3.2, 0.5, 2.5);
         scene.add(mascotGroup);
 
-        // Head
-        var headGeo = new THREE.BoxGeometry(0.7, 0.6, 0.6);
-        var headMat = new THREE.MeshStandardMaterial({ color: 0x1a2638, roughness: 0.3, metalness: 0.6 });
-        var mascotHead = new THREE.Mesh(headGeo, headMat);
+        var mascotHead = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0x1a2638, roughness: 0.3, metalness: 0.6 }));
         mascotGroup.add(mascotHead);
 
-        // Glowing Visor Eyes
-        var visorGeo = new THREE.BoxGeometry(0.55, 0.22, 0.08);
-        var visorMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
-        var mascotVisor = new THREE.Mesh(visorGeo, visorMat);
+        var mascotVisor = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.22, 0.08), new THREE.MeshBasicMaterial({ color: 0x35d0ba }));
         mascotVisor.position.set(0, 0.05, 0.31);
         mascotHead.add(mascotVisor);
 
-        // Dual Antennae
         var antGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.3);
         var antMat = new THREE.MeshStandardMaterial({ color: 0xffbe3b });
         var ant1 = new THREE.Mesh(antGeo, antMat);
-        ant1.position.set(-0.25, 0.42, 0);
-        ant1.rotation.z = 0.2;
+        ant1.position.set(-0.25, 0.42, 0); ant1.rotation.z = 0.2;
         mascotHead.add(ant1);
 
         var ant2 = new THREE.Mesh(antGeo, antMat);
-        ant2.position.set(0.25, 0.42, 0);
-        ant2.rotation.z = -0.2;
+        ant2.position.set(0.25, 0.42, 0); ant2.rotation.z = -0.2;
         mascotHead.add(ant2);
 
-        // Floating Hands
-        var handGeo = new THREE.SphereGeometry(0.12, 16, 16);
         var handMat = new THREE.MeshStandardMaterial({ color: 0x35d0ba, metalness: 0.5 });
-        var leftHand = new THREE.Mesh(handGeo, handMat);
+        var leftHand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
         leftHand.position.set(-0.55, -0.2, 0.2);
         mascotGroup.add(leftHand);
 
-        var rightHand = new THREE.Mesh(handGeo, handMat);
+        var rightHand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), handMat);
         rightHand.position.set(0.55, -0.2, 0.2);
         mascotGroup.add(rightHand);
 
-        // ------------------------------------------------------------- State & Timeline Management
+        // State & DOM Handles
         var isPlaying = true;
         var playbackSpeed = 1.0;
         var currentTime = 0;
@@ -2021,7 +2014,6 @@
         var currentSurfaceIndex = 0;
         var isFreeOrbit = false;
 
-        // UI DOM Elements
         var timeDisplay = document.getElementById("time-display");
         var timelineFill = document.getElementById("timeline-fill");
         var timelineHandle = document.getElementById("timeline-handle");
@@ -2036,64 +2028,40 @@
         var btnSoundToggle = document.getElementById("btn-sound-toggle");
         var soundLabel = document.getElementById("sound-label");
 
-        // Format MM:SS helper
         function formatTime(sec) {
           var m = Math.floor(sec / 60);
           var s = Math.floor(sec % 60);
           return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
         }
 
-        // Switch Active Surface View
         function activateSurface(index) {
           if (index < 0 || index >= SURFACES.length) return;
           currentSurfaceIndex = index;
           var surf = SURFACES[index];
 
-          // Update navigation tabs
           for (var i = 0; i < surfaceButtons.length; i++) {
-            if (i === index) {
-              surfaceButtons[i].classList.add("active");
-            } else {
-              surfaceButtons[i].classList.remove("active");
-            }
+            if (i === index) surfaceButtons[i].classList.add("active");
+            else surfaceButtons[i].classList.remove("active");
           }
 
-          // Update DOM viewports
           for (var j = 0; j < surfaceViews.length; j++) {
-            if (surfaceViews[j].id === surf.elementId) {
-              surfaceViews[j].classList.add("active");
-            } else {
-              surfaceViews[j].classList.remove("active");
-            }
+            if (surfaceViews[j].id === surf.elementId) surfaceViews[j].classList.add("active");
+            else surfaceViews[j].classList.remove("active");
           }
 
-          // Update narration subtitle
           narrationText.innerHTML = "<strong>" + surf.name + ":</strong> " + surf.narration;
 
-          // Camera Transition in Director mode
           if (!isFreeOrbit && typeof TWEEN !== "undefined") {
-            new TWEEN.Tween(camera.position)
-              .to(surf.camPos, 1200)
-              .easing(TWEEN.Easing.Cubic.Out)
-              .start();
+            new TWEEN.Tween(camera.position).to(surf.camPos, 900).easing(TWEEN.Easing.Cubic.Out).start();
+            new TWEEN.Tween(controls.target).to(surf.camTarget, 900).easing(TWEEN.Easing.Cubic.Out).start();
 
-            new TWEEN.Tween(controls.target)
-              .to(surf.camTarget, 1200)
-              .easing(TWEEN.Easing.Cubic.Out)
-              .start();
-
-            // Mascot repositioning per surface
-            var mascotTargetX = (index % 2 === 0) ? 3.2 : -3.2;
-            new TWEEN.Tween(mascotGroup.position)
-              .to({ x: mascotTargetX, y: 0.6, z: 2.2 }, 1000)
-              .easing(TWEEN.Easing.Quadratic.Out)
-              .start();
+            var mascotTargetX = (index % 2 === 0) ? 3.0 : -3.0;
+            new TWEEN.Tween(mascotGroup.position).to({ x: mascotTargetX, y: 0.5, z: 2.3 }, 800).easing(TWEEN.Easing.Quadratic.Out).start();
           }
 
-          playChirp(440 + index * 60, "sine", 0.15);
+          playChirp(460 + index * 60, "sine", 0.12);
         }
 
-        // Attach click listeners to tabs
         for (var b = 0; b < surfaceButtons.length; b++) {
           (function (idx) {
             surfaceButtons[idx].addEventListener("click", function () {
@@ -2103,168 +2071,233 @@
           })(b);
         }
 
-        // ------------------------------------------------------------- Continuous Surface Animation Scripting
-        // This function drives the micro-animations inside each surface based on current time
+        // Fast-Paced Dynamic Simulation Driver (Continuous action every 2-3 seconds)
         function updateSurfaceSimulations(time) {
-          // --- Surface 0: Telegram Bot (0 - 60s) ---
-          if (time >= 0 && time < 60) {
+          // ================= Surface 0: Telegram Bot (0 - 30s) =================
+          if (time >= 0 && time < 30) {
             var tgRel = time;
             var tgTyping = document.getElementById("tg-typing");
             var tgReply1 = document.getElementById("tg-reply-1");
-            var tgReply2 = document.getElementById("tg-reply-2");
+            var tgBtnCal = document.getElementById("tg-btn-cal");
+            var tgCalCard = document.getElementById("tg-cal-card");
+            var tgDocBubble = document.getElementById("tg-doc-bubble");
+            var tgDocReply = document.getElementById("tg-doc-reply");
+            var tgStatusText = document.getElementById("tg-status-text");
 
-            if (tgRel > 4 && tgRel < 9) {
+            // 0 - 2s: Voice note playing
+            // 2.5 - 5s: Typing...
+            if (tgRel >= 2.5 && tgRel < 5.5) {
               tgTyping.style.display = "flex";
+              tgStatusText.textContent = "bot • typing...";
             } else {
               tgTyping.style.display = "none";
+              tgStatusText.textContent = "bot • 13 tools active • online";
             }
 
-            if (tgRel >= 9) {
+            // 5.5s: Reminder + durable memory reply appears
+            if (tgRel >= 5.5) {
               tgReply1.style.display = "block";
             } else {
               tgReply1.style.display = "none";
             }
 
-            if (tgRel >= 24) {
-              tgReply2.style.display = "block";
+            // 9s: Simulated user taps "View in Calendar"
+            if (tgRel >= 9 && tgRel < 12) {
+              tgBtnCal.classList.add("clicked");
             } else {
-              tgReply2.style.display = "none";
+              tgBtnCal.classList.remove("clicked");
+            }
+
+            // 11s: Calendar Event card pops in
+            if (tgRel >= 11) {
+              tgCalCard.style.display = "block";
+            } else {
+              tgCalCard.style.display = "none";
+            }
+
+            // 16s: User drops architecture_spec.pdf
+            if (tgRel >= 16) {
+              tgDocBubble.style.display = "block";
+            } else {
+              tgDocBubble.style.display = "none";
+            }
+
+            // 20s: Attachment parsing tool output pops in
+            if (tgRel >= 20) {
+              tgDocReply.style.display = "block";
+            } else {
+              tgDocReply.style.display = "none";
             }
           }
 
-          // --- Surface 1: Linux CLI (60 - 120s) ---
-          if (time >= 60 && time < 120) {
-            var cliRel = time - 60;
-            var termCmd2 = document.getElementById("term-cmd-2");
-            var termCmd3 = document.getElementById("term-cmd-3");
-            var termCmd4 = document.getElementById("term-cmd-4");
+          // ================= Surface 1: Linux CLI (30 - 65s) =================
+          if (time >= 30 && time < 65) {
+            var cliRel = time - 30;
+            var termStepTable = document.getElementById("term-step-table");
+            var termStepSearch = document.getElementById("term-step-search");
+            var termStepChat = document.getElementById("term-step-chat");
+            var termStepPair = document.getElementById("term-step-pair");
+            var termPairedToast = document.getElementById("term-paired-toast");
             var termStreamText = document.getElementById("term-stream-text");
             var termTypedCmd = document.getElementById("term-typed-cmd");
 
-            if (cliRel < 6) {
-              termTypedCmd.textContent = "ranti memory list --recent 3".slice(0, Math.floor(cliRel * 5));
-            } else {
+            // 0 - 4s: Typing "ranti memory list --recent 3"
+            if (cliRel < 4) {
+              termTypedCmd.textContent = "ranti memory list --recent 3".slice(0, Math.floor(cliRel * 7));
+            } else if (cliRel >= 4 && cliRel < 10) {
               termTypedCmd.textContent = "";
             }
 
-            if (cliRel >= 6) {
-              termCmd2.style.display = "block";
+            // 4s: Table renders
+            if (cliRel >= 4) {
+              termStepTable.style.display = "block";
             } else {
-              termCmd2.style.display = "none";
+              termStepTable.style.display = "none";
             }
 
+            // 10s: Search "Solana" matches in 4ms
+            if (cliRel >= 10) {
+              termStepSearch.style.display = "block";
+            } else {
+              termStepSearch.style.display = "none";
+            }
+
+            // 16s: ranti chat starts streaming tokens
             if (cliRel >= 16) {
-              termCmd3.style.display = "block";
-              var fullTokenResponse = "Recalling from Walrus decentralized storage (Blob 0x9f82b1): You build with Solana, Rust, and Python. You are deploying smart contracts to Sui testnet with durable memory verification.";
-              var tokenCount = Math.min(fullTokenResponse.length, Math.floor((cliRel - 16) * 16));
-              termStreamText.textContent = fullTokenResponse.slice(0, tokenCount);
+              termStepChat.style.display = "block";
+              var fullTokens = "I have 13 active agent tools (Wikipedia, Web Search, Weather, Calculator, Calendar, Reminders, Walrus Query, Walrus Put, Page Inspect...). Everything you share is instantly synchronized with your Telegram & Browser Extension via Walrus decentralized blobs.";
+              var tokenCount = Math.min(fullTokens.length, Math.floor((cliRel - 16) * 18));
+              termStreamText.textContent = fullTokens.slice(0, tokenCount);
             } else {
-              termCmd3.style.display = "none";
+              termStepChat.style.display = "none";
             }
 
-            if (cliRel >= 38) {
-              termCmd4.style.display = "block";
+            // 26s: Pairing code generation
+            if (cliRel >= 26) {
+              termStepPair.style.display = "block";
             } else {
-              termCmd4.style.display = "none";
+              termStepPair.style.display = "none";
+            }
+
+            // 31s: Paired toast appears
+            if (cliRel >= 31) {
+              termPairedToast.style.display = "block";
+            } else {
+              termPairedToast.style.display = "none";
             }
           }
 
-          // --- Surface 2: Browser Extension & WebMCP (120 - 185s) ---
-          if (time >= 120 && time < 185) {
-            var extRel = time - 120;
+          // ================= Surface 2: Browser Extension & WebMCP (65 - 100s) =================
+          if (time >= 65 && time < 100) {
+            var extRel = time - 65;
             var spToolBadge = document.getElementById("sp-tool-badge");
             var spBotReply = document.getElementById("sp-bot-reply");
+            var spToolsList = document.getElementById("sp-tools-list-bubble");
             var spDrawer = document.getElementById("sp-drawer");
             var pizzaCheese = document.getElementById("pizza-cheese");
             var pageToolStatus = document.getElementById("page-tool-status");
+            var spReadBtn = document.getElementById("sp-read-tab-btn");
 
-            if (extRel >= 8) {
-              spToolBadge.style.display = "inline-flex";
-              pageToolStatus.textContent = "[WebMCP] add_topping({'topping': 'pepperoni, mushrooms'}) executed";
+            // 3s: "Read Tab" button pulses
+            if (extRel >= 3 && extRel < 6) {
+              spReadBtn.style.boxShadow = "0 0 12px var(--accent)";
             } else {
-              spToolBadge.style.display = "none";
-              pageToolStatus.textContent = "Awaiting agent tool call...";
+              spReadBtn.style.boxShadow = "none";
             }
 
-            // Spawn pizza toppings into DOM
-            if (extRel >= 12 && pizzaCheese.children.length === 0) {
-              // Add pepperonis
-              var p1 = document.createElement("div");
-              p1.className = "topping-pep";
-              p1.style.top = "25px"; p1.style.left = "35px";
-              pizzaCheese.appendChild(p1);
+            // 5s: In-page tool badge executes
+            if (extRel >= 5) {
+              spToolBadge.style.display = "inline-flex";
+              pageToolStatus.textContent = "[WebMCP] add_topping({'topping': ['pepperoni', 'mushrooms']}) executed";
+            } else {
+              spToolBadge.style.display = "none";
+              pageToolStatus.textContent = "Awaiting agent in-page tool invocation...";
+            }
 
-              var p2 = document.createElement("div");
-              p2.className = "topping-pep";
-              p2.style.top = "80px"; p2.style.left = "75px";
-              pizzaCheese.appendChild(p2);
-
-              var p3 = document.createElement("div");
-              p3.className = "topping-pep";
-              p3.style.top = "40px"; p3.style.left = "110px";
-              pizzaCheese.appendChild(p3);
-
-              // Add mushrooms
-              var m1 = document.createElement("div");
-              m1.className = "topping-mush";
-              m1.style.top = "110px"; m1.style.left = "30px";
-              pizzaCheese.appendChild(m1);
-
-              var m2 = document.createElement("div");
-              m2.className = "topping-mush";
-              m2.style.top = "115px"; m2.style.left = "110px";
-              pizzaCheese.appendChild(m2);
-
-              playChirp(720, "triangle", 0.2);
-            } else if (extRel < 12 && pizzaCheese.children.length > 0) {
+            // 7s: Pepperoni and mushrooms fall onto pizza
+            if (extRel >= 7 && pizzaCheese.children.length === 0) {
+              var p1 = document.createElement("div"); p1.className = "topping-pep"; p1.style.top = "20px"; p1.style.left = "30px"; pizzaCheese.appendChild(p1);
+              var p2 = document.createElement("div"); p2.className = "topping-pep"; p2.style.top = "65px"; p2.style.left = "65px"; pizzaCheese.appendChild(p2);
+              var p3 = document.createElement("div"); p3.className = "topping-pep"; p3.style.top = "30px"; p3.style.left = "95px"; pizzaCheese.appendChild(p3);
+              var m1 = document.createElement("div"); m1.className = "topping-mush"; m1.style.top = "95px"; m1.style.left = "25px"; pizzaCheese.appendChild(m1);
+              var m2 = document.createElement("div"); m2.className = "topping-mush"; m2.style.top = "100px"; m2.style.left = "95px"; pizzaCheese.appendChild(m2);
+              playChirp(720, "triangle", 0.15);
+            } else if (extRel < 7 && pizzaCheese.children.length > 0) {
               pizzaCheese.innerHTML = "";
             }
 
-            if (extRel >= 14) {
+            // 8s: Reply confirms
+            if (extRel >= 8) {
               spBotReply.style.display = "block";
             } else {
               spBotReply.style.display = "none";
             }
 
-            // Toggle memories drawer
-            if (extRel >= 32) {
+            // 14s: List tools on page
+            if (extRel >= 14) {
+              spToolsList.style.display = "block";
+            } else {
+              spToolsList.style.display = "none";
+            }
+
+            // 20s: Open memories drawer
+            if (extRel >= 20) {
               spDrawer.classList.add("open");
             } else {
               spDrawer.classList.remove("open");
             }
           }
 
-          // --- Surface 3: Web Portal (185 - 245s) ---
-          if (time >= 185 && time < 245) {
-            var portRel = time - 185;
+          // ================= Surface 3: Web Portal (100 - 125s) =================
+          if (time >= 100 && time < 125) {
+            var portRel = time - 100;
             var slashPopup = document.getElementById("slash-popup");
             var portalUserMsg = document.getElementById("portal-user-msg");
             var portalBotMsg = document.getElementById("portal-bot-msg");
+            var portalQueryMsg = document.getElementById("portal-query-msg");
+            var portalQueryReply = document.getElementById("portal-query-reply");
             var portalInput = document.getElementById("portal-input");
 
-            if (portRel > 4 && portRel < 14) {
+            // 2 - 6s: Typing / and slash commands open
+            if (portRel >= 2 && portRel < 6) {
               slashPopup.style.display = "flex";
               portalInput.value = "/rem";
             } else {
               slashPopup.style.display = "none";
             }
 
-            if (portRel >= 14) {
+            // 6s: /remember message appears
+            if (portRel >= 6) {
               portalUserMsg.style.display = "block";
               portalInput.value = "";
             } else {
               portalUserMsg.style.display = "none";
             }
 
-            if (portRel >= 20) {
+            // 9s: Walrus Put confirmed
+            if (portRel >= 9) {
               portalBotMsg.style.display = "block";
             } else {
               portalBotMsg.style.display = "none";
             }
+
+            // 14s: Cross-device query
+            if (portRel >= 14) {
+              portalQueryMsg.style.display = "block";
+            } else {
+              portalQueryMsg.style.display = "none";
+            }
+
+            // 17s: Instant cross-surface recall
+            if (portRel >= 17) {
+              portalQueryReply.style.display = "block";
+            } else {
+              portalQueryReply.style.display = "none";
+            }
           }
         }
 
-        // ------------------------------------------------------------- Controls & Scrubbing
+        // Timeline & Controls Event Handlers
         btnPlayPause.addEventListener("click", function () {
           isPlaying = !isPlaying;
           btnPlayPause.textContent = isPlaying ? "Pause" : "Play";
@@ -2299,13 +2332,11 @@
           if (soundEnabled) playChirp(600, "sine", 0.1);
         });
 
-        // Timeline Scrubbing
         timelineTrack.addEventListener("click", function (e) {
           var rect = timelineTrack.getBoundingClientRect();
           var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
           currentTime = ratio * TOTAL_DURATION;
 
-          // Determine corresponding surface
           for (var k = 0; k < SURFACES.length; k++) {
             if (currentTime >= SURFACES[k].startTime && currentTime < SURFACES[k].endTime) {
               activateSurface(k);
@@ -2314,7 +2345,6 @@
           }
         });
 
-        // Keyboard Shortcuts
         window.addEventListener("keydown", function (e) {
           if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
           if (e.code === "Space") {
@@ -2331,7 +2361,7 @@
           }
         });
 
-        // ------------------------------------------------------------- Direct Video Recording (WebM Export)
+        // Direct Video Recording
         var btnRecord = document.getElementById("btn-record-video");
         var recordLabel = document.getElementById("record-label");
         var mediaRecorder = null;
@@ -2340,58 +2370,48 @@
 
         btnRecord.addEventListener("click", function () {
           if (!isRecording) {
-            startVideoRecording();
+            try {
+              var stream = canvas.captureStream(30);
+              recordedChunks = [];
+              var mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+              mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+
+              mediaRecorder.ondataavailable = function (e) {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+              };
+
+              mediaRecorder.onstop = function () {
+                var blob = new Blob(recordedChunks, { type: "video/webm" });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement("a");
+                a.href = url;
+                a.download = "cheta-multi-surface-showcase.webm";
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function () {
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }, 100);
+              };
+
+              mediaRecorder.start();
+              isRecording = true;
+              btnRecord.classList.add("recording");
+              recordLabel.textContent = "&#9632; Stop & Save";
+            } catch (err) {
+              alert("Video recording could not start: " + err.message);
+            }
           } else {
-            stopVideoRecording();
+            if (mediaRecorder && isRecording) {
+              mediaRecorder.stop();
+              isRecording = false;
+              btnRecord.classList.remove("recording");
+              recordLabel.textContent = "&#9679; Record Video";
+            }
           }
         });
 
-        function startVideoRecording() {
-          try {
-            var stream = canvas.captureStream(30);
-            recordedChunks = [];
-            var mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-            mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
-
-            mediaRecorder.ondataavailable = function (e) {
-              if (e.data && e.data.size > 0) {
-                recordedChunks.push(e.data);
-              }
-            };
-
-            mediaRecorder.onstop = function () {
-              var blob = new Blob(recordedChunks, { type: "video/webm" });
-              var url = URL.createObjectURL(blob);
-              var a = document.createElement("a");
-              a.href = url;
-              a.download = "cheta-multi-surface-showcase.webm";
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(function () {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }, 100);
-            };
-
-            mediaRecorder.start();
-            isRecording = true;
-            btnRecord.classList.add("recording");
-            recordLabel.textContent = "&#9632; Stop & Save";
-          } catch (err) {
-            alert("Video recording could not start: " + err.message);
-          }
-        }
-
-        function stopVideoRecording() {
-          if (mediaRecorder && isRecording) {
-            mediaRecorder.stop();
-            isRecording = false;
-            btnRecord.classList.remove("recording");
-            recordLabel.textContent = "&#9679; Record Video";
-          }
-        }
-
-        // ------------------------------------------------------------- Animation & Render Loop
+        // Main Render Loop
         activateSurface(0);
 
         function animate(timestamp) {
@@ -2407,10 +2427,9 @@
           if (isPlaying) {
             currentTime += deltaSec * playbackSpeed;
             if (currentTime >= TOTAL_DURATION) {
-              currentTime = 0; // Seamless continuous loop
+              currentTime = 0;
             }
 
-            // Check surface boundary and transition
             var activeIdx = 0;
             for (var i = 0; i < SURFACES.length; i++) {
               if (currentTime >= SURFACES[i].startTime && currentTime < SURFACES[i].endTime) {
@@ -2423,20 +2442,16 @@
               activateSurface(activeIdx);
             }
 
-            // Update surface micro-animations
             updateSurfaceSimulations(currentTime);
 
-            // Update Progress HUD
             var pct = (currentTime / TOTAL_DURATION) * 100;
             timelineFill.style.width = pct + "%";
             timelineHandle.style.left = pct + "%";
             timeDisplay.textContent = formatTime(currentTime) + " / " + formatTime(TOTAL_DURATION);
           }
 
-          // 3D Motion Updates
           var t = timestamp * 0.001;
 
-          // Walrus Core Rotation
           if (octMesh) {
             octMesh.rotation.x = t * 0.4;
             octMesh.rotation.y = t * 0.6;
@@ -2444,28 +2459,21 @@
           if (ring1) ring1.rotation.z = -t * 0.5;
           if (ring2) ring2.rotation.y = t * 0.35;
 
-          // Particle Field subtle drift
           if (particleSystem) {
             particleSystem.rotation.y = t * 0.05;
           }
 
-          // Cheta Mascot Lifelike Hover & Expressions
           if (mascotGroup) {
-            mascotGroup.position.y = 0.6 + Math.sin(t * 2.5) * 0.12;
-            mascotHead.rotation.y = Math.sin(t * 1.5) * 0.15;
-            mascotHead.rotation.x = Math.sin(t * 2.0) * 0.08;
+            mascotGroup.position.y = 0.5 + Math.sin(t * 2.5) * 0.1;
+            mascotHead.rotation.y = Math.sin(t * 1.5) * 0.12;
+            mascotHead.rotation.x = Math.sin(t * 2.0) * 0.06;
 
-            // Mascot hand typing & gesturing
-            leftHand.position.y = -0.2 + Math.sin(t * 4.0) * 0.05;
-            rightHand.position.y = -0.2 + Math.cos(t * 4.0) * 0.05;
+            leftHand.position.y = -0.2 + Math.sin(t * 4.0) * 0.04;
+            rightHand.position.y = -0.2 + Math.cos(t * 4.0) * 0.04;
 
-            // Cartoon eye blink
             var blinkCycle = t % 4;
-            if (blinkCycle > 3.85) {
-              mascotVisor.scale.y = 0.1;
-            } else {
-              mascotVisor.scale.y = 1.0;
-            }
+            if (blinkCycle > 3.85) mascotVisor.scale.y = 0.1;
+            else mascotVisor.scale.y = 1.0;
           }
 
           if (controls && controls.enabled) {
@@ -2480,7 +2488,6 @@
           animate(ts);
         });
 
-        // Window resize handler
         window.addEventListener("resize", function () {
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
