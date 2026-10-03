@@ -309,57 +309,272 @@
       min-height: 48px;
     }
 
-    .face-cards {
+    .intro-container {
       display: flex;
-      gap: 12px;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
+      max-width: 980px;
+      width: 100%;
+      padding: 10px 16px;
+      margin: auto;
+      text-align: center;
+    }
+
+    .intro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(212, 168, 83, 0.08);
+      border: 1px solid rgba(212, 168, 83, 0.28);
+      margin-bottom: 12px;
+    }
+
+    .pulsing-orbit-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold);
+      animation: pulseDot 2s ease infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    .intro-eyebrow-text {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .intro-telemetry-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
-      margin-top: 4px;
+    }
+
+    .tele-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      background: #141416;
+      border: 1px solid #232326;
+      font-family: var(--f-mono);
+      font-size: 11px;
+    }
+
+    .tele-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .tele-val {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .tele-lbl {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .face-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      width: 100%;
+      max-width: 920px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .face-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     .face-card {
-      background: var(--surf);
-      border: 1px solid var(--line);
-      border-radius: 14px;
+      background: #121214;
+      border: 1px solid #25252a;
+      border-radius: 16px;
       padding: 16px 14px 14px;
-      width: 136px;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
       cursor: pointer;
-      transition: border-color 0.25s, transform 0.25s, background 0.25s;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
       opacity: 0;
       animation: fadeUp 0.5s ease forwards;
     }
 
     .face-card:hover {
-      border-color: var(--gold-line);
-      background: var(--gold-dim);
-      transform: translateY(-4px);
+      border-color: var(--gold);
+      background: #18181c;
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 18px rgba(212,168,83,0.18);
+    }
+
+    .face-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .face-status-badge {
+      font-family: var(--f-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      background: rgba(212, 168, 83, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(212, 168, 83, 0.2);
+    }
+
+    .face-scene-num {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      color: #55555c;
+      font-weight: 600;
     }
 
     .face-card-icon {
-      width: 38px; height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 10px;
-      background: var(--surf2);
-      border: 1px solid var(--line2);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 10px;
+      background: #1a1a1e;
+      border: 1px solid #2a2a30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      color: var(--gold);
+      transition: transform 0.3s;
     }
 
-    .face-card-icon svg { width: 18px; height: 18px; }
+    .face-card:hover .face-card-icon {
+      transform: scale(1.1);
+      border-color: var(--gold);
+      background: #22201b;
+    }
+
+    .face-card-icon svg {
+      width: 18px;
+      height: 18px;
+    }
 
     .face-card-name {
-      font-family: var(--f-display);
-      font-size: 16px;
+      font-family: var(--f-bubbly);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+      letter-spacing: 0.02em;
+    }
+
+    .face-card-sub {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      color: var(--gold);
+      margin-bottom: 8px;
       letter-spacing: 0.04em;
-      color: var(--white);
-      margin-bottom: 4px;
     }
 
     .face-card-desc {
-      font-size: 10px;
-      color: var(--muted);
-      line-height: 1.35;
-      font-family: var(--f-body);
+      font-family: var(--f-bubbly);
+      font-size: 11.5px;
+      color: #92929e;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+
+    .face-card-cta {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--gold);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: gap 0.2s;
+    }
+
+    .face-card:hover .face-card-cta {
+      gap: 8px;
+    }
+
+    .intro-action-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .intro-play-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 28px;
+      border-radius: 999px;
+      background: #171510;
+      border: 1.5px solid var(--gold);
+      color: #fff;
+      font-family: var(--f-display);
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 22px rgba(212, 168, 83, 0.22);
+    }
+
+    .intro-play-btn:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(212, 168, 83, 0.45);
+    }
+
+    .intro-feature-pills {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .feature-pill {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      color: #7a7a85;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #111113;
+      border: 1px solid #1f1f23;
     }
 
     /* ====================================================================
@@ -1384,40 +1599,102 @@
 
       <!-- ═══ SCENE 0: INTRO ═══ -->
       <div id="s0" class="scene active">
-        <p class="intro-eyebrow">Igbo for "Remember" &mdash; One Mind Across Every Device</p>
-        <h1 class="intro-hero-title">
-          <span id="c-letter">C</span><span id="h-letter">h</span><span id="e-letter">e</span><span id="t-letter">t</span><span id="a-letter">a</span>
-        </h1>
-        <p class="intro-sub" id="intro-sub-text">One Mind. Every Surface.</p>
-        <p class="intro-desc" id="intro-desc-text">Cheta is an autonomous memory-first AI agent. It keeps one private, encrypted memory space across Telegram, Linux Terminal, Chromium Extension, and Web Portal using Walrus decentralized storage. Zero memory rot.</p>
-        <div class="face-cards" id="face-cards">
-          <div class="face-card" onclick="window.goToScene(1)">
-            <div class="face-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </div>
-            <div class="face-card-name">Telegram</div>
-            <div class="face-card-desc">Natural fact extraction, slash commands, voice notes &amp; reminders</div>
+        <div class="intro-container">
+          <div class="intro-badge">
+            <span class="pulsing-orbit-dot"></span>
+            <span class="intro-eyebrow-text">Igbo for "Remember" &bull; Decentralized Agentic Memory</span>
           </div>
-          <div class="face-card" onclick="window.goToScene(2)">
-            <div class="face-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>
-            </div>
-            <div class="face-card-name">Terminal</div>
-            <div class="face-card-desc">Interactive chat REPL, salience scoring, pair &amp; passport backup</div>
+
+          <h1 class="intro-hero-title">
+            <span id="c-letter">C</span><span id="h-letter">h</span><span id="e-letter">e</span><span id="t-letter">t</span><span id="a-letter">a</span>
+          </h1>
+
+          <p class="intro-sub" id="intro-sub-text">ONE MIND. EVERY SURFACE.</p>
+          <p class="intro-desc" id="intro-desc-text">An autonomous, memory-first AI agent that eliminates memory rot. Your agent&rsquo;s knowledge lives on <strong>Walrus decentralized storage</strong> &mdash; shared instantly across Telegram, Terminal, Chrome, and Web Portal.</p>
+
+          <!-- LIVE WALRUS TELEMETRY STRIP -->
+          <div class="intro-telemetry-strip">
+            <div class="tele-chip"><span class="tele-dot"></span><span class="tele-val">14</span><span class="tele-lbl">WALRUS BLOBS</span></div>
+            <div class="tele-chip"><span class="tele-dot"></span><span class="tele-val">4</span><span class="tele-lbl">ACTIVE SURFACES</span></div>
+            <div class="tele-chip"><span class="tele-dot"></span><span class="tele-val">0%</span><span class="tele-lbl">DATA LOCK-IN</span></div>
+            <div class="tele-chip"><span class="tele-dot"></span><span class="tele-val">100%</span><span class="tele-lbl">DECENTRALIZED</span></div>
           </div>
-          <div class="face-card" onclick="window.goToScene(3)">
-            <div class="face-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>
+
+          <!-- 4 RICH INTERACTIVE SURFACE CARDS -->
+          <div class="face-cards" id="face-cards">
+            <!-- Telegram Card -->
+            <div class="face-card" onclick="window.goToScene(1)" title="Enter Telegram Showcase">
+              <div class="face-card-top">
+                <span class="face-status-badge">● LIVE MINING</span>
+                <span class="face-scene-num">01</span>
+              </div>
+              <div class="face-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div class="face-card-name">Telegram</div>
+              <div class="face-card-sub">Autonomous Ingestion</div>
+              <div class="face-card-desc">Conversational memory mining, consolidation, voice notes &amp; reminders</div>
+              <div class="face-card-cta">Explore Telegram <span>&rarr;</span></div>
             </div>
-            <div class="face-card-name">Extension</div>
-            <div class="face-card-desc">Active tab inspection, in-page WebMCP tool automation &amp; memories</div>
+
+            <!-- Terminal Card -->
+            <div class="face-card" onclick="window.goToScene(2)" title="Enter Terminal Showcase">
+              <div class="face-card-top">
+                <span class="face-status-badge">● WALRUS REPL</span>
+                <span class="face-scene-num">02</span>
+              </div>
+              <div class="face-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>
+              </div>
+              <div class="face-card-name">Terminal</div>
+              <div class="face-card-sub">Clack CLI &amp; Recall</div>
+              <div class="face-card-desc">Salience scoring, local execution, pair code sync &amp; passport backup</div>
+              <div class="face-card-cta">Explore Terminal <span>&rarr;</span></div>
+            </div>
+
+            <!-- Extension Card -->
+            <div class="face-card" onclick="window.goToScene(3)" title="Enter Browser Showcase">
+              <div class="face-card-top">
+                <span class="face-status-badge">● IN-PAGE WEBMCP</span>
+                <span class="face-scene-num">03</span>
+              </div>
+              <div class="face-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>
+              </div>
+              <div class="face-card-name">Browser</div>
+              <div class="face-card-sub">WebMCP &amp; Sidepanel</div>
+              <div class="face-card-desc">In-page DOM tool automation on Chrome Labs, tab reading &amp; memories drawer</div>
+              <div class="face-card-cta">Explore Browser <span>&rarr;</span></div>
+            </div>
+
+            <!-- Web Portal Card -->
+            <div class="face-card" onclick="window.goToScene(4)" title="Enter Web Portal Showcase">
+              <div class="face-card-top">
+                <span class="face-status-badge">● CAUSAL AUDIT</span>
+                <span class="face-scene-num">04</span>
+              </div>
+              <div class="face-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <div class="face-card-name">Web Portal</div>
+              <div class="face-card-sub">Evidence Replay</div>
+              <div class="face-card-desc">Full dashboard, counterfactual proof replay &amp; multi-client pairing</div>
+              <div class="face-card-cta">Explore Portal <span>&rarr;</span></div>
+            </div>
           </div>
-          <div class="face-card" onclick="window.goToScene(4)">
-            <div class="face-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10A15.3 15.3 0 0 1 8 12a15.3 15.3 0 0 1 4-10z"/></svg>
+
+          <!-- BOTTOM ACTION STRIP -->
+          <div class="intro-action-bar">
+            <button class="intro-play-btn" onclick="window.goToScene(1)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              <span>PLAY FULL 5-MINUTE GUIDED TOUR</span>
+            </button>
+            <div class="intro-feature-pills">
+              <span class="feature-pill">✦ Auto-Consolidation</span>
+              <span class="feature-pill">✦ Walrus Decentralized Blobs</span>
+              <span class="feature-pill">✦ Zero-Auth Pairing</span>
+              <span class="feature-pill">✦ In-Page WebMCP</span>
             </div>
-            <div class="face-card-name">Web Portal</div>
-            <div class="face-card-desc">Full web assistant, memory management, pairing &amp; evidence audit</div>
           </div>
         </div>
       </div>
@@ -1796,22 +2073,74 @@
     }
 
     /* ================================================================
-       STREAMING TYPEWRITER & TIMING ENGINE
+       STREAMING TYPEWRITER & TIMING ENGINE (With Full Cancellation)
     ================================================================ */
+    var activeTypingMap = new WeakMap();
+    var currentSceneEpoch = 0;
+    var activeSceneTimers = [];
+
+    function cancelActiveScene() {
+      currentSceneEpoch++;
+      for (var i = 0; i < activeSceneTimers.length; i++) {
+        clearTimeout(activeSceneTimers[i]);
+      }
+      activeSceneTimers = [];
+
+      var narEl = document.getElementById('nar-text');
+      if (narEl) {
+        var prev = activeTypingMap.get(narEl);
+        if (prev) {
+          prev.cancelled = true;
+          if (prev.timer) clearTimeout(prev.timer);
+        }
+      }
+    }
+
     function sleep(ms) {
-      return new Promise(function(res) { setTimeout(res, ms); });
+      var epoch = currentSceneEpoch;
+      return new Promise(function(resolve, reject) {
+        var t = setTimeout(function() {
+          if (epoch === currentSceneEpoch) {
+            resolve();
+          } else {
+            reject(new Error('Scene aborted'));
+          }
+        }, ms);
+        activeSceneTimers.push(t);
+      });
     }
 
     function typeInto(el, text, speed) {
       return new Promise(function(resolve) {
         if (!el) { resolve(); return; }
-        var i = 0;
-        var sp = speed || 24;
+
+        // Cancel previous typing loop on this specific element!
+        var prev = activeTypingMap.get(el);
+        if (prev) {
+          prev.cancelled = true;
+          if (prev.timer) clearTimeout(prev.timer);
+        }
+
+        var token = { cancelled: false, timer: null };
+        activeTypingMap.set(el, token);
+
         var cursor = el.querySelector('.narrator-cursor');
         if (cursor) cursor.remove();
         el.textContent = '';
 
+        if (!text) {
+          resolve();
+          return;
+        }
+
+        var i = 0;
+        var sp = speed || 20;
+
         function next() {
+          if (token.cancelled) {
+            resolve();
+            return;
+          }
           if (i >= text.length) {
             var cur = document.createElement('span');
             cur.className = 'narrator-cursor';
@@ -1820,7 +2149,7 @@
             return;
           }
           el.textContent += text[i++];
-          setTimeout(next, sp + Math.random() * (sp * 0.3));
+          token.timer = setTimeout(next, sp);
         }
         next();
       });
@@ -1829,7 +2158,12 @@
     function flash() {
       var f = document.getElementById('flash');
       f.classList.add('on');
-      return sleep(160).then(function() { f.classList.remove('on'); });
+      return new Promise(function(res) {
+        setTimeout(function() {
+          f.classList.remove('on');
+          res();
+        }, 160);
+      });
     }
 
     /* ================================================================
@@ -1862,35 +2196,46 @@
     }
 
     function narrate(title, text, speed) {
-      document.getElementById('nar-title').textContent = title;
-      return typeInto(document.getElementById('nar-text'), text, speed || 22);
+      var titleEl = document.getElementById('nar-title');
+      if (titleEl) titleEl.textContent = title;
+      var textEl = document.getElementById('nar-text');
+      return typeInto(textEl, text, speed || 20);
     }
 
     function goToScene(idx) {
-      if (isTransitioning || idx === currentScene) return;
+      if (isTransitioning || (idx === currentScene && idx !== 0)) return;
       isTransitioning = true;
+      cancelActiveScene();
 
       flash().then(function() {
         var prev = document.getElementById(SCENES[currentScene].id);
-        prev.style.opacity = '0';
-        prev.style.transform = 'scale(0.96)';
-        return sleep(280);
+        if (prev) {
+          prev.style.opacity = '0';
+          prev.style.transform = 'scale(0.96)';
+        }
+        return new Promise(function(r) { setTimeout(r, 200); });
       }).then(function() {
         var prev = document.getElementById(SCENES[currentScene].id);
-        prev.classList.remove('active');
-        prev.style.opacity = '';
-        prev.style.transform = '';
+        if (prev) {
+          prev.classList.remove('active');
+          prev.style.opacity = '';
+          prev.style.transform = '';
+        }
 
         currentScene = idx;
         updateDots(idx);
 
         var next = document.getElementById(SCENES[idx].id);
-        next.style.display = 'flex';
-        next.offsetHeight;
-        next.classList.add('active');
+        if (next) {
+          next.style.display = 'flex';
+          next.offsetHeight;
+          next.classList.add('active');
+        }
 
         isTransitioning = false;
         runScene(idx);
+      }).catch(function(err) {
+        isTransitioning = false;
       });
     }
 
@@ -2047,7 +2392,7 @@
         return sleep(4500);
       }).then(function() {
         goToScene(2);
-      });
+      }).catch(function() {});
     }
 
     /* ================================================================
@@ -2199,7 +2544,7 @@
         return sleep(4500);
       }).then(function() {
         goToScene(3);
-      });
+      }).catch(function() {});
     }
 
     /* ================================================================
@@ -2414,7 +2759,7 @@
         return sleep(4500);
       }).then(function() {
         goToScene(4);
-      });
+      }).catch(function() {});
     }
 
     /* ================================================================
@@ -2526,7 +2871,7 @@
         return sleep(4500);
       }).then(function() {
         goToScene(0);
-      });
+      }).catch(function() {});
     }
 
     function resetAndRerun() {

@@ -14,7 +14,7 @@
   "use strict";
 
   var BG = 0x0a0a0a;
-  var ACCENT = 0x35d0ba;
+  var ACCENT = 0xd4a853;
   var NODE = 0x8a8a8a;
   var LINE = 0x262626;
 
