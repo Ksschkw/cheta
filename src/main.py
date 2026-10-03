@@ -93,6 +93,9 @@ def create_app(container: Container | None = None, settings: Settings | None = N
 
     if WEB_ROOT.is_dir():
         app.mount("/app", StaticFiles(directory=WEB_ROOT, html=True), name="app")
+        audio_dir = WEB_ROOT / "audio"
+        if audio_dir.is_dir():
+            app.mount("/audio", StaticFiles(directory=audio_dir), name="audio")
 
         # The landing page is the front door: entering the host name in a browser
         # must show it rather than a JSON 404. Declared after the API routes are

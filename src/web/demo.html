@@ -154,6 +154,44 @@
       color: #777;
     }
 
+    .voice-toggle-btn.pulse-unmute {
+      background: var(--gold);
+      color: #0c0c0e;
+      border-color: var(--gold);
+      animation: pulseUnmute 1.1s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseUnmute {
+      from { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 168, 83, 0.3); }
+      to { transform: scale(1.05); box-shadow: 0 0 10px 3px rgba(212, 168, 83, 0.5); }
+    }
+
+    .audio-prompt-pill {
+      margin: 8px 0 4px;
+      padding: 6px 10px;
+      background: rgba(212, 168, 83, 0.12);
+      border: 1px solid var(--gold);
+      border-radius: 6px;
+      font-size: 10px;
+      font-family: var(--f-mono);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      animation: pulseUnmute 1.1s ease-in-out infinite alternate;
+      transition: all 0.2s;
+    }
+
+    .audio-prompt-pill:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+    }
+
     .voice-wave {
       display: flex;
       align-items: flex-end;
@@ -1982,6 +2020,9 @@
           <span id="voice-status-text">Voice ON</span>
         </button>
       </div>
+      <div id="audio-unlock-banner" class="audio-prompt-pill" style="display:none;" title="Click anywhere to enable voice">
+        <span>Click to hear voiceover</span>
+      </div>
       <div class="narrator-face">
         <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="32" cy="28" r="18" fill="#18181c" stroke="#333" stroke-width="1.5"/>
@@ -2155,7 +2196,33 @@
     ================================================================ */
     var VoiceEngine = (function() {
       var currentAudio = null;
+      var currentTrackKey = null;
       var isMuted = false;
+      var unlocked = false;
+      var autoplayBlocked = false;
+      var audioCtx = null;
+
+      function getCandidates(trackKey) {
+        var file = trackKey + '.mp3';
+        return [
+          'audio/narration/' + file,
+          '/audio/narration/' + file,
+          '/app/audio/narration/' + file,
+          './audio/narration/' + file
+        ];
+      }
+
+      function primeAudio() {
+        try {
+          var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtxClass && !audioCtx) {
+            audioCtx = new AudioCtxClass();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+        } catch(e) {}
+      }
 
       function stop() {
         if (currentAudio) {
@@ -2169,45 +2236,134 @@
         if (wave) wave.classList.remove('active');
       }
 
+      function updateUI() {
+        var txt = document.getElementById('voice-status-text');
+        var btn = document.getElementById('voice-toggle');
+        var banner = document.getElementById('audio-unlock-banner');
+        if (isMuted) {
+          if (txt) txt.textContent = 'Voice Muted';
+          if (btn) {
+            btn.classList.add('muted');
+            btn.classList.remove('pulse-unmute');
+          }
+          if (banner) banner.style.display = 'none';
+        } else if (autoplayBlocked) {
+          if (txt) txt.textContent = 'Click for Voice';
+          if (btn) {
+            btn.classList.remove('muted');
+            btn.classList.add('pulse-unmute');
+          }
+          if (banner) banner.style.display = 'flex';
+        } else {
+          if (txt) txt.textContent = 'Voice ON';
+          if (btn) {
+            btn.classList.remove('muted');
+            btn.classList.remove('pulse-unmute');
+          }
+          if (banner) banner.style.display = 'none';
+        }
+      }
+
+      function tryPlayCandidate(candidates, index) {
+        if (index >= candidates.length) {
+          console.warn('[VoiceEngine] All audio candidate URLs failed for track:', currentTrackKey);
+          var wave = document.getElementById('voice-wave');
+          if (wave) wave.classList.remove('active');
+          return;
+        }
+
+        var url = candidates[index];
+        var audio = new Audio(url);
+        audio.volume = 1.0;
+        audio.preload = 'auto';
+        currentAudio = audio;
+
+        var wave = document.getElementById('voice-wave');
+
+        audio.onended = function() {
+          if (wave) wave.classList.remove('active');
+        };
+
+        audio.onerror = function() {
+          console.warn('[VoiceEngine] Candidate failed: ' + url + ', trying next fallback...');
+          tryPlayCandidate(candidates, index + 1);
+        };
+
+        var p = audio.play();
+        if (p && p.then) {
+          p.then(function() {
+            autoplayBlocked = false;
+            unlocked = true;
+            if (wave) wave.classList.add('active');
+            updateUI();
+          }).catch(function(err) {
+            console.warn('[VoiceEngine] Playback rejected for ' + url + ':', err.name, err.message);
+            if (err.name === 'NotAllowedError') {
+              autoplayBlocked = true;
+              if (wave) wave.classList.remove('active');
+              updateUI();
+            } else {
+              tryPlayCandidate(candidates, index + 1);
+            }
+          });
+        }
+      }
+
       function play(trackKey) {
         stop();
+        currentTrackKey = trackKey;
         if (isMuted || !trackKey) return;
-        try {
-          var audio = new Audio('audio/narration/' + trackKey + '.mp3');
-          currentAudio = audio;
-          var wave = document.getElementById('voice-wave');
-          if (wave) wave.classList.add('active');
 
-          audio.onended = function() {
-            if (wave) wave.classList.remove('active');
-          };
-          audio.onerror = function() {
-            if (wave) wave.classList.remove('active');
-          };
+        primeAudio();
+        var candidates = getCandidates(trackKey);
+        tryPlayCandidate(candidates, 0);
+      }
 
-          var p = audio.play();
-          if (p && p.catch) {
-            p.catch(function(err) {
-              if (wave) wave.classList.remove('active');
-            });
+      function unlock() {
+        primeAudio();
+        unlocked = true;
+        autoplayBlocked = false;
+        updateUI();
+        if (currentTrackKey && !isMuted) {
+          if (!currentAudio || currentAudio.paused) {
+            play(currentTrackKey);
           }
-        } catch (e) {}
+        }
       }
 
       function toggle() {
+        primeAudio();
+        if (autoplayBlocked) {
+          autoplayBlocked = false;
+          isMuted = false;
+          unlock();
+          return true;
+        }
+
         isMuted = !isMuted;
-        if (isMuted) stop();
-        var txt = document.getElementById('voice-status-text');
-        var btn = document.getElementById('voice-toggle');
-        if (txt) txt.textContent = isMuted ? 'Voice Muted' : 'Voice ON';
-        if (btn) btn.classList.toggle('muted', isMuted);
+        if (isMuted) {
+          stop();
+        } else {
+          unlock();
+        }
+        updateUI();
         return !isMuted;
       }
+
+      // Automatically attach global listener for initial user gesture
+      ['click', 'touchstart', 'keydown'].forEach(function(evt) {
+        window.addEventListener(evt, function() {
+          if (autoplayBlocked || !unlocked) {
+            unlock();
+          }
+        }, { passive: true });
+      });
 
       return {
         play: play,
         stop: stop,
         toggle: toggle,
+        unlock: unlock,
         isMuted: function() { return isMuted; }
       };
     })();
@@ -2217,6 +2373,14 @@
       voiceBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         VoiceEngine.toggle();
+      });
+    }
+
+    var audioBanner = document.getElementById('audio-unlock-banner');
+    if (audioBanner) {
+      audioBanner.addEventListener('click', function(e) {
+        e.stopPropagation();
+        VoiceEngine.unlock();
       });
     }
 
@@ -2357,6 +2521,7 @@
     function goToScene(idx) {
       if (isTransitioning || (idx === currentScene && idx !== 0)) return;
       isTransitioning = true;
+      VoiceEngine.unlock();
       cancelActiveScene();
 
       flash().then(function() {
