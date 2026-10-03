@@ -124,10 +124,13 @@ def build_router() -> APIRouter:
             task = asyncio.create_task(run_turn())
 
             while True:
-                item = await queue.get()
-                yield f"data: {json.dumps(item)}\n\n"
-                if item.get("type") in ("done", "error"):
-                    break
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=2.5)
+                    yield f"data: {json.dumps(item)}\n\n"
+                    if item.get("type") in ("done", "error"):
+                        break
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
 
             await task
 

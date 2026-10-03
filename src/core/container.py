@@ -149,7 +149,7 @@ def build_telegram_gateway(settings: Settings) -> TelegramGateway | None:
 
 def build_web_gateway(settings: Settings) -> WebGateway:
     """One outbound boundary for every web tool: timeout and breaker included."""
-    return WebGateway(boundary=_boundary_factory("web", 15.0))
+    return WebGateway(boundary=_boundary_factory("web", 35.0), timeout_seconds=30.0)
 
 
 def build_transcription_gateway(settings: Settings) -> TranscriptionGateway | None:

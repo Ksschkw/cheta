@@ -4004,7 +4004,13 @@
       reasoning.addStep(msg);
     }
 
+    var hasFinalized = false;
+
     function finalizeTurn(turn) {
+      if (hasFinalized) {
+        return;
+      }
+      hasFinalized = true;
       state.userId = turn.user_id;
       persist(KEYS.userId, turn.user_id);
       reasoning.complete();
@@ -4069,6 +4075,22 @@
         function readNext() {
           return reader.read().then(function (result) {
             if (result.done) {
+              if (buffer && buffer.trim()) {
+                var trimmed = buffer.trim();
+                if (trimmed.startsWith("data: ")) {
+                  try {
+                    var data = JSON.parse(trimmed.slice(6));
+                    if (data.type === "step" && data.message) {
+                      updateStep(data.message);
+                    } else if (data.type === "done" && data.turn) {
+                      finalizeTurn(data.turn);
+                    }
+                  } catch (e) {}
+                }
+              }
+              if (!hasFinalized) {
+                return sendFallbackTurn(payload, streamWrap, reasoning, bubbleNode, usedMemory);
+              }
               return;
             }
             buffer += decoder.decode(result.value, { stream: true });
@@ -4097,10 +4119,14 @@
         return readNext();
       })
       .catch(function (err) {
-        if (streamWrap && streamWrap.parentNode) {
-          streamWrap.parentNode.removeChild(streamWrap);
+        if (!hasFinalized) {
+          return sendFallbackTurn(payload, streamWrap, reasoning, bubbleNode, usedMemory).catch(function (fErr) {
+            if (streamWrap && streamWrap.parentNode) {
+              streamWrap.parentNode.removeChild(streamWrap);
+            }
+            throw fErr || err;
+          });
         }
-        throw err;
       });
   }
 
