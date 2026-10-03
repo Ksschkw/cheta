@@ -104,6 +104,12 @@ def create_app(container: Container | None = None, settings: Settings | None = N
                 candidate = WEB_ROOT / "index.html"
             return FileResponse(candidate)
 
+        @app.get("/demo", include_in_schema=False)
+        @app.get("/demo.html", include_in_schema=False)
+        async def demo_page() -> FileResponse:
+            candidate = WEB_ROOT / "demo.html"
+            return FileResponse(candidate)
+
     return app
 
 

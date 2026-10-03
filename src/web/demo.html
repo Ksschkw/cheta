@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Cheta 3D Interactive Demo - 5-Minute Animated Showcase of the AI Agent across all surfaces.">
+    <title>Cheta 3D Interactive Demo - 5-Minute Animated Showcase</title>
+    <style>
+      :root {
+        --bg: #090a0f;
+        --surface: #12141c;
+        --surface-glass: rgba(18, 20, 28, 0.85);
+        --line: #262936;
+        --line-glow: rgba(53, 208, 186, 0.4);
+        --text: #f0f3f6;
+        --muted: #8b92a5;
+        --accent: #35d0ba;
+        --accent-glow: rgba(53, 208, 186, 0.25);
+        --accent-gold: #ffbe3b;
+        --accent-purple: #9d65ff;
+        --accent-cyan: #35d0ba;
+        --radius: 8px;
+        --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        user-select: none;
+      }
+
+      #webgl-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        outline: none;
+      }
+
+      /* ------------------------------------------------------------- UI HUD */
+
+      .hud-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px 24px;
+      }
+
+      .interactive-element {
+        pointer-events: auto;
+      }
+
+      /* Top Header */
+      .hud-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .hud-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface-glass);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        border-radius: 9999px;
+        padding: 8px 18px 8px 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .brand-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+        animation: pulseDot 2s infinite ease-in-out;
+      }
+
+      @keyframes pulseDot {
+        0%, 100% { opacity: 0.6; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1.15); }
+      }
+
+      .brand-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+
+      .brand-tag {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+        background: rgba(53, 208, 186, 0.12);
+        border: 1px solid rgba(53, 208, 186, 0.4);
+        color: var(--accent);
+        border-radius: 9999px;
+      }
+
+      .hud-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .hud-btn {
+        appearance: none;
+        background: var(--surface-glass);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        border-radius: 9999px;
+        color: var(--text);
+        padding: 8px 16px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.16s ease;
+      }
+
+      .hud-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px var(--accent-glow);
+      }
+
+      .hud-btn.active {
+        background: var(--accent);
+        color: #08090d;
+        border-color: var(--accent);
+      }
+
+      .hud-btn.record-btn {
+        border-color: #ff5252;
+        color: #ff5252;
+      }
+
+      .hud-btn.record-btn.recording {
+        background: #ff5252;
+        color: #fff;
+        animation: pulseRecord 1s infinite alternate;
+      }
+
+      @keyframes pulseRecord {
+        from { opacity: 0.85; }
+        to { opacity: 1; }
+      }
+
+      /* Act Notification Card */
+      .act-banner-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .act-banner {
+        background: var(--surface-glass);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--line-glow);
+        border-radius: 12px;
+        padding: 12px 24px;
+        text-align: center;
+        max-width: 640px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      .act-num {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 2px;
+      }
+
+      .act-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+      }
+
+      .act-desc {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+        line-height: 1.45;
+      }
+
+      /* Subtitles / Speech Bubble Overlay */
+      .dialogue-overlay {
+        align-self: center;
+        margin-bottom: 12px;
+        max-width: 680px;
+        width: 100%;
+        background: var(--surface-glass);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: var(--radius);
+        padding: 12px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .dialogue-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(53, 208, 186, 0.15);
+        border: 1px solid var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .dialogue-content {
+        flex: 1;
+      }
+
+      .dialogue-speaker {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        margin-bottom: 2px;
+      }
+
+      .dialogue-text {
+        font-size: 14px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+
+      /* Bottom Controller Bar */
+      .hud-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--surface-glass);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 18px;
+        box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6);
+      }
+
+      /* Timeline Scrubber */
+      .timeline-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .time-display {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        min-width: 96px;
+      }
+
+      .timeline-track {
+        flex: 1;
+        position: relative;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      .timeline-progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+        border-radius: 3px;
+        box-shadow: 0 0 10px var(--accent-glow);
+      }
+
+      .timeline-handle {
+        position: absolute;
+        top: 50%;
+        left: 0%;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 8px var(--accent);
+        pointer-events: none;
+      }
+
+      /* Controls Row */
+      .controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .playback-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ctrl-btn {
+        appearance: none;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--text);
+        padding: 6px 12px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.12s ease;
+      }
+
+      .ctrl-btn:hover {
+        background: rgba(53, 208, 186, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .ctrl-btn.active {
+        background: var(--accent);
+        color: #08090d;
+        border-color: var(--accent);
+      }
+
+      .chapters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .chapter-pill {
+        appearance: none;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 9999px;
+        color: var(--muted);
+        padding: 4px 10px;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.12s ease;
+      }
+
+      .chapter-pill:hover {
+        border-color: var(--text);
+        color: var(--text);
+      }
+
+      .chapter-pill.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(53, 208, 186, 0.08);
+      }
+
+      /* Audio / Mode toggles */
+      .meta-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Keyboard Shortcuts Help Modal */
+      .help-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--surface-glass);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 420px;
+        width: 90%;
+        z-index: 100;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+      }
+
+      .help-modal h3 {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: var(--accent);
+      }
+
+      .help-modal ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .help-modal kbd {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 2px 6px;
+        color: var(--text);
+        font-family: var(--mono);
+      }
+
+      .help-close-btn {
+        margin-top: 16px;
+        width: 100%;
+        padding: 8px;
+        background: var(--accent);
+        color: #08090d;
+        border: 0;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        .hud-layer {
+          padding: 12px 14px;
+        }
+        .act-title {
+          font-size: 15px;
+        }
+        .act-desc {
+          display: none;
+        }
+        .chapters-group {
+          max-width: 240px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Three.js Canvas -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Overlay HUD -->
+    <div class="hud-layer">
+      <!-- Top Bar -->
+      <header class="hud-header interactive-element">
+        <div class="hud-brand">
+          <div class="brand-dot"></div>
+          <span class="brand-title">Cheta</span>
+          <span class="brand-tag">5-Min 3D Showcase</span>
+        </div>
+
+        <div class="hud-top-actions">
+          <button id="btn-camera-mode" class="hud-btn" type="button" title="Switch between Cinematic Director and Free 3D Orbit">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span id="cam-mode-text">Free Orbit</span>
+          </button>
+          <button id="btn-audio-toggle" class="hud-btn" type="button" title="Toggle Synth Audio & Voice Narration">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span id="audio-toggle-text">Sound: ON</span>
+          </button>
+          <button id="btn-record-video" class="hud-btn record-btn" type="button" title="Record this 5-minute showcase to WebM video">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+            <span id="record-text">Record Video</span>
+          </button>
+          <a class="hud-btn" href="portal.html" title="Return to Home Landing Page">
+            <span>Portal</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Act Announcement Banner -->
+      <div class="act-banner-wrap">
+        <div id="act-banner" class="act-banner interactive-element">
+          <div id="act-num" class="act-num">ACT 1 OF 6</div>
+          <h2 id="act-title" class="act-title">The AI Agent & Walrus Memory Network</h2>
+          <p id="act-desc" class="act-desc">Meet Cheta: a memory-first agentic assistant backed by Walrus decentralized protocol storage.</p>
+        </div>
+      </div>
+
+      <!-- Dialogue Subtitle Bubble -->
+      <div class="dialogue-overlay interactive-element">
+        <div class="dialogue-avatar">C</div>
+        <div class="dialogue-content">
+          <div id="speaker-name" class="dialogue-speaker">Cheta (Mascot)</div>
+          <div id="dialogue-text" class="dialogue-text">Initializing Walrus memory space and activating agentic tools...</div>
+        </div>
+      </div>
+
+      <!-- Bottom Timeline & Playback Controller -->
+      <footer class="hud-bottom interactive-element">
+        <!-- Timeline Track -->
+        <div class="timeline-wrap">
+          <span id="time-display" class="time-display">00:00 / 05:20</span>
+          <div id="timeline-track" class="timeline-track">
+            <div id="timeline-progress" class="timeline-progress"></div>
+            <div id="timeline-handle" class="timeline-handle"></div>
+          </div>
+        </div>
+
+        <!-- Controls & Chapter Navigation -->
+        <div class="controls-row">
+          <div class="playback-group">
+            <button id="btn-play-pause" class="ctrl-btn" type="button">
+              <span id="play-pause-icon">Pause</span>
+            </button>
+            <button id="btn-restart" class="ctrl-btn" type="button">Restart</button>
+            <button id="btn-speed" class="ctrl-btn" type="button">1.0x</button>
+          </div>
+
+          <div class="chapters-group">
+            <button class="chapter-pill active" data-chapter="0" type="button">1. Agent & Walrus</button>
+            <button class="chapter-pill" data-chapter="1" type="button">2. Telegram Face</button>
+            <button class="chapter-pill" data-chapter="2" type="button">3. CLI Terminal</button>
+            <button class="chapter-pill" data-chapter="3" type="button">4. WebMCP Extension</button>
+            <button class="chapter-pill" data-chapter="4" type="button">5. Unified Memory</button>
+            <button class="chapter-pill" data-chapter="5" type="button">6. Grand Finale</button>
+          </div>
+
+          <div class="meta-group">
+            <button id="btn-help" class="ctrl-btn" type="button">Help</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Help Shortcuts Modal -->
+    <div id="help-modal" class="help-modal hidden interactive-element">
+      <h3>Demo Navigation & Shortcuts</h3>
+      <ul>
+        <li><kbd>Space</kbd> Play / Pause animation</li>
+        <li><kbd>C</kbd> Toggle Cinematic vs Free Orbit Camera</li>
+        <li><kbd>1 - 6</kbd> Jump to Act 1 through 6</li>
+        <li><kbd>M</kbd> Toggle Sound Effects & Narration</li>
+        <li><kbd>R</kbd> Restart 5-minute showcase from beginning</li>
+      </ul>
+      <button id="help-close" class="help-close-btn" type="button">Got it</button>
+    </div>
+
+    <!-- Include Three.js & OrbitControls via CDN with clean error fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- 3D Scene Architecture & Cinematic Director -->
+    <script>
+      (function () {
+        "use strict";
+
+        // Total demo duration in seconds: 320s = 5 minutes 20 seconds
+        var TOTAL_DURATION = 320;
+
+        // Acts definition with timings, titles, narration script and camera keyframes
+        var ACTS = [
+          {
+            id: 0,
+            startTime: 0,
+            endTime: 52,
+            num: "ACT 1 OF 6",
+            title: "The AI Agent & Walrus Memory Network",
+            desc: "Cheta is a memory-first agentic assistant. Walrus decentralized storage indexes durable facts with verifiable proof.",
+            speaker: "Cheta (AI Agent)",
+            dialogue: "Welcome! I am Cheta. Everything I learn about you is committed to Walrus decentralized storage and recalled with ranked embeddings across 13 native tools.",
+            camPos: { x: 0, y: 3.5, z: 10 },
+            camTarget: { x: 0, y: 1.5, z: 0 },
+            setFocus: "vault"
+          },
+          {
+            id: 1,
+            startTime: 52,
+            endTime: 105,
+            num: "ACT 2 OF 6",
+            title: "The Telegram Face (Voice & Documents)",
+            desc: "Instant conversational access on Telegram with voice note transcription, PDF/DOCX analysis, and inline memory buttons.",
+            speaker: "Cheta (Telegram Surface)",
+            dialogue: "On Telegram, speak to me with voice notes or drop documents. I transcribe audio waveforms and parse files while keeping your private memory space synchronized.",
+            camPos: { x: -6.5, y: 3, z: 7 },
+            camTarget: { x: -4, y: 1.8, z: 0 },
+            setFocus: "telegram"
+          },
+          {
+            id: 2,
+            startTime: 105,
+            endTime: 160,
+            num: "ACT 3 OF 6",
+            title: "The CLI Terminal Face (Ultra-Fast & Offline-Ready)",
+            desc: "Command-line interface with persistent local memory caching, instant token streaming, and one-time pairing codes.",
+            speaker: "Cheta (CLI Face)",
+            dialogue: "In your terminal, run 'ranti chat'. It works offline with local model fallbacks, streams zero-latency tokens, and links to your other devices with /pair.",
+            camPos: { x: 6.5, y: 3, z: 7 },
+            camTarget: { x: 4, y: 1.8, z: 0 },
+            setFocus: "cli"
+          },
+          {
+            id: 3,
+            startTime: 160,
+            endTime: 225,
+            num: "ACT 4 OF 6",
+            title: "The Browser Extension & WebMCP Execution",
+            desc: "Reads the active web tab and directly executes in-page WebMCP tools (like zaMaker pizza demo) without DOM scraping.",
+            speaker: "Cheta (Web Extension)",
+            dialogue: "Inside Chrome and Firefox, I read the page in front of you. When a website registers WebMCP tools, I execute actions directly on the page, like adding pizza toppings!",
+            camPos: { x: 0, y: 4.5, z: 7.5 },
+            camTarget: { x: 0, y: 1.8, z: -1 },
+            setFocus: "webmcp"
+          },
+          {
+            id: 4,
+            startTime: 225,
+            endTime: 275,
+            num: "ACT 5 OF 6",
+            title: "Unified Cross-Surface Memory Continuity",
+            desc: "Tell Cheta a preference on Telegram, and it is instantly recalled in the CLI and browser side panel. Counterfactual comparison.",
+            speaker: "Cheta (Walrus Core)",
+            dialogue: "Four surfaces, one unified memory mind. Tell me something in Telegram, and my CLI and browser extension instantly recall it. Notice our side-by-side counterfactual replay!",
+            camPos: { x: 0, y: 7.5, z: 11 },
+            camTarget: { x: 0, y: 1.5, z: 0 },
+            setFocus: "constellation"
+          },
+          {
+            id: 5,
+            startTime: 275,
+            endTime: 320,
+            num: "ACT 6 OF 6",
+            title: "Grand Finale: The Hackathon Winner",
+            desc: "13 Real Tools, WebMCP First-Class Integration, 100% Offline LLM Fallback, 420 Passing Tests. Ready to win.",
+            speaker: "Cheta (Celebration)",
+            dialogue: "420 passing tests, 13 real tools, decentralized Walrus storage, and zero external runtime dependencies. Cheta is built to win!",
+            camPos: { x: 0, y: 4, z: 8.5 },
+            camTarget: { x: 0, y: 2, z: 0 },
+            setFocus: "finale"
+          }
+        ];
+
+        /* -------------------------------------------------------- Procedural Audio Engine */
+        var AudioEngine = (function () {
+          var ctx = null;
+          var isMuted = false;
+          var synthTimer = null;
+
+          function getContext() {
+            if (!ctx && (window.AudioContext || window.webkitAudioContext)) {
+              var AudioCtx = window.AudioContext || window.webkitAudioContext;
+              ctx = new AudioCtx();
+            }
+            if (ctx && ctx.state === "suspended") {
+              ctx.resume();
+            }
+            return ctx;
+          }
+
+          function playChirp(freq, duration, type) {
+            if (isMuted) return;
+            var c = getContext();
+            if (!c) return;
+            try {
+              var osc = c.createOscillator();
+              var gain = c.createGain();
+              osc.type = type || "sine";
+              osc.frequency.setValueAtTime(freq || 440, c.currentTime);
+              osc.frequency.exponentialRampToValueAtTime((freq || 440) * 1.5, c.currentTime + duration);
+              gain.gain.setValueAtTime(0.08, c.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+              osc.connect(gain);
+              gain.connect(c.destination);
+              osc.start();
+              osc.stop(c.currentTime + duration);
+            } catch (e) {}
+          }
+
+          function playFanfare() {
+            if (isMuted) return;
+            var notes = [523.25, 659.25, 783.99, 1046.5];
+            notes.forEach(function (n, i) {
+              window.setTimeout(function () {
+                playChirp(n, 0.35, "triangle");
+              }, i * 90);
+            });
+          }
+
+          function playBeat() {
+            if (isMuted) return;
+            var c = getContext();
+            if (!c) return;
+            try {
+              var osc = c.createOscillator();
+              var gain = c.createGain();
+              osc.type = "sine";
+              osc.frequency.setValueAtTime(140, c.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(40, c.currentTime + 0.12);
+              gain.gain.setValueAtTime(0.06, c.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
+              osc.connect(gain);
+              gain.connect(c.destination);
+              osc.start();
+              osc.stop(c.currentTime + 0.12);
+            } catch (e) {}
+          }
+
+          function startBgm() {
+            if (synthTimer) return;
+            var notes = [220, 261.63, 329.63, 392, 440];
+            var step = 0;
+            synthTimer = window.setInterval(function () {
+              if (isMuted) return;
+              if (step % 4 === 0) {
+                playBeat();
+              }
+              var f = notes[step % notes.length];
+              playChirp(f * 1.5, 0.12, "sine");
+              step += 1;
+            }, 320);
+          }
+
+          function toggleMute() {
+            isMuted = !isMuted;
+            if (window.speechSynthesis) {
+              if (isMuted) window.speechSynthesis.cancel();
+            }
+            return !isMuted;
+          }
+
+          return {
+            init: getContext,
+            playChirp: playChirp,
+            playFanfare: playFanfare,
+            startBgm: startBgm,
+            toggleMute: toggleMute,
+            isMuted: function () { return isMuted; }
+          };
+        })();
+
+        /* -------------------------------------------------------- Voice Synthesizer */
+        var Narrator = (function () {
+          var lastText = "";
+          function speak(text) {
+            if (AudioEngine.isMuted()) return;
+            if (!window.speechSynthesis || text === lastText) return;
+            lastText = text;
+            try {
+              window.speechSynthesis.cancel();
+              var utter = new SpeechSynthesisUtterance(text);
+              utter.rate = 1.05;
+              utter.pitch = 1.1;
+              window.speechSynthesis.speak(utter);
+            } catch (e) {}
+          }
+          return { speak: speak };
+        })();
+
+        /* -------------------------------------------------------- Three.js Scene Setup */
+        var canvas = document.getElementById("webgl-canvas");
+        var scene, camera, renderer, controls;
+        var mascotGroup, vaultGroup, telegramGroup, cliGroup, webmcpGroup, constellationGroup, finaleGroup;
+        var pizzaMesh, toppingsGroup = [];
+        var confettiParticles = [];
+        var memoryBlobs = [];
+        var isFreeCam = false;
+
+        function initGraphics() {
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x090a0f);
+          scene.fog = new THREE.FogExp2(0x090a0f, 0.035);
+
+          camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+          camera.position.set(0, 3.5, 10);
+
+          renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.15;
+          renderer.shadowMap.enabled = true;
+
+          if (typeof THREE.OrbitControls !== "undefined") {
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.enabled = false; // Disabled during cinematic mode
+          }
+
+          // Lighting
+          var ambientLight = new THREE.AmbientLight(0x222638, 1.8);
+          scene.add(ambientLight);
+
+          var dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+          dirLight.position.set(5, 12, 8);
+          dirLight.castShadow = true;
+          scene.add(dirLight);
+
+          var cyanPoint = new THREE.PointLight(0x35d0ba, 2.5, 30);
+          cyanPoint.position.set(0, 4, 3);
+          scene.add(cyanPoint);
+
+          var purplePoint = new THREE.PointLight(0x9d65ff, 2.0, 35);
+          purplePoint.position.set(-6, 3, -2);
+          scene.add(purplePoint);
+
+          var goldPoint = new THREE.PointLight(0xffbe3b, 1.8, 30);
+          goldPoint.position.set(6, 3, -2);
+          scene.add(goldPoint);
+
+          // Floor Grid
+          var gridHelper = new THREE.GridHelper(60, 60, 0x35d0ba, 0x181c2a);
+          gridHelper.position.y = -0.5;
+          scene.add(gridHelper);
+
+          buildMascot();
+          buildVaultSet();
+          buildTelegramSet();
+          buildCliSet();
+          buildWebMcpSet();
+          buildConstellationSet();
+          buildFinaleSet();
+
+          window.addEventListener("resize", onWindowResize);
+        }
+
+        function onWindowResize() {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /* -------------------------------------------------------- Mascot: Cheta */
+        function buildMascot() {
+          mascotGroup = new THREE.Group();
+          mascotGroup.position.set(0, 1.6, 0);
+
+          // Head (Rounded floating robot/chameleon head)
+          var headGeo = new THREE.SphereGeometry(0.75, 32, 24);
+          headGeo.scale(1.1, 0.95, 1.0);
+          var toonMat = new THREE.MeshToonMaterial({
+            color: 0x1c2130,
+            emissive: 0x08151c
+          });
+          var headMesh = new THREE.Mesh(headGeo, toonMat);
+          mascotGroup.add(headMesh);
+          mascotGroup.headMesh = headMesh;
+
+          // Eye Visor
+          var visorGeo = new THREE.BoxGeometry(0.95, 0.32, 0.45);
+          var visorMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
+          var visorMesh = new THREE.Mesh(visorGeo, visorMat);
+          visorMesh.position.set(0, 0.05, 0.6);
+          mascotGroup.add(visorMesh);
+
+          // Cute Eyes on Visor
+          var eyeGeo = new THREE.PlaneGeometry(0.18, 0.18);
+          var eyeMat = new THREE.MeshBasicMaterial({ color: 0x090a0f });
+          var leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+          leftEye.position.set(-0.25, 0.05, 0.83);
+          var rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+          rightEye.position.set(0.25, 0.05, 0.83);
+          mascotGroup.add(leftEye);
+          mascotGroup.add(rightEye);
+          mascotGroup.leftEye = leftEye;
+          mascotGroup.rightEye = rightEye;
+
+          // Cute Floating Ears / Antennae
+          var earGeo = new THREE.ConeGeometry(0.18, 0.45, 16);
+          var earMat = new THREE.MeshToonMaterial({ color: 0x35d0ba });
+          var leftEar = new THREE.Mesh(earGeo, earMat);
+          leftEar.position.set(-0.75, 0.7, 0);
+          leftEar.rotation.z = 0.5;
+          var rightEar = new THREE.Mesh(earGeo, earMat);
+          rightEar.position.set(0.75, 0.7, 0);
+          rightEar.rotation.z = -0.5;
+          mascotGroup.add(leftEar);
+          mascotGroup.add(rightEar);
+
+          // Body: Floating Torso with Glowing Walrus Memory Core
+          var bodyGeo = new THREE.CylinderGeometry(0.35, 0.5, 0.65, 16);
+          var bodyMesh = new THREE.Mesh(bodyGeo, toonMat);
+          bodyMesh.position.set(0, -0.8, 0);
+          mascotGroup.add(bodyMesh);
+
+          // Walrus Memory Core (Floating Octahedron inside chest)
+          var coreGeo = new THREE.OctahedronGeometry(0.22, 0);
+          var coreMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba, wireframe: true });
+          var coreMesh = new THREE.Mesh(coreGeo, coreMat);
+          coreMesh.position.set(0, -0.75, 0.32);
+          mascotGroup.add(coreMesh);
+          mascotGroup.coreMesh = coreMesh;
+
+          // Orbiting Memory Rings around mascot
+          var ringGeo = new THREE.TorusGeometry(1.3, 0.02, 8, 48);
+          var ringMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba, transparent: true, opacity: 0.6 });
+          var ringMesh = new THREE.Mesh(ringGeo, ringMat);
+          ringMesh.rotation.x = Math.PI / 2.5;
+          mascotGroup.add(ringMesh);
+          mascotGroup.ringMesh = ringMesh;
+
+          // Floating Hands
+          var handGeo = new THREE.SphereGeometry(0.16, 16, 12);
+          var handMat = new THREE.MeshToonMaterial({ color: 0x35d0ba });
+          var leftHand = new THREE.Mesh(handGeo, handMat);
+          leftHand.position.set(-0.85, -0.7, 0.2);
+          var rightHand = new THREE.Mesh(handGeo, handMat);
+          rightHand.position.set(0.85, -0.7, 0.2);
+          mascotGroup.add(leftHand);
+          mascotGroup.add(rightHand);
+          mascotGroup.leftHand = leftHand;
+          mascotGroup.rightHand = rightHand;
+
+          scene.add(mascotGroup);
+        }
+
+        /* -------------------------------------------------------- Set 1: Walrus Vault */
+        function buildVaultSet() {
+          vaultGroup = new THREE.Group();
+          vaultGroup.position.set(0, 0, -3);
+
+          // Crystalline Data Pillars
+          var pillarGeo = new THREE.CylinderGeometry(0.4, 0.5, 4.5, 6);
+          var pillarMat = new THREE.MeshStandardMaterial({
+            color: 0x131722,
+            metalness: 0.8,
+            roughness: 0.2,
+            emissive: 0x0f2b2b,
+            emissiveIntensity: 0.2
+          });
+
+          for (var i = -3; i <= 3; i += 2) {
+            var pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            pillar.position.set(i * 1.8, 1.8, -2.5 - Math.abs(i) * 0.5);
+            vaultGroup.add(pillar);
+
+            // Glowing data node on top of pillar
+            var nodeGeo = new THREE.DodecahedronGeometry(0.25, 0);
+            var nodeMat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0x35d0ba : 0xffbe3b });
+            var node = new THREE.Mesh(nodeGeo, nodeMat);
+            node.position.set(i * 1.8, 4.3, -2.5 - Math.abs(i) * 0.5);
+            vaultGroup.add(node);
+            memoryBlobs.push(node);
+          }
+
+          // Floating Tools Hologram Cubes
+          var toolNames = ["calculate", "weather", "wikipedia", "reminder", "calendar", "walrus_recall"];
+          toolNames.forEach(function (name, idx) {
+            var boxGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            var boxMat = new THREE.MeshStandardMaterial({
+              color: 0x1f2738,
+              emissive: 0x35d0ba,
+              emissiveIntensity: 0.35,
+              wireframe: true
+            });
+            var box = new THREE.Mesh(boxGeo, boxMat);
+            var angle = (idx / toolNames.length) * Math.PI * 2;
+            box.position.set(Math.cos(angle) * 3.2, 2.2 + Math.sin(angle) * 0.4, Math.sin(angle) * 2.2);
+            vaultGroup.add(box);
+          });
+
+          scene.add(vaultGroup);
+        }
+
+        /* -------------------------------------------------------- Set 2: Telegram */
+        function buildTelegramSet() {
+          telegramGroup = new THREE.Group();
+          telegramGroup.position.set(-4.5, 0, 0);
+
+          // 3D Cartoon Smartphone
+          var phoneGeo = new THREE.BoxGeometry(1.6, 3.2, 0.15);
+          var phoneMat = new THREE.MeshStandardMaterial({ color: 0x181a24, roughness: 0.2, metalness: 0.8 });
+          var phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
+          phoneMesh.position.set(0, 1.8, 0);
+          telegramGroup.add(phoneMesh);
+
+          // Phone Screen
+          var screenGeo = new THREE.PlaneGeometry(1.45, 2.9);
+          var screenMat = new THREE.MeshBasicMaterial({ color: 0x0e111a });
+          var screenMesh = new THREE.Mesh(screenGeo, screenMat);
+          screenMesh.position.set(0, 1.8, 0.08);
+          telegramGroup.add(screenMesh);
+
+          // Chat bubbles popping up
+          var bubbleGeo = new THREE.BoxGeometry(0.9, 0.28, 0.05);
+          var bubbleUserMat = new THREE.MeshBasicMaterial({ color: 0x22354a });
+          var bubbleBotMat = new THREE.MeshBasicMaterial({ color: 0x1d3835 });
+
+          var b1 = new THREE.Mesh(bubbleGeo, bubbleUserMat);
+          b1.position.set(0.18, 2.6, 0.12);
+          var b2 = new THREE.Mesh(bubbleGeo, bubbleBotMat);
+          b2.position.set(-0.18, 2.0, 0.12);
+          var b3 = new THREE.Mesh(bubbleGeo, bubbleUserMat);
+          b3.position.set(0.18, 1.4, 0.12);
+          var b4 = new THREE.Mesh(bubbleGeo, bubbleBotMat);
+          b4.position.set(-0.18, 0.8, 0.12);
+
+          telegramGroup.add(b1);
+          telegramGroup.add(b2);
+          telegramGroup.add(b3);
+          telegramGroup.add(b4);
+
+          // Floating Audio Waveform Ribbon
+          var waveGeo = new THREE.TorusGeometry(0.6, 0.03, 8, 32);
+          var waveMat = new THREE.MeshBasicMaterial({ color: 0x35d0ba });
+          var waveMesh = new THREE.Mesh(waveGeo, waveMat);
+          waveMesh.position.set(0, 3.8, 0.2);
+          telegramGroup.add(waveMesh);
+          telegramGroup.waveMesh = waveMesh;
+
+          scene.add(telegramGroup);
+        }
+
+        /* -------------------------------------------------------- Set 3: CLI Terminal */
+        function buildCliSet() {
+          cliGroup = new THREE.Group();
+          cliGroup.position.set(4.5, 0, 0);
+
+          // Retro CRT Terminal Monitor
+          var monitorGeo = new THREE.BoxGeometry(2.4, 2.0, 1.2);
+          var monitorMat = new THREE.MeshStandardMaterial({ color: 0x151822, roughness: 0.6 });
+          var monitor = new THREE.Mesh(monitorGeo, monitorMat);
+          monitor.position.set(0, 2.0, 0);
+          cliGroup.add(monitor);
+
+          // Curved Screen
+          var crtScreenGeo = new THREE.PlaneGeometry(2.0, 1.6);
+          var crtScreenMat = new THREE.MeshBasicMaterial({ color: 0x051410 });
+          var crtScreen = new THREE.Mesh(crtScreenGeo, crtScreenMat);
+          crtScreen.position.set(0, 2.0, 0.61);
+          cliGroup.add(crtScreen);
+
+          // Glowing Green Command Prompts Lines
+          for (var i = 0; i < 5; i++) {
+            var lineGeo = new THREE.PlaneGeometry(1.4 - i * 0.15, 0.08);
+            var lineMat = new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffbe3b : 0x35d0ba });
+            var line = new THREE.Mesh(lineGeo, lineMat);
+            line.position.set(-0.2 + (i % 2) * 0.1, 2.5 - i * 0.25, 0.62);
+            cliGroup.add(line);
+          }
+
+          // Keyboard
+          var kbGeo = new THREE.BoxGeometry(2.2, 0.12, 0.8);
+          var kbMesh = new THREE.Mesh(kbGeo, monitorMat);
+          kbMesh.position.set(0, 0.8, 0.8);
+          kbMesh.rotation.x = 0.18;
+          cliGroup.add(kbMesh);
+
+          scene.add(cliGroup);
+        }
+
+        /* -------------------------------------------------------- Set 4: WebMCP Extension */
+        function buildWebMcpSet() {
+          webmcpGroup = new THREE.Group();
+          webmcpGroup.position.set(0, 0, 0);
+
+          // Floating Browser Window
+          var winGeo = new THREE.BoxGeometry(4.2, 2.6, 0.1);
+          var winMat = new THREE.MeshStandardMaterial({ color: 0x121520, metalness: 0.6, roughness: 0.3 });
+          var browserWin = new THREE.Mesh(winGeo, winMat);
+          browserWin.position.set(0, 2.5, -1.8);
+          webmcpGroup.add(browserWin);
+
+          // Web Page Canvas: Pizza Base
+          var pizzaGeo = new THREE.CylinderGeometry(1.2, 1.25, 0.12, 32);
+          var pizzaMat = new THREE.MeshStandardMaterial({ color: 0xedb44e, roughness: 0.8 }); // Crust
+          pizzaMesh = new THREE.Mesh(pizzaGeo, pizzaMat);
+          pizzaMesh.position.set(0, 1.8, -1.0);
+          pizzaMesh.rotation.x = Math.PI / 4;
+          webmcpGroup.add(pizzaMesh);
+
+          // Pizza Sauce Layer
+          var sauceGeo = new THREE.CylinderGeometry(1.08, 1.08, 0.04, 32);
+          var sauceMat = new THREE.MeshBasicMaterial({ color: 0xd32f2f });
+          var sauceMesh = new THREE.Mesh(sauceGeo, sauceMat);
+          sauceMesh.position.set(0, 0.06, 0);
+          pizzaMesh.add(sauceMesh);
+
+          // Animated Toppings (Pepperoni disks, Basil leaves, Mushrooms)
+          for (var t = 0; t < 12; t++) {
+            var topGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16);
+            var topMat = new THREE.MeshStandardMaterial({
+              color: t % 3 === 0 ? 0xb71c1c : t % 3 === 1 ? 0x2e7d32 : 0x8d6e63
+            });
+            var topMesh = new THREE.Mesh(topGeo, topMat);
+            var rad = Math.random() * 0.8;
+            var theta = Math.random() * Math.PI * 2;
+            topMesh.position.set(Math.cos(theta) * rad, 0.1, Math.sin(theta) * rad);
+            topMesh.baseY = 0.1;
+            pizzaMesh.add(topMesh);
+            toppingsGroup.push(topMesh);
+          }
+
+          scene.add(webmcpGroup);
+        }
+
+        /* -------------------------------------------------------- Set 5: Constellation */
+        function buildConstellationSet() {
+          constellationGroup = new THREE.Group();
+          constellationGroup.position.set(0, 2.0, 0);
+
+          // Big Glowing Walrus Core Sphere
+          var coreGeo = new THREE.SphereGeometry(1.1, 32, 24);
+          var coreMat = new THREE.MeshStandardMaterial({
+            color: 0x162232,
+            emissive: 0x35d0ba,
+            emissiveIntensity: 0.5,
+            wireframe: true
+          });
+          var coreGlobe = new THREE.Mesh(coreGeo, coreMat);
+          constellationGroup.add(coreGlobe);
+          constellationGroup.coreGlobe = coreGlobe;
+
+          // 4 Surface Satellites (Telegram, Web, CLI, Extension)
+          var satNames = ["Telegram", "Browser", "CLI", "WebMCP"];
+          var colors = [0x29b6f6, 0x35d0ba, 0xab47bc, 0xffa726];
+          constellationGroup.satellites = [];
+
+          satNames.forEach(function (name, idx) {
+            var satGeo = new THREE.IcosahedronGeometry(0.38, 1);
+            var satMat = new THREE.MeshStandardMaterial({ color: colors[idx], emissive: colors[idx], emissiveIntensity: 0.3 });
+            var sat = new THREE.Mesh(satGeo, satMat);
+            sat.orbitAngle = (idx / 4) * Math.PI * 2;
+            sat.orbitRadius = 3.6;
+            sat.position.set(Math.cos(sat.orbitAngle) * sat.orbitRadius, 0, Math.sin(sat.orbitAngle) * sat.orbitRadius);
+            constellationGroup.add(sat);
+            constellationGroup.satellites.push(sat);
+          });
+
+          scene.add(constellationGroup);
+        }
+
+        /* -------------------------------------------------------- Set 6: Finale */
+        function buildFinaleSet() {
+          finaleGroup = new THREE.Group();
+          finaleGroup.position.set(0, 0, 0);
+
+          // Golden Winner Trophy
+          var cupGeo = new THREE.CylinderGeometry(0.65, 0.25, 0.9, 24);
+          var goldMat = new THREE.MeshStandardMaterial({ color: 0xffd54f, metalness: 0.9, roughness: 0.1 });
+          var trophyCup = new THREE.Mesh(cupGeo, goldMat);
+          trophyCup.position.set(0, 3.8, 0);
+          finaleGroup.add(trophyCup);
+
+          var baseGeo = new THREE.CylinderGeometry(0.45, 0.55, 0.4, 24);
+          var baseMesh = new THREE.Mesh(baseGeo, goldMat);
+          baseMesh.position.set(0, 3.2, 0);
+          finaleGroup.add(baseMesh);
+
+          // Confetti Particles (celebration bursts)
+          for (var p = 0; p < 180; p++) {
+            var pGeo = new THREE.PlaneGeometry(0.08, 0.08);
+            var pColor = [0x35d0ba, 0xffbe3b, 0x9d65ff, 0xff5252, 0x40c4ff][p % 5];
+            var pMat = new THREE.MeshBasicMaterial({ color: pColor, side: THREE.DoubleSide });
+            var particle = new THREE.Mesh(pGeo, pMat);
+            particle.position.set((Math.random() - 0.5) * 12, Math.random() * 8 + 1, (Math.random() - 0.5) * 10);
+            particle.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+            particle.velocityY = Math.random() * 0.03 + 0.01;
+            particle.rotSpeed = Math.random() * 0.05;
+            finaleGroup.add(particle);
+            confettiParticles.push(particle);
+          }
+
+          scene.add(finaleGroup);
+        }
+
+        /* -------------------------------------------------------- Timeline Director */
+        var currentTime = 0;
+        var isPlaying = true;
+        var playSpeed = 1.0;
+        var currentActIndex = 0;
+
+        function updateActState() {
+          var act = ACTS[currentActIndex];
+          for (var a = 0; a < ACTS.length; a++) {
+            if (currentTime >= ACTS[a].startTime && currentTime < ACTS[a].endTime) {
+              if (currentActIndex !== a) {
+                currentActIndex = a;
+                act = ACTS[a];
+                onActChanged(act);
+              }
+              break;
+            }
+          }
+
+          // Camera Dolly interpolation
+          if (!isFreeCam) {
+            var actProgress = (currentTime - act.startTime) / (act.endTime - act.startTime);
+            var smoothT = Math.sin(actProgress * Math.PI * 0.5);
+
+            camera.position.x += (act.camPos.x - camera.position.x) * 0.04;
+            camera.position.y += (act.camPos.y - camera.position.y) * 0.04;
+            camera.position.z += (act.camPos.z - camera.position.z) * 0.04;
+
+            camera.lookAt(act.camTarget.x, act.camTarget.y, act.camTarget.z);
+          }
+
+          // Visibility by Act Focus
+          vaultGroup.visible = (act.setFocus === "vault" || act.setFocus === "constellation");
+          telegramGroup.visible = (act.setFocus === "telegram" || act.setFocus === "constellation");
+          cliGroup.visible = (act.setFocus === "cli" || act.setFocus === "constellation");
+          webmcpGroup.visible = (act.setFocus === "webmcp" || act.setFocus === "constellation");
+          constellationGroup.visible = (act.setFocus === "constellation");
+          finaleGroup.visible = (act.setFocus === "finale");
+        }
+
+        function onActChanged(act) {
+          document.getElementById("act-num").textContent = act.num;
+          document.getElementById("act-title").textContent = act.title;
+          document.getElementById("act-desc").textContent = act.desc;
+          document.getElementById("speaker-name").textContent = act.speaker;
+          document.getElementById("dialogue-text").textContent = act.dialogue;
+
+          // Update chapter pill active class
+          var pills = document.querySelectorAll(".chapter-pill");
+          pills.forEach(function (pill, idx) {
+            pill.classList.toggle("active", idx === act.id);
+          });
+
+          AudioEngine.playChirp(480 + act.id * 80, 0.25, "triangle");
+          if (act.id === 5) {
+            AudioEngine.playFanfare();
+          }
+
+          Narrator.speak(act.dialogue);
+        }
+
+        function formatTime(sec) {
+          var m = Math.floor(sec / 60);
+          var s = Math.floor(sec % 60);
+          return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        function updateTimelineUI() {
+          var frac = Math.min(1, Math.max(0, currentTime / TOTAL_DURATION));
+          var pct = (frac * 100).toFixed(2) + "%";
+          document.getElementById("timeline-progress").style.width = pct;
+          document.getElementById("timeline-handle").style.left = pct;
+          document.getElementById("time-display").textContent =
+            formatTime(currentTime) + " / " + formatTime(TOTAL_DURATION);
+        }
+
+        /* -------------------------------------------------------- Render & Animation Loop */
+        var clock = new THREE.Clock();
+
+        function animate() {
+          requestAnimationFrame(animate);
+
+          var delta = clock.getDelta();
+
+          if (isPlaying) {
+            currentTime += delta * playSpeed;
+            if (currentTime >= TOTAL_DURATION) {
+              currentTime = TOTAL_DURATION;
+              isPlaying = false;
+              document.getElementById("play-pause-icon").textContent = "Replay";
+            }
+            updateActState();
+            updateTimelineUI();
+          }
+
+          // Mascot Animations
+          if (mascotGroup) {
+            var t = clock.getElapsedTime();
+            // Hover bobbing
+            mascotGroup.position.y = 1.6 + Math.sin(t * 2.2) * 0.12;
+            mascotGroup.rotation.y = Math.sin(t * 0.8) * 0.2;
+
+            if (mascotGroup.coreMesh) {
+              mascotGroup.coreMesh.rotation.y += 0.03;
+              mascotGroup.coreMesh.rotation.x += 0.02;
+            }
+            if (mascotGroup.ringMesh) {
+              mascotGroup.ringMesh.rotation.z += 0.015;
+            }
+
+            // Blinking
+            if (mascotGroup.leftEye && mascotGroup.rightEye) {
+              var blink = Math.sin(t * 4) > 0.96 ? 0.05 : 0.18;
+              mascotGroup.leftEye.scale.y = blink;
+              mascotGroup.rightEye.scale.y = blink;
+            }
+
+            // Dancing hands during finale
+            if (currentActIndex === 5 && mascotGroup.leftHand && mascotGroup.rightHand) {
+              mascotGroup.leftHand.position.y = -0.4 + Math.sin(t * 8) * 0.3;
+              mascotGroup.rightHand.position.y = -0.4 + Math.cos(t * 8) * 0.3;
+            }
+          }
+
+          // WebMCP Pizza Animated Toppings
+          if (webmcpGroup && toppingsGroup.length) {
+            var timeVal = clock.getElapsedTime();
+            toppingsGroup.forEach(function (top, idx) {
+              top.position.y = top.baseY + Math.abs(Math.sin(timeVal * 3 + idx)) * 0.15;
+            });
+          }
+
+          // Constellation Orbiting
+          if (constellationGroup && constellationGroup.satellites) {
+            var rotSpeed = clock.getElapsedTime() * 0.5;
+            constellationGroup.satellites.forEach(function (sat, i) {
+              var angle = sat.orbitAngle + rotSpeed;
+              sat.position.x = Math.cos(angle) * sat.orbitRadius;
+              sat.position.z = Math.sin(angle) * sat.orbitRadius;
+            });
+            if (constellationGroup.coreGlobe) {
+              constellationGroup.coreGlobe.rotation.y += 0.008;
+            }
+          }
+
+          // Finale Confetti falling
+          if (finaleGroup.visible && confettiParticles.length) {
+            confettiParticles.forEach(function (p) {
+              p.position.y -= p.velocityY;
+              p.rotation.x += p.rotSpeed;
+              p.rotation.y += p.rotSpeed;
+              if (p.position.y < -0.4) {
+                p.position.y = 8 + Math.random() * 2;
+              }
+            });
+          }
+
+          if (controls && isFreeCam) {
+            controls.update();
+          }
+
+          renderer.render(scene, camera);
+        }
+
+        /* -------------------------------------------------------- Video Recorder (WebM) */
+        var mediaRecorder = null;
+        var recordedChunks = [];
+        var isRecording = false;
+
+        function toggleVideoRecord() {
+          var btn = document.getElementById("btn-record-video");
+          var text = document.getElementById("record-text");
+
+          if (!isRecording) {
+            try {
+              var stream = canvas.captureStream(30); // 30 FPS stream
+              mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
+              recordedChunks = [];
+
+              mediaRecorder.ondataavailable = function (e) {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+              };
+
+              mediaRecorder.onstop = function () {
+                var blob = new Blob(recordedChunks, { type: "video/webm" });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement("a");
+                a.href = url;
+                a.download = "cheta-5min-demo-showcase.webm";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+              };
+
+              mediaRecorder.start();
+              isRecording = true;
+              btn.classList.add("recording");
+              text.textContent = "Stop & Save Video";
+            } catch (err) {
+              alert("Video recording is not supported in this browser build.");
+            }
+          } else {
+            if (mediaRecorder) mediaRecorder.stop();
+            isRecording = false;
+            btn.classList.remove("recording");
+            text.textContent = "Record Video";
+          }
+        }
+
+        /* -------------------------------------------------------- Controller Wiring */
+        function wireControls() {
+          // Play / Pause
+          var playBtn = document.getElementById("btn-play-pause");
+          playBtn.addEventListener("click", function () {
+            AudioEngine.init();
+            AudioEngine.startBgm();
+            isPlaying = !isPlaying;
+            document.getElementById("play-pause-icon").textContent = isPlaying ? "Pause" : "Play";
+          });
+
+          // Restart
+          document.getElementById("btn-restart").addEventListener("click", function () {
+            currentTime = 0;
+            isPlaying = true;
+            document.getElementById("play-pause-icon").textContent = "Pause";
+            currentActIndex = -1;
+            updateActState();
+            updateTimelineUI();
+          });
+
+          // Speed
+          var speedBtn = document.getElementById("btn-speed");
+          var speeds = [1.0, 1.5, 2.0];
+          var speedIdx = 0;
+          speedBtn.addEventListener("click", function () {
+            speedIdx = (speedIdx + 1) % speeds.length;
+            playSpeed = speeds[speedIdx];
+            speedBtn.textContent = playSpeed.toFixed(1) + "x";
+          });
+
+          // Scrubber
+          var track = document.getElementById("timeline-track");
+          track.addEventListener("click", function (e) {
+            AudioEngine.init();
+            var rect = track.getBoundingClientRect();
+            var frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            currentTime = frac * TOTAL_DURATION;
+            currentActIndex = -1;
+            updateActState();
+            updateTimelineUI();
+          });
+
+          // Chapter Pills
+          document.querySelectorAll(".chapter-pill").forEach(function (pill) {
+            pill.addEventListener("click", function () {
+              AudioEngine.init();
+              var chapIdx = parseInt(pill.getAttribute("data-chapter"), 10);
+              if (!isNaN(chapIdx) && ACTS[chapIdx]) {
+                currentTime = ACTS[chapIdx].startTime + 0.1;
+                currentActIndex = -1;
+                updateActState();
+                updateTimelineUI();
+              }
+            });
+          });
+
+          // Camera Mode Toggle
+          var camBtn = document.getElementById("btn-camera-mode");
+          camBtn.addEventListener("click", function () {
+            isFreeCam = !isFreeCam;
+            if (controls) controls.enabled = isFreeCam;
+            document.getElementById("cam-mode-text").textContent = isFreeCam ? "Cinematic" : "Free Orbit";
+            camBtn.classList.toggle("active", isFreeCam);
+          });
+
+          // Sound Toggle
+          var audioBtn = document.getElementById("btn-audio-toggle");
+          audioBtn.addEventListener("click", function () {
+            var active = AudioEngine.toggleMute();
+            document.getElementById("audio-toggle-text").textContent = active ? "Sound: ON" : "Sound: OFF";
+            audioBtn.classList.toggle("active", active);
+          });
+
+          // Record Video
+          document.getElementById("btn-record-video").addEventListener("click", toggleVideoRecord);
+
+          // Help Modal
+          var helpModal = document.getElementById("help-modal");
+          document.getElementById("btn-help").addEventListener("click", function () {
+            helpModal.classList.remove("hidden");
+          });
+          document.getElementById("help-close").addEventListener("click", function () {
+            helpModal.classList.add("hidden");
+          });
+
+          // Keyboard Shortcuts
+          window.addEventListener("keydown", function (e) {
+            if (e.code === "Space") {
+              e.preventDefault();
+              playBtn.click();
+            } else if (e.code === "KeyC") {
+              camBtn.click();
+            } else if (e.code === "KeyM") {
+              audioBtn.click();
+            } else if (e.code === "KeyR") {
+              document.getElementById("btn-restart").click();
+            } else if (e.key >= "1" && e.key <= "6") {
+              var idx = parseInt(e.key, 10) - 1;
+              if (ACTS[idx]) {
+                currentTime = ACTS[idx].startTime + 0.1;
+                currentActIndex = -1;
+                updateActState();
+                updateTimelineUI();
+              }
+            }
+          });
+        }
+
+        // Boot
+        window.addEventListener("DOMContentLoaded", function () {
+          initGraphics();
+          wireControls();
+          onActChanged(ACTS[0]);
+          animate();
+        });
+      })();
+    </script>
+  </body>
+</html>

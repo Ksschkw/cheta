@@ -1024,6 +1024,19 @@ body.modal-open {
   color: var(--accent);
 }
 
+.hero-pill-demo {
+  color: #ffbe3b;
+  border-color: rgba(255, 190, 59, 0.45);
+  background: rgba(255, 190, 59, 0.08);
+}
+
+.hero-pill-demo:hover {
+  border-color: #ffbe3b;
+  color: #ffbe3b;
+  background: rgba(255, 190, 59, 0.16);
+  box-shadow: 0 0 16px rgba(255, 190, 59, 0.25);
+}
+
 .walrus-link {
   color: var(--accent);
   text-decoration: underline;
