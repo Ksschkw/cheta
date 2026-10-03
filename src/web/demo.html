@@ -1675,6 +1675,402 @@
       line-height: 1.45;
     }
 
+    /* ══════════════════════════════════════════════════════════════════
+       VIDEO CONTROLLER & CHAPTER SCRUBBER BAR
+    ══════════════════════════════════════════════════════════════════ */
+    .video-dock {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 860px;
+      background: rgba(14, 14, 17, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 7px 14px 9px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(212, 168, 83, 0.12);
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .video-dock:hover {
+      border-color: rgba(212, 168, 83, 0.35);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 18px rgba(212, 168, 83, 0.2);
+    }
+
+    /* Chapter Scrubber Bar */
+    .video-timeline {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      height: 14px;
+      position: relative;
+      cursor: pointer;
+      padding: 3px 0;
+    }
+
+    .timeline-segment {
+      flex: 1;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      position: relative;
+      overflow: hidden;
+      transition: height 0.15s ease, background 0.15s ease;
+      cursor: pointer;
+    }
+
+    .video-timeline:hover .timeline-segment {
+      height: 7px;
+    }
+
+    .timeline-segment:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .timeline-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 0%;
+      background: var(--gold);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .timeline-segment.active .timeline-fill {
+      box-shadow: 0 0 8px rgba(212, 168, 83, 0.8);
+    }
+
+    .timeline-tooltip {
+      position: absolute;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: #18181c;
+      border: 1px solid var(--gold);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-family: var(--f-mono);
+      font-size: 10px;
+      color: #fff;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      z-index: 70;
+    }
+
+    /* Video Controls Row */
+    .video-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .vctl-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .vctl-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #eaeaea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vctl-btn:hover {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #0c0c0e;
+      transform: scale(1.05);
+    }
+
+    .vctl-btn.vctl-play {
+      width: 30px;
+      height: 30px;
+      background: rgba(212, 168, 83, 0.15);
+      border-color: rgba(212, 168, 83, 0.4);
+      color: var(--gold);
+    }
+
+    .vctl-btn.vctl-play:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+    }
+
+    .vctl-time {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      color: #888892;
+      margin-left: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    .vctl-center {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vctl-badge {
+      font-family: var(--f-mono);
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--gold);
+      background: rgba(212, 168, 83, 0.1);
+      border: 1px solid rgba(212, 168, 83, 0.25);
+      border-radius: 4px;
+      padding: 2px 6px;
+      letter-spacing: 0.08em;
+    }
+
+    .vctl-title-txt {
+      font-family: var(--f-display);
+      font-size: 12px;
+      font-weight: 600;
+      color: #f0f0f2;
+      letter-spacing: 0.04em;
+    }
+
+    .vctl-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .vctl-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: var(--f-mono);
+      font-size: 10px;
+      color: #9999a0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vctl-pill:hover, .vctl-pill.active {
+      background: rgba(212, 168, 83, 0.14);
+      border-color: rgba(212, 168, 83, 0.4);
+      color: var(--gold);
+    }
+
+    .vctl-pill-replay {
+      background: rgba(212, 168, 83, 0.1);
+      border-color: rgba(212, 168, 83, 0.3);
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .vctl-pill-replay:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       ENDING / CHAPTERS REPLAY MODAL OVERLAY
+    ══════════════════════════════════════════════════════════════════ */
+    .demo-end-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 8, 10, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .demo-end-overlay.show {
+      display: flex;
+    }
+
+    .end-card-box {
+      background: #111114;
+      border: 1.5px solid rgba(212, 168, 83, 0.35);
+      border-radius: 20px;
+      padding: 28px 32px;
+      max-width: 720px;
+      width: 100%;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95), 0 0 30px rgba(212, 168, 83, 0.15);
+      text-align: center;
+      animation: endPop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+    }
+
+    @keyframes endPop {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .end-badge {
+      display: inline-block;
+      font-family: var(--f-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      background: rgba(212, 168, 83, 0.1);
+      border: 1px solid rgba(212, 168, 83, 0.25);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .end-title {
+      font-family: var(--f-display);
+      font-size: 24px;
+      color: #fff;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .end-desc {
+      font-family: var(--f-body);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 22px;
+    }
+
+    .end-chapters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .end-chapter-tile {
+      background: #17171b;
+      border: 1px solid #282830;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .end-chapter-tile:hover {
+      background: #1f1f26;
+      border-color: var(--gold);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(212, 168, 83, 0.15);
+    }
+
+    .echap-num {
+      font-family: var(--f-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      opacity: 0.7;
+    }
+
+    .end-chapter-tile:hover .echap-num {
+      opacity: 1;
+    }
+
+    .echap-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .echap-name {
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .echap-sub {
+      font-family: var(--f-body);
+      font-size: 10.5px;
+      color: #888892;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .echap-arrow {
+      color: var(--muted);
+      font-size: 14px;
+      transition: transform 0.2s;
+    }
+
+    .end-chapter-tile:hover .echap-arrow {
+      color: var(--gold);
+      transform: translateX(3px);
+    }
+
+    .end-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .end-btn-replay {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      background: var(--gold);
+      color: #0c0c0e;
+      border: none;
+      border-radius: 999px;
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 18px rgba(212, 168, 83, 0.35);
+    }
+
+    .end-btn-replay:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(212, 168, 83, 0.55);
+    }
+
+    .end-btn-close {
+      padding: 11px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .end-btn-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
     /* Mobile */
     @media (max-width: 768px) {
       #narrator { display: none; }
@@ -2005,6 +2401,126 @@
               </div>
             </div>
             <div class="portal-main" id="portal-main"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════ DEMO ENDING / CHAPTERS OVERLAY ══════════════════════ -->
+      <div id="demo-end-overlay" class="demo-end-overlay">
+        <div class="end-card-box">
+          <div class="end-badge">DEMO COMPLETE &bull; 5-SURFACE ARCHITECTURE</div>
+          <h2 class="end-title">Unified Memory Across Every Device</h2>
+          <p class="end-desc">Skip directly to any surface showcase, test features interactively, or replay from the beginning.</p>
+
+          <div class="end-chapters-grid">
+            <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(0);">
+              <div class="echap-num">01</div>
+              <div class="echap-info">
+                <div class="echap-name">Overview</div>
+                <div class="echap-sub">Walrus Blobs &bull; Telemetry</div>
+              </div>
+              <div class="echap-arrow">&rarr;</div>
+            </div>
+
+            <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(1);">
+              <div class="echap-num">02</div>
+              <div class="echap-info">
+                <div class="echap-name">Telegram Face</div>
+                <div class="echap-sub">Automatic Mining &bull; Consolidation</div>
+              </div>
+              <div class="echap-arrow">&rarr;</div>
+            </div>
+
+            <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(2);">
+              <div class="echap-num">03</div>
+              <div class="echap-info">
+                <div class="echap-name">Linux Terminal</div>
+                <div class="echap-sub">Clack CLI &bull; Counterfactual Replay</div>
+              </div>
+              <div class="echap-arrow">&rarr;</div>
+            </div>
+
+            <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(3);">
+              <div class="echap-num">04</div>
+              <div class="echap-info">
+                <div class="echap-name">Browser &amp; WebMCP</div>
+                <div class="echap-sub">In-Page DOM Tools &bull; Memories Drawer</div>
+              </div>
+              <div class="echap-arrow">&rarr;</div>
+            </div>
+
+            <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(4);">
+              <div class="echap-num">05</div>
+              <div class="echap-info">
+                <div class="echap-name">Web Portal</div>
+                <div class="echap-sub">Evidence Replay &bull; Device Pairing</div>
+              </div>
+              <div class="echap-arrow">&rarr;</div>
+            </div>
+          </div>
+
+          <div class="end-action-row">
+            <button class="end-btn-replay" onclick="dismissEndOverlay(); goToScene(0);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              <span>REPLAY FULL TOUR</span>
+            </button>
+            <button class="end-btn-close" onclick="dismissEndOverlay();">
+              <span>Close Menu</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════ VIDEO CONTROLLER & CHAPTER SCRUBBER DOCK ══════════════════════ -->
+      <div id="video-dock" class="video-dock">
+        <!-- Interactive 5-Chapter Scrubber Timeline -->
+        <div class="video-timeline" id="video-timeline">
+          <div class="timeline-segment s-0" onclick="goToScene(0)" data-title="Chapter 1: Overview" data-time="00:00">
+            <div class="timeline-fill" id="tfill-0"></div>
+          </div>
+          <div class="timeline-segment s-1" onclick="goToScene(1)" data-title="Chapter 2: Telegram Mining" data-time="01:00">
+            <div class="timeline-fill" id="tfill-1"></div>
+          </div>
+          <div class="timeline-segment s-2" onclick="goToScene(2)" data-title="Chapter 3: Terminal CLI" data-time="02:15">
+            <div class="timeline-fill" id="tfill-2"></div>
+          </div>
+          <div class="timeline-segment s-3" onclick="goToScene(3)" data-title="Chapter 4: Browser WebMCP" data-time="03:30">
+            <div class="timeline-fill" id="tfill-3"></div>
+          </div>
+          <div class="timeline-segment s-4" onclick="goToScene(4)" data-title="Chapter 5: Web Portal" data-time="04:30">
+            <div class="timeline-fill" id="tfill-4"></div>
+          </div>
+          <div class="timeline-tooltip" id="timeline-tooltip"></div>
+        </div>
+
+        <!-- Video Controls Bar -->
+        <div class="video-controls-row">
+          <div class="vctl-left">
+            <button class="vctl-btn" id="vbtn-prev" onclick="prevChapter()" title="Previous Chapter (Shift+Left)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"/></svg>
+            </button>
+            <button class="vctl-btn vctl-play" id="vbtn-play" onclick="togglePlayPause()" title="Play / Pause">
+              <svg id="vbtn-play-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <svg id="vbtn-pause-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="vctl-btn" id="vbtn-next" onclick="nextChapter()" title="Next Chapter (Shift+Right)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+            </button>
+            <span class="vctl-time" id="vctl-time">00:00 / 05:00</span>
+          </div>
+
+          <div class="vctl-center" id="vctl-chapter-name">
+            <span class="vctl-badge" id="vctl-badge">CHAPTER 1</span>
+            <span class="vctl-title-txt" id="vctl-title-txt">Decentralized Overview</span>
+          </div>
+
+          <div class="vctl-right">
+            <button class="vctl-pill" id="vpill-0" onclick="goToScene(0)">01 Intro</button>
+            <button class="vctl-pill" id="vpill-1" onclick="goToScene(1)">02 Telegram</button>
+            <button class="vctl-pill" id="vpill-2" onclick="goToScene(2)">03 CLI</button>
+            <button class="vctl-pill" id="vpill-3" onclick="goToScene(3)">04 WebMCP</button>
+            <button class="vctl-pill" id="vpill-4" onclick="goToScene(4)">05 Portal</button>
+            <button class="vctl-pill vctl-pill-replay" onclick="showEndingMenu()" title="Show All Chapters & Ending Menu">Menu</button>
           </div>
         </div>
       </div>
@@ -2481,6 +2997,8 @@
 
     /* ================================================================
        SCENE CONTROLLER
+    /* ================================================================
+       SCENE CONTROLLER & VIDEO TIMELINE
     ================================================================ */
     var SCENES = [
       { id: 's0', title: 'One Mind', narTitle: 'What is Cheta?' },
@@ -2489,6 +3007,170 @@
       { id: 's3', title: 'Extension', narTitle: 'Browser Extension & WebMCP' },
       { id: 's4', title: 'Web Portal', narTitle: 'Web Portal & Evidence' },
     ];
+
+    var CHAPTER_CONFIG = [
+      { id: 0, title: 'Decentralized Overview', label: '01 Intro', startSec: 0, durMs: 7500 },
+      { id: 1, title: 'Telegram Autonomous Mining', label: '02 Telegram', startSec: 60, durMs: 18000 },
+      { id: 2, title: 'Terminal CLI & Causal Audit', label: '03 Terminal', startSec: 135, durMs: 20000 },
+      { id: 3, title: 'Browser WebMCP & Sidepanel', label: '04 WebMCP', startSec: 210, durMs: 22000 },
+      { id: 4, title: 'Web Portal & Identity Pairing', label: '05 Portal', startSec: 270, durMs: 18000 }
+    ];
+
+    var TOTAL_DEMO_SEC = 300; // 5:00 full tour
+    var isPaused = false;
+    var playerAnimFrame = null;
+    var sceneStartTime = null;
+
+    function formatTime(totalSeconds) {
+      var m = Math.floor(totalSeconds / 60);
+      var s = Math.floor(totalSeconds % 60);
+      return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    var VideoPlayer = {
+      sync: function(idx) {
+        if (playerAnimFrame) cancelAnimationFrame(playerAnimFrame);
+        sceneStartTime = Date.now();
+
+        var cfg = CHAPTER_CONFIG[idx] || CHAPTER_CONFIG[0];
+        var badge = document.getElementById('vctl-badge');
+        var titleTxt = document.getElementById('vctl-title-txt');
+        var timeEl = document.getElementById('vctl-time');
+
+        if (badge) badge.textContent = 'CHAPTER ' + (idx + 1);
+        if (titleTxt) titleTxt.textContent = cfg.title;
+        if (timeEl) timeEl.textContent = formatTime(cfg.startSec) + ' / 05:00';
+
+        // Update active pills & segment fills
+        for (var i = 0; i < 5; i++) {
+          var pill = document.getElementById('vpill-' + i);
+          if (pill) pill.classList.toggle('active', i === idx);
+
+          var seg = document.querySelector('.timeline-segment.s-' + i);
+          var fill = document.getElementById('tfill-' + i);
+          if (fill) {
+            if (i < idx) {
+              fill.style.width = '100%';
+              if (seg) seg.classList.remove('active');
+            } else if (i === idx) {
+              fill.style.width = '0%';
+              if (seg) seg.classList.add('active');
+            } else {
+              fill.style.width = '0%';
+              if (seg) seg.classList.remove('active');
+            }
+          }
+        }
+
+        // Animate scrubber progress smoothly
+        function tick() {
+          if (isPaused) {
+            playerAnimFrame = requestAnimationFrame(tick);
+            return;
+          }
+          var elapsed = Date.now() - sceneStartTime;
+          var frac = Math.min(1, elapsed / cfg.durMs);
+          var currentFill = document.getElementById('tfill-' + idx);
+          if (currentFill) {
+            currentFill.style.width = (frac * 100) + '%';
+          }
+
+          var nextSec = (idx + 1 < 5) ? CHAPTER_CONFIG[idx + 1].startSec : TOTAL_DEMO_SEC;
+          var currentSec = cfg.startSec + (nextSec - cfg.startSec) * frac;
+          if (timeEl) {
+            timeEl.textContent = formatTime(currentSec) + ' / 05:00';
+          }
+
+          if (frac < 1) {
+            playerAnimFrame = requestAnimationFrame(tick);
+          }
+        }
+        playerAnimFrame = requestAnimationFrame(tick);
+      }
+    };
+
+    function prevChapter() {
+      var prev = Math.max(0, currentScene - 1);
+      goToScene(prev);
+    }
+
+    function nextChapter() {
+      var next = Math.min(4, currentScene + 1);
+      goToScene(next);
+    }
+
+    function togglePlayPause() {
+      isPaused = !isPaused;
+      var playIco = document.getElementById('vbtn-play-icon');
+      var pauseIco = document.getElementById('vbtn-pause-icon');
+      if (isPaused) {
+        VoiceEngine.stop();
+        if (playIco) playIco.style.display = 'block';
+        if (pauseIco) pauseIco.style.display = 'none';
+      } else {
+        VoiceEngine.unlock();
+        if (playIco) playIco.style.display = 'none';
+        if (pauseIco) pauseIco.style.display = 'block';
+      }
+    }
+
+    function showEndingMenu() {
+      var overlay = document.getElementById('demo-end-overlay');
+      if (overlay) overlay.classList.add('show');
+      if (playerAnimFrame) cancelAnimationFrame(playerAnimFrame);
+      for (var i = 0; i < 5; i++) {
+        var fill = document.getElementById('tfill-' + i);
+        if (fill) fill.style.width = '100%';
+        var pill = document.getElementById('vpill-' + i);
+        if (pill) pill.classList.remove('active');
+      }
+      var timeEl = document.getElementById('vctl-time');
+      if (timeEl) timeEl.textContent = '05:00 / 05:00';
+    }
+
+    function dismissEndOverlay() {
+      var overlay = document.getElementById('demo-end-overlay');
+      if (overlay) overlay.classList.remove('show');
+    }
+
+    window.prevChapter = prevChapter;
+    window.nextChapter = nextChapter;
+    window.togglePlayPause = togglePlayPause;
+    window.showEndingMenu = showEndingMenu;
+    window.dismissEndOverlay = dismissEndOverlay;
+
+    // Timeline hover tooltips
+    var vTimeline = document.getElementById('video-timeline');
+    var vTip = document.getElementById('timeline-tooltip');
+    if (vTimeline && vTip) {
+      vTimeline.addEventListener('mousemove', function(e) {
+        var seg = e.target.closest('.timeline-segment');
+        if (seg) {
+          vTip.textContent = seg.getAttribute('data-title') + ' (' + seg.getAttribute('data-time') + ')';
+          var rect = vTimeline.getBoundingClientRect();
+          vTip.style.left = (e.clientX - rect.left) + 'px';
+          vTip.style.opacity = '1';
+        }
+      });
+      vTimeline.addEventListener('mouseleave', function() {
+        vTip.style.opacity = '0';
+      });
+    }
+
+    // Keyboard shortcuts for video scrubbing & chapter skip
+    window.addEventListener('keydown', function(e) {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'ArrowLeft' && e.shiftKey) {
+        prevChapter();
+      } else if (e.key === 'ArrowRight' && e.shiftKey) {
+        nextChapter();
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (['1', '2', '3', '4', '5'].indexOf(e.key) !== -1) {
+        goToScene(parseInt(e.key, 10) - 1);
+      }
+    });
 
     var currentScene = 0;
     var isTransitioning = false;
@@ -2522,6 +3204,7 @@
       if (isTransitioning || (idx === currentScene && idx !== 0)) return;
       isTransitioning = true;
       VoiceEngine.unlock();
+      dismissEndOverlay();
       cancelActiveScene();
 
       flash().then(function() {
@@ -2541,6 +3224,7 @@
 
         currentScene = idx;
         updateDots(idx);
+        VideoPlayer.sync(idx);
 
         var next = document.getElementById(SCENES[idx].id);
         if (next) {
@@ -3183,9 +3867,9 @@
         return narrate('Web Portal & Evidence',
           'Cheta: One Mind Across Every Device. Decentralized Walrus memory, consolidation on ingest, and salience-ranked recall.', 21, 'portal_3');
       }).then(function() {
-        return sleep(4500);
+        return sleep(3500);
       }).then(function() {
-        goToScene(0);
+        showEndingMenu();
       }).catch(function() {});
     }
 
@@ -3244,6 +3928,7 @@
     if (initialScene > 0 && initialScene < 5) {
       goToScene(initialScene);
     } else {
+      VideoPlayer.sync(0);
       runIntro();
     }
 
