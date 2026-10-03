@@ -129,6 +129,16 @@ def build_archives() -> None:
                     archive.write(path, arcname=str(path.relative_to(chrome_dir)))
         print(f"[OK] {relative(chrome_zip)} (Chrome zip package)")
 
+    web_downloads = REPO_ROOT / "src" / "web" / "downloads"
+    if web_downloads.exists():
+        if (DIST / "cheta-firefox.xpi").exists():
+            shutil.copy2(DIST / "cheta-firefox.xpi", web_downloads / "cheta-firefox.xpi")
+        if (DIST / "cheta-firefox.zip").exists():
+            shutil.copy2(DIST / "cheta-firefox.zip", web_downloads / "cheta-firefox.zip")
+        if (DIST / "cheta-chrome.zip").exists():
+            shutil.copy2(DIST / "cheta-chrome.zip", web_downloads / "cheta-chrome.zip")
+        print(f"[OK] {relative(web_downloads)} (synced pre-packaged downloads)")
+
 
 def main() -> int:
     check_inputs()

@@ -169,13 +169,13 @@ code {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 34px 32px 32px 32px;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
   border-color: var(--accent);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(53, 208, 186, 0.1);
+  background: #111622;
 }
 
 .card-label {
@@ -993,6 +993,7 @@ body.modal-open {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   margin-top: 24px;
 }
@@ -1010,13 +1011,13 @@ body.modal-open {
   background: #0f131c;
   border: 1px solid #252e42;
   color: var(--text);
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
 }
 
 .hero-pill-btn:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
   color: var(--accent);
+  background: #141c2a;
 }
 
 .hero-pill-ext {
@@ -1119,7 +1120,9 @@ body.modal-open {
 /* -------------------------------------------------- architecture showcase */
 
 .architecture-showcase {
-  margin: 40px 0 24px 0;
+  margin: 40px auto 24px auto;
+  max-width: 960px;
+  width: 100%;
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface);
@@ -1129,7 +1132,8 @@ body.modal-open {
 }
 
 .showcase-header {
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 24px;
 }
 
 .showcase-tag {
@@ -1180,12 +1184,16 @@ body.modal-open {
 }
 
 .arch-node {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
-.arch-node:hover {
-  transform: scale(1.03);
+.arch-node rect {
+  transition: stroke 0.2s ease, fill 0.2s ease;
+}
+
+.arch-node:hover rect {
+  stroke: var(--accent);
+  fill: #141c29;
 }
 
 .btn-icon {

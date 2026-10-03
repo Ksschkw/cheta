@@ -884,6 +884,20 @@
     hidePageHint();
   }
 
+  function setReadButtonLabel(text, busy) {
+    var button = $("use-page");
+    if (!button) {
+      return;
+    }
+    button.disabled = Boolean(busy);
+    var span = button.querySelector("span");
+    if (span) {
+      span.textContent = text;
+    } else {
+      button.textContent = text;
+    }
+  }
+
   function clearPageSummary() {
     var node = $("page-summary");
     var toggle = $("page-actions-toggle");
@@ -900,18 +914,16 @@
     }
     if (use) {
       use.classList.remove("hidden");
+      setReadButtonLabel("Read Tab", state.busy);
     }
+    state.pageBusy = false;
     setPageActionsOpen(false);
     clearMcpUi();
   }
 
   function setPageBusy(busy) {
     state.pageBusy = busy;
-    var button = $("use-page");
-    if (button) {
-      button.disabled = busy || state.busy;
-      button.textContent = busy ? "Reading..." : "Read page";
-    }
+    setReadButtonLabel(busy ? "Reading..." : "Read Tab", busy || state.busy);
     var toggle = $("page-actions-toggle");
     if (toggle) {
       toggle.disabled = busy || state.busy;
@@ -997,7 +1009,16 @@
    * this, reading one page hid the Read page button for the rest of the
    * session, so a page opened in another tab could never be read at all. */
   function invalidatePage(message) {
+    state.pageBusy = false;
+    var use = $("use-page");
+    if (use) {
+      use.classList.remove("hidden");
+      setReadButtonLabel("Read Tab", state.busy);
+    }
     if (state.page === null && state.pageTabId === null && !state.pageOrigin) {
+      if (message) {
+        setPageStatus(message, "");
+      }
       return;
     }
     state.page = null;
@@ -2455,8 +2476,10 @@
   /* Recalled memories are shown as plain text lines: no verdict, no salience,
    * no blob id, no origin surface. The memory text itself is the product. */
   function recalledBlock(recalled) {
-    return el("div", { class: "recalled" }, [
-      el("div", { class: "recalled-label" }, "Recalled"),
+    var count = Array.isArray(recalled) ? recalled.length : 0;
+    var label = count === 1 ? "1 recalled memory" : count + " recalled memories";
+    return el("details", { class: "recalled-details" }, [
+      el("summary", { class: "recalled-summary" }, label + " (click to view)"),
       el(
         "div",
         { class: "recalled-list" },
@@ -2788,6 +2811,27 @@
     updateSessionsBadge();
   }
 
+  function closeTopPanels(exceptId) {
+    var panels = [
+      { id: "chats-panel", btnId: "btn-chats" },
+      { id: "profile-panel", btnId: "toggle-profile-panel" },
+      { id: "memory-panel", btnId: "toggle-memory-panel" },
+      { id: "help-panel", btnId: "toggle-help" }
+    ];
+    panels.forEach(function (item) {
+      if (item.id !== exceptId) {
+        var p = $(item.id);
+        if (p) {
+          p.classList.add("hidden");
+        }
+        var b = $(item.btnId);
+        if (b) {
+          b.setAttribute("aria-expanded", "false");
+        }
+      }
+    });
+  }
+
   function startNewChatSession(initialTitle) {
     saveCurrentSession();
     var newSession = {
@@ -2827,27 +2871,12 @@
 
     updateSessionsBadge();
     renderSessionsList();
-
-    var panel = $("chats-panel");
-    if (panel) {
-      panel.classList.add("hidden");
-    }
-    var btn = $("btn-chats");
-    if (btn) {
-      btn.setAttribute("aria-expanded", "false");
-    }
+    closeTopPanels("");
   }
 
   function switchChatSession(sessionId) {
     if (sessionId === state.currentSessionId) {
-      var p = $("chats-panel");
-      if (p) {
-        p.classList.add("hidden");
-      }
-      var b = $("btn-chats");
-      if (b) {
-        b.setAttribute("aria-expanded", "false");
-      }
+      closeTopPanels("");
       return;
     }
     saveCurrentSession();
@@ -3597,7 +3626,11 @@
             return "Scrolled to top of the page.";
           }
           if (t === "bottom") {
-            window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            var scrollHeight = Math.max(
+              document.body ? document.body.scrollHeight : 0,
+              document.documentElement ? document.documentElement.scrollHeight : 0
+            );
+            window.scrollTo({ top: scrollHeight, behavior: "smooth" });
             return "Scrolled to bottom of the page.";
           }
           var headers = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6, p, a, button, section"));
@@ -3671,11 +3704,31 @@
     return null;
   }
 
+  function shouldBypassPagePlanning(text) {
+    if (!text || typeof text !== "string") {
+      return false;
+    }
+    var lower = text.toLowerCase().trim();
+    if (
+      /^(why|what|how|who|can you explain|tell me about your|what is the meaning of|where is)\b/.test(lower) &&
+      /(your reply|your answer|your message|recalled|memory|memories|walrus|cheta|agentic|the steps|the bottom of your|what you said)/.test(lower)
+    ) {
+      return true;
+    }
+    if (/(in your reply|in your answer|in your previous|you said|did you say|why did you|what did you mean|at the bottom of your|bottom of your)/.test(lower)) {
+      return true;
+    }
+    if (/(my memories|my memory|walrus note|stored note|remember about me|recalled note)/.test(lower)) {
+      return true;
+    }
+    return false;
+  }
+
   /* Ask the server which page tool, if any, a plain request is asking for.
    * Planning is an extra, never the turn: any failure returns null and the
    * message is answered normally, so a plan can never cost someone a reply. */
   function planToolFor(text, tools) {
-    if (!tools || !tools.length) {
+    if (!tools || !tools.length || shouldBypassPagePlanning(text)) {
       return Promise.resolve(null);
     }
     var catalog = tools.slice(0, 25).map(function (tool) {
@@ -4547,6 +4600,7 @@
       chatsBtn.addEventListener("click", function () {
         var open = chatsPanel.classList.contains("hidden");
         if (open) {
+          closeTopPanels("chats-panel");
           chatsPanel.classList.remove("hidden");
           renderSessionsList();
         } else {
@@ -4586,6 +4640,7 @@
       panelButton.addEventListener("click", function () {
         var open = panel.classList.contains("hidden");
         if (open) {
+          closeTopPanels("memory-panel");
           panel.classList.remove("hidden");
           loadMemories();
         } else {
@@ -4621,6 +4676,7 @@
         if (cmd === "/tutorial") {
           var helpPanel = $("help-panel");
           if (helpPanel) {
+            closeTopPanels("help-panel");
             helpPanel.classList.remove("hidden");
             var helpBtn = $("toggle-help");
             if (helpBtn) {
@@ -4656,6 +4712,7 @@
       helpButton.addEventListener("click", function () {
         var open = helpPanel.classList.contains("hidden");
         if (open) {
+          closeTopPanels("help-panel");
           helpPanel.classList.remove("hidden");
         } else {
           helpPanel.classList.add("hidden");
@@ -4681,6 +4738,7 @@
       profileBtn.addEventListener("click", function () {
         var open = profilePanel.classList.contains("hidden");
         if (open) {
+          closeTopPanels("profile-panel");
           profilePanel.classList.remove("hidden");
           var input = $("profile-name-input");
           if (input) {

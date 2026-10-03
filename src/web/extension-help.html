@@ -26,89 +26,67 @@
           restarts and has to be loaded again.
         </p>
 
-        <h2>Get the repository</h2>
-        <pre class="code"><code>git clone https://github.com/Ksschkw/ranti.git
-cd ranti</code></pre>
-        <p>
-          The extension lives in the <code>extension/</code> folder at the top of
-          the repository. That folder holds the shared code and two manifests:
-          <code>manifest.json</code> for Chromium and
-          <code>manifest.firefox.json</code> for Firefox.
-        </p>
+        <div class="note">
+          <p class="note-title">Quick Install (No Terminal or Python Needed)</p>
+          <p>If you downloaded the pre-packaged zip directly from the portal, you do not need git or python:</p>
+          <ul class="plain-list">
+            <li><strong>Chrome, Brave, Edge</strong>: Download <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="accent-underline"><code>cheta-chrome.zip</code></a>, extract it, and select the folder in <code>chrome://extensions</code> (or <code>edge://extensions</code> / <code>brave://extensions</code>) via <strong>Load unpacked</strong>.</li>
+            <li><strong>Firefox</strong>: Download <a href="/app/downloads/cheta-firefox.xpi" download="cheta-firefox.xpi" class="accent-underline"><code>cheta-firefox.xpi</code></a> (or <a href="/app/downloads/cheta-firefox.zip" download="cheta-firefox.zip" class="accent-underline"><code>cheta-firefox.zip</code></a>), open <code>about:debugging#/runtime/this-firefox</code>, click <strong>Load Temporary Add-on...</strong>, and select the file.</li>
+          </ul>
+        </div>
 
-        <h2>Build the loadable folders</h2>
+        <h2>Build from Source (Developers)</h2>
+        <p>If you prefer to inspect and package the extension from the repository yourself:</p>
+        <pre class="code"><code>git clone https://github.com/Ksschkw/ranti.git
+cd ranti
+python3 scripts/build_extension.py</code></pre>
         <p>
-          Firefox only reads a file named <code>manifest.json</code>, so the two
-          builds cannot share one manifest. Run the packaging script, which uses
-          the Python standard library and nothing else:
-        </p>
-        <pre class="code"><code>python3 scripts/build_extension.py</code></pre>
-        <p>
-          It writes two folders, each a complete extension with its own
-          <code>manifest.json</code>:
+          The script uses the standard library and outputs:
         </p>
         <ul>
-          <li><code>extension-dist/chrome/</code> for Chrome and Edge.</li>
+          <li><code>extension-dist/chrome/</code> for Chrome, Brave, and Edge.</li>
           <li><code>extension-dist/firefox/</code> for Firefox.</li>
         </ul>
-        <p>
-          Re-run the script after any change to <code>extension/</code>, then
-          reload the extension in the browser.
-        </p>
 
-        <h2>Chrome or Edge</h2>
+        <h2>Browser Instructions</h2>
+        <h3>1. Google Chrome</h3>
         <ol>
-          <li>Open <code>chrome://extensions</code>. In Edge, open <code>edge://extensions</code>.</li>
-          <li>Turn on <code>Developer mode</code>, in the top right corner.</li>
-          <li>Click <code>Load unpacked</code>.</li>
-          <li>Select the <code>extension-dist/chrome/</code> folder, the one that contains <code>manifest.json</code>.</li>
-          <li>Open the side panel from the Cheta toolbar button.</li>
+          <li>Open <code>chrome://extensions</code> in your address bar.</li>
+          <li>Turn on <strong>Developer mode</strong> in the top-right corner.</li>
+          <li>Click <strong>Load unpacked</strong> in the top-left corner.</li>
+          <li>Select the <code>extension-dist/chrome/</code> folder (or your extracted zip folder).</li>
+          <li>Click Cheta in your extensions menu to open the Side Panel.</li>
         </ol>
-        <p>
-          Requires Chrome or Edge 114 or newer, because the panel uses the side
-          panel API. Loading the <code>extension/</code> folder directly also
-          works in these browsers, since its <code>manifest.json</code> is the
-          Chromium one; the packaged folder is the recommended path because
-          Chrome and Firefox then read the same shared files.
-        </p>
 
-        <h2>Firefox</h2>
+        <h3>2. Brave Browser</h3>
         <ol>
-          <li>Run <code>python3 scripts/build_extension.py</code> as above.</li>
-          <li>Open <code>about:debugging</code>.</li>
-          <li>Click <code>This Firefox</code>.</li>
-          <li>Click <code>Load Temporary Add-on</code>.</li>
-          <li>Select the file <code>extension-dist/firefox/manifest.json</code>.</li>
+          <li>Open <code>brave://extensions</code> in your address bar.</li>
+          <li>Turn on <strong>Developer mode</strong> in the top-right corner.</li>
+          <li>Click <strong>Load unpacked</strong>.</li>
+          <li>Select the <code>extension-dist/chrome/</code> folder.</li>
+          <li>Launch Cheta from your toolbar.</li>
         </ol>
-        <p>
-          The Firefox build uses the <code>sidebar_action</code> manifest key, so
-          Firefox shows Cheta as a sidebar. The sidebar opens when the add-on
-          loads; if it is closed, open it from <code>View</code> &gt;
-          <code>Sidebar</code> &gt; <code>Cheta</code>, or press
-          <code>Ctrl+Shift+Y</code> (<code>Command+Shift+Y</code> on macOS) to
-          open or close it.
-        </p>
-        <p>
-          A temporary add-on is removed when Firefox restarts. After every
-          restart, go back to <code>about:debugging</code>, click
-          <code>This Firefox</code>, click <code>Load Temporary Add-on</code>,
-          and select <code>extension-dist/firefox/manifest.json</code> again.
-          Nothing is preserved by the browser across that restart.
-        </p>
-        <p>
-          The Firefox manifest declares
-          <code>browser_specific_settings.gecko.id</code>. It is not required for
-          <code>Load Temporary Add-on</code>, where Firefox can assign a
-          temporary id, but a stable id keeps the extension's stored settings
-          attached to the same identity across reloads and is required for a
-          signed, permanently installed add-on.
-        </p>
 
-        <h2>Store status</h2>
+        <h3>3. Microsoft Edge</h3>
+        <ol>
+          <li>Open <code>edge://extensions</code> in your address bar.</li>
+          <li>Turn on <strong>Developer mode</strong> in the left sidebar.</li>
+          <li>Click <strong>Load unpacked</strong> in the top bar.</li>
+          <li>Select the <code>extension-dist/chrome/</code> folder.</li>
+          <li>Cheta opens in Edge's native Side Panel.</li>
+        </ol>
+
+        <h3>4. Mozilla Firefox</h3>
+        <ol>
+          <li>Open <code>about:debugging#/runtime/this-firefox</code> in your address bar.</li>
+          <li>Click <strong>Load Temporary Add-on...</strong></li>
+          <li>Select either <code>cheta-firefox.xpi</code> or <code>extension-dist/firefox/manifest.json</code>.</li>
+          <li>Cheta opens in your Firefox Sidebar. Press <code>Ctrl+Shift+Y</code> (<code>Cmd+Shift+Y</code> on macOS) to toggle.</li>
+        </ol>
+
+        <h2>Store status & Zero Paywalls</h2>
         <p class="warn-line">
-          There is no Chrome Web Store listing and no addons.mozilla.org listing.
-          Neither build is published to any store. The only honest install paths
-          are the unpacked and temporary loading described above.
+          Cheta does not publish to the Chrome Web Store or addons.mozilla.org. This avoids developer registration fees, central telemetry requirements, and weeks of opaque store review delays. Running unpacked gives you direct, unadulterated access to Walrus decentralized memory and full WebMCP DOM automation.
         </p>
 
         <p class="back-row">

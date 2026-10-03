@@ -52,7 +52,11 @@
           memory space per person. It mines each turn for durable facts,
           adjudicates every new fact against the notes it already holds, and
           keeps the store clean: duplicates are skipped before the write,
-          superseded values are retired, and contradictions are surfaced
+          superseded values are retired, and contradictions are surfaced.
+        </p>
+      </section>
+
+      <section class="architecture-section">
         <div class="architecture-showcase" aria-label="System Architecture Diagram">
           <div class="showcase-header">
             <span class="showcase-tag">Decentralized Object Model</span>
@@ -116,22 +120,23 @@
             </g>
           </svg>
         </div>
-
-        <nav class="index-row" aria-label="Sections">
-          <a href="#memory">Memory</a>
-          <a href="#documents">Documents</a>
-          <a href="#voice">Voice</a>
-          <a href="#tools">Tools</a>
-          <a href="#reminders">Reminders</a>
-          <a href="#surfaces">Surfaces</a>
-          <a href="#pairing">Pairing</a>
-          <a href="#honesty">Honesty</a>
-          <a href="/app/evidence.html" target="_blank" rel="noopener noreferrer">Evidence ↗</a>
-          <button class="try-btn try-btn-nav" type="button" id="try-open-nav" aria-haspopup="dialog" aria-controls="try-modal">
-            Try Cheta now
-          </button>
-        </nav>
       </section>
+
+      <nav class="index-row" aria-label="Sections">
+        <a href="#memory">Memory</a>
+        <a href="#documents">Documents</a>
+        <a href="#voice">Voice</a>
+        <a href="#tools">Tools</a>
+        <a href="#reminders">Reminders</a>
+        <a href="#surfaces">Surfaces</a>
+        <a href="#install-guide">Install</a>
+        <a href="#pairing">Pairing</a>
+        <a href="#honesty">Honesty</a>
+        <a href="/app/evidence.html" target="_blank" rel="noopener noreferrer">Evidence ↗</a>
+        <button class="try-btn try-btn-nav" type="button" id="try-open-nav" aria-haspopup="dialog" aria-controls="try-modal">
+          Try Cheta now
+        </button>
+      </nav>
 
       <section class="section" id="memory" aria-labelledby="memory-label">
         <h2 class="label" id="memory-label">Memory that decides</h2>
@@ -373,6 +378,100 @@ PYTHONPATH=src python -m cli</code></pre>
             <li>Reminder push and the pairing notice need a push channel, so both are Telegram today.</li>
             <li>Commands are dispatched by the service on <code>POST /chat/turn</code>, so <code>/start /help /memories /forget /correct /link /unlink /pair /sessions /unpair</code> work on all four. The extension also answers <code>/start</code>, <code>/memories</code> and <code>/help</code> locally.</li>
             <li>The extension declares its own surface identity, which the backend accepts alongside telegram, cli and web.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="install-guide" aria-labelledby="install-label">
+        <h2 class="label" id="install-label">Install the Browser Extension</h2>
+        <p class="section-lead">
+          Zero store fees. Zero registration delays. Install Cheta directly in under 30 seconds using native developer / unpacked mode for your browser:
+        </p>
+
+        <div class="grid">
+          <article class="card">
+            <p class="card-label">Browser 01</p>
+            <h3 class="card-title">Google Chrome</h3>
+            <p class="card-desc">
+              Manifest V3 native Sidepanel integration with in-page WebMCP automation.
+            </p>
+            <ol class="steps">
+              <li class="step"><span class="step-text">Download <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="accent-underline"><strong>cheta-chrome.zip</strong></a> and extract it to a folder on your computer.</span></li>
+              <li class="step"><span class="step-text">Open <code>chrome://extensions</code> in your Chrome address bar.</span></li>
+              <li class="step"><span class="step-text">Turn on <strong>Developer mode</strong> in the top-right corner.</span></li>
+              <li class="step"><span class="step-text">Click <strong>Load unpacked</strong> in the top-left corner.</span></li>
+              <li class="step"><span class="step-text">Select the extracted folder (the folder containing <code>manifest.json</code>).</span></li>
+              <li class="step"><span class="step-text">Pin Cheta to your toolbar and click it to open the Side Panel!</span></li>
+            </ol>
+            <p class="card-action">
+              <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="btn">Download Chrome ZIP</a>
+            </p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Browser 02</p>
+            <h3 class="card-title">Brave Browser</h3>
+            <p class="card-desc">
+              Privacy-first Chromium browser with full WebMCP DOM execution support.
+            </p>
+            <ol class="steps">
+              <li class="step"><span class="step-text">Download <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="accent-underline"><strong>cheta-chrome.zip</strong></a> and extract the archive.</span></li>
+              <li class="step"><span class="step-text">Open <code>brave://extensions</code> in your address bar.</span></li>
+              <li class="step"><span class="step-text">Toggle <strong>Developer mode</strong> ON in the upper-right corner.</span></li>
+              <li class="step"><span class="step-text">Click <strong>Load unpacked</strong> in the header.</span></li>
+              <li class="step"><span class="step-text">Select the extracted folder containing <code>manifest.json</code>.</span></li>
+              <li class="step"><span class="step-text">Cheta is ready! Click its icon in the Brave toolbar to launch.</span></li>
+            </ol>
+            <p class="card-action">
+              <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="btn">Download Brave ZIP</a>
+            </p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Browser 03</p>
+            <h3 class="card-title">Microsoft Edge</h3>
+            <p class="card-desc">
+              Integrated natively with Edge's built-in vertical sidebar.
+            </p>
+            <ol class="steps">
+              <li class="step"><span class="step-text">Download <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="accent-underline"><strong>cheta-chrome.zip</strong></a> and extract it.</span></li>
+              <li class="step"><span class="step-text">Open <code>edge://extensions</code> in your Edge address bar.</span></li>
+              <li class="step"><span class="step-text">Turn on <strong>Developer mode</strong> in the left sidebar navigation.</span></li>
+              <li class="step"><span class="step-text">Click the <strong>Load unpacked</strong> button that appears at the top.</span></li>
+              <li class="step"><span class="step-text">Choose the unzipped folder containing <code>manifest.json</code>.</span></li>
+              <li class="step"><span class="step-text">Open Cheta from Edge's toolbar or side panel.</span></li>
+            </ol>
+            <p class="card-action">
+              <a href="/app/downloads/cheta-chrome.zip" download="cheta-chrome.zip" class="btn">Download Edge ZIP</a>
+            </p>
+          </article>
+
+          <article class="card">
+            <p class="card-label">Browser 04</p>
+            <h3 class="card-title">Mozilla Firefox</h3>
+            <p class="card-desc">
+              Native Firefox sidebar integration via temporary debugging add-on.
+            </p>
+            <ol class="steps">
+              <li class="step"><span class="step-text">Download <a href="/app/downloads/cheta-firefox.zip" download="cheta-firefox.zip" class="accent-underline"><strong>cheta-firefox.zip</strong></a> (or <a href="/app/downloads/cheta-firefox.xpi" download="cheta-firefox.xpi" class="accent-underline"><strong>cheta-firefox.xpi</strong></a>).</span></li>
+              <li class="step"><span class="step-text">Open <code>about:debugging#/runtime/this-firefox</code> in Firefox.</span></li>
+              <li class="step"><span class="step-text">Click the <strong>Load Temporary Add-on...</strong> button.</span></li>
+              <li class="step"><span class="step-text">Select either the downloaded <code>cheta-firefox.xpi</code> file or the <code>manifest.json</code> inside the extracted zip.</span></li>
+              <li class="step"><span class="step-text">Cheta opens automatically in your Firefox Sidebar! Press <code>Ctrl+Shift+Y</code> (<code>Cmd+Shift+Y</code> on Mac) to toggle anytime.</span></li>
+            </ol>
+            <p class="card-action">
+              <a href="/app/downloads/cheta-firefox.zip" download="cheta-firefox.zip" class="btn">Download Firefox ZIP</a>
+              <a href="/app/downloads/cheta-firefox.xpi" download="cheta-firefox.xpi" class="btn">Download .XPI</a>
+            </p>
+          </article>
+        </div>
+
+        <div class="note">
+          <p class="note-title">Why Unpacked & Developer Mode?</p>
+          <ul class="plain-list">
+            <li><strong>No Store Fees or Paywalls</strong>: Google requires a $5 registration fee and days of review; Mozilla has separate manual queues. Unpacked mode lets you use Cheta for free immediately.</li>
+            <li><strong>Complete Privacy & Direct Source</strong>: Your extension runs the exact code from this repository, connects directly to your Walrus decentralized memory, and never phones home to commercial ad trackers.</li>
+            <li><strong>Automatic Updates</strong>: When you download or pull a new version, simply click the reload icon in your browser's extensions page.</li>
           </ul>
         </div>
       </section>
