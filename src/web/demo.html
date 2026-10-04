@@ -326,7 +326,7 @@
       transform: scale(0.97);
       transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
       pointer-events: none;
-      padding: 20px;
+      padding: 16px 20px 88px 20px;
       box-sizing: border-box;
     }
 
@@ -686,8 +686,8 @@
     ==================================================================== */
 
     .tg-device {
-      width: min(350px, 90vw);
-      height: min(640px, calc(100vh - 80px));
+      width: min(340px, 90vw);
+      height: min(570px, calc(100vh - 120px));
       background: var(--tg-bg);
       border-radius: 38px;
       border: 3px solid #232a38;
@@ -945,7 +945,7 @@
 
     .term-window {
       width: min(940px, 96%);
-      height: min(580px, calc(100vh - 90px));
+      height: min(530px, calc(100vh - 120px));
       background: var(--term-bg);
       border-radius: 12px;
       border: 1px solid #222226;
@@ -1009,7 +1009,7 @@
 
     .chrome-window {
       width: min(980px, 98%);
-      height: min(600px, calc(100vh - 90px));
+      height: min(540px, calc(100vh - 120px));
       background: var(--chrome-bar);
       border-radius: 12px;
       border: 1px solid #1c1c1f;
@@ -1587,7 +1587,7 @@
 
     .portal-window {
       width: min(960px, 96%);
-      height: min(580px, calc(100vh - 90px));
+      height: min(530px, calc(100vh - 120px));
       background: #0c0c0e;
       border-radius: 12px;
       border: 1px solid #202026;
@@ -2143,6 +2143,31 @@
       box-shadow: 0 6px 24px rgba(212, 168, 83, 0.55);
     }
 
+    .end-btn-portal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      background: rgba(212, 168, 83, 0.12);
+      border: 1.5px solid var(--gold);
+      border-radius: 999px;
+      color: var(--gold);
+      font-family: var(--f-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .end-btn-portal:hover {
+      background: var(--gold);
+      color: #0c0c0e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(212, 168, 83, 0.45);
+    }
+
     .end-btn-close {
       padding: 11px 20px;
       background: rgba(255, 255, 255, 0.05);
@@ -2242,18 +2267,18 @@
             </div>
 
             <!-- Extension Card -->
-            <div class="face-card" onclick="window.goToScene(3)" title="Enter Browser Showcase">
+            <div class="face-card" onclick="window.goToScene(3)" title="Enter Web Extension Showcase">
               <div class="face-card-top">
-                <span class="face-status-badge">● IN-PAGE WEBMCP</span>
+                <span class="face-status-badge">● EXTENSION MV3</span>
                 <span class="face-scene-num">03</span>
               </div>
               <div class="face-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/></svg>
               </div>
-              <div class="face-card-name">Browser</div>
-              <div class="face-card-sub">WebMCP &amp; Sidepanel</div>
-              <div class="face-card-desc">In-page DOM tool automation on Chrome Labs, tab reading &amp; memories drawer</div>
-              <div class="face-card-cta">Explore Browser <span>&rarr;</span></div>
+              <div class="face-card-name">Web Extension</div>
+              <div class="face-card-sub">Sidepanel &amp; WebMCP</div>
+              <div class="face-card-desc">Manifest V3 Sidepanel with in-page WebMCP DOM automation, tab reading &amp; memories drawer</div>
+              <div class="face-card-cta">Explore Extension <span>&rarr;</span></div>
             </div>
 
             <!-- Web Portal Card -->
@@ -2532,8 +2557,8 @@
             <div class="end-chapter-tile" onclick="dismissEndOverlay(); goToScene(3);">
               <div class="echap-num">04</div>
               <div class="echap-info">
-                <div class="echap-name">Browser &amp; WebMCP</div>
-                <div class="echap-sub">In-Page DOM Tools &bull; Memories Drawer</div>
+                <div class="echap-name">Web Extension</div>
+                <div class="echap-sub">Sidepanel &bull; WebMCP DOM Automation</div>
               </div>
               <div class="echap-arrow">&rarr;</div>
             </div>
@@ -2553,6 +2578,10 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               <span>REPLAY FULL TOUR</span>
             </button>
+            <a class="end-btn-portal" href="/app/portal.html" target="_blank" rel="noopener noreferrer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>OPEN LANDING PAGE</span>
+            </a>
             <button class="end-btn-close" onclick="dismissEndOverlay();">
               <span>Close Menu</span>
             </button>
@@ -2573,7 +2602,7 @@
           <div class="timeline-segment s-2" onclick="goToScene(2)" data-title="Chapter 3: Terminal CLI" data-time="02:15">
             <div class="timeline-fill" id="tfill-2"></div>
           </div>
-          <div class="timeline-segment s-3" onclick="goToScene(3)" data-title="Chapter 4: Browser WebMCP" data-time="03:30">
+          <div class="timeline-segment s-3" onclick="goToScene(3)" data-title="Chapter 4: Web Extension" data-time="03:30">
             <div class="timeline-fill" id="tfill-3"></div>
           </div>
           <div class="timeline-segment s-4" onclick="goToScene(4)" data-title="Chapter 5: Web Portal" data-time="04:30">
@@ -2607,7 +2636,7 @@
             <button class="vctl-pill" id="vpill-0" onclick="goToScene(0)">01 Intro</button>
             <button class="vctl-pill" id="vpill-1" onclick="goToScene(1)">02 Telegram</button>
             <button class="vctl-pill" id="vpill-2" onclick="goToScene(2)">03 CLI</button>
-            <button class="vctl-pill" id="vpill-3" onclick="goToScene(3)">04 WebMCP</button>
+            <button class="vctl-pill" id="vpill-3" onclick="goToScene(3)">04 Extension</button>
             <button class="vctl-pill" id="vpill-4" onclick="goToScene(4)">05 Portal</button>
             <button class="vctl-pill vctl-pill-replay" onclick="showEndingMenu()" title="Show All Chapters & Ending Menu">Menu</button>
           </div>
@@ -3093,7 +3122,7 @@
       { id: 's0', title: 'One Mind', narTitle: 'What is Cheta?' },
       { id: 's1', title: 'Telegram', narTitle: 'Telegram Face' },
       { id: 's2', title: 'Terminal', narTitle: 'CLI Face' },
-      { id: 's3', title: 'Extension', narTitle: 'Browser Extension & WebMCP' },
+      { id: 's3', title: 'Extension', narTitle: 'Web Extension & WebMCP' },
       { id: 's4', title: 'Web Portal', narTitle: 'Web Portal & Evidence' },
     ];
 
@@ -3101,7 +3130,7 @@
       { id: 0, title: 'Decentralized Overview', label: '01 Intro', startSec: 0, durMs: 7500 },
       { id: 1, title: 'Telegram Autonomous Mining', label: '02 Telegram', startSec: 60, durMs: 18000 },
       { id: 2, title: 'Terminal CLI & Causal Audit', label: '03 Terminal', startSec: 135, durMs: 20000 },
-      { id: 3, title: 'Browser WebMCP & Sidepanel', label: '04 WebMCP', startSec: 210, durMs: 22000 },
+      { id: 3, title: 'Web Extension & WebMCP Automation', label: '04 Extension', startSec: 210, durMs: 22000 },
       { id: 4, title: 'Web Portal & Identity Pairing', label: '05 Portal', startSec: 270, durMs: 18000 }
     ];
 
@@ -3831,10 +3860,10 @@
       document.getElementById('tab-doc').classList.remove('chrome-tab-active');
       document.getElementById('chrome-url-text').textContent = 'https://googlechromelabs.github.io/webmcp-pizza/';
 
-      narrate('Browser Extension & WebMCP', '');
+      narrate('Web Extension & WebMCP', '');
 
       sleep(350).then(function() {
-        return narrate('Browser Extension & WebMCP',
+        return narrate('Web Extension & WebMCP',
           'First: WebMCP in-page automation! Cheta probes the active page DOM for tools registered via document.modelContext on Google Chrome Labs.', 21, 'ext_1');
       }).then(function() {
         // Move cursor to extension icon and click
@@ -3891,7 +3920,7 @@
         return sleep(1000);
       }).then(function() {
         // Open Memories Drawer
-        return narrate('Browser Extension & WebMCP',
+        return narrate('Web Extension & WebMCP',
           'The Memories drawer fetches your live Walrus memory blobs directly into the browser sidepanel.', 21, 'ext_3');
       }).then(function() {
         document.querySelectorAll('.ext-tab').forEach(function(t) { t.classList.remove('sel'); });
