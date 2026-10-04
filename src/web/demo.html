@@ -362,15 +362,20 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    #s0.scene {
+      padding: 12px 16px 90px 16px;
+      overflow-y: auto;
+    }
+
     .intro-hero-title {
       font-family: var(--f-display);
-      font-size: clamp(68px, 9.5vw, 126px);
+      font-size: clamp(48px, 6.5vw, 76px);
       font-weight: 400;
       line-height: 0.95;
       letter-spacing: 0.02em;
       color: var(--white);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       overflow: hidden;
     }
 
@@ -392,25 +397,25 @@
 
     .intro-sub {
       font-family: var(--f-impact);
-      font-size: clamp(14px, 1.8vw, 19px);
+      font-size: clamp(11.5px, 1.3vw, 14px);
       font-weight: 900;
       font-style: italic;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 22px;
-      min-height: 26px;
+      margin-bottom: 6px;
+      min-height: 18px;
     }
 
     .intro-desc {
       font-family: var(--f-bubbly);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--txt);
-      line-height: 1.65;
-      max-width: 600px;
-      margin: 0 auto 26px;
-      min-height: 48px;
+      line-height: 1.48;
+      max-width: 580px;
+      margin: 0 auto 12px;
+      min-height: 36px;
     }
 
     .intro-container {
@@ -418,9 +423,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      max-width: 980px;
+      max-width: 960px;
       width: 100%;
-      padding: 10px 16px;
+      padding: 6px 14px;
       margin: auto;
       text-align: center;
     }
@@ -429,11 +434,11 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
+      padding: 4px 12px;
       border-radius: 999px;
       background: rgba(212, 168, 83, 0.08);
       border: 1px solid rgba(212, 168, 83, 0.28);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .pulsing-orbit-dot {
@@ -463,21 +468,21 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 8px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
     }
 
     .tele-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 8px;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 6px;
       background: #141416;
       border: 1px solid #232326;
       font-family: var(--f-mono);
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .tele-dot {
@@ -501,10 +506,10 @@
     .face-cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
+      gap: 10px;
       width: 100%;
-      max-width: 920px;
-      margin-bottom: 20px;
+      max-width: 900px;
+      margin-bottom: 12px;
     }
 
     @media (max-width: 900px) {
@@ -516,8 +521,8 @@
     .face-card {
       background: #121214;
       border: 1px solid #25252a;
-      border-radius: 16px;
-      padding: 16px 14px 14px;
+      border-radius: 12px;
+      padding: 10px 11px 9px;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -534,8 +539,8 @@
     .face-card:hover {
       border-color: var(--gold);
       background: #18181c;
-      transform: translateY(-5px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 18px rgba(212,168,83,0.18);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.6), 0 0 16px rgba(212,168,83,0.18);
     }
 
     .face-card-top {
@@ -543,38 +548,38 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
     }
 
     .face-status-badge {
       font-family: var(--f-mono);
-      font-size: 9px;
+      font-size: 8.5px;
       font-weight: 700;
       letter-spacing: 0.08em;
       color: var(--gold);
       background: rgba(212, 168, 83, 0.1);
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 4px;
       border: 1px solid rgba(212, 168, 83, 0.2);
     }
 
     .face-scene-num {
       font-family: var(--f-mono);
-      font-size: 11px;
+      font-size: 10px;
       color: #55555c;
       font-weight: 600;
     }
 
     .face-card-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       background: #1a1a1e;
       border: 1px solid #2a2a30;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
       color: var(--gold);
       transition: transform 0.3s;
     }
@@ -586,96 +591,96 @@
     }
 
     .face-card-icon svg {
-      width: 18px;
-      height: 18px;
+      width: 15px;
+      height: 15px;
     }
 
     .face-card-name {
       font-family: var(--f-bubbly);
-      font-size: 18px;
+      font-size: 14.5px;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       letter-spacing: 0.02em;
     }
 
     .face-card-sub {
       font-family: var(--f-mono);
-      font-size: 10px;
+      font-size: 9.5px;
       color: var(--gold);
-      margin-bottom: 8px;
+      margin-bottom: 5px;
       letter-spacing: 0.04em;
     }
 
     .face-card-desc {
       font-family: var(--f-bubbly);
-      font-size: 11.5px;
+      font-size: 10.5px;
       color: #92929e;
-      line-height: 1.45;
-      margin-bottom: 14px;
+      line-height: 1.35;
+      margin-bottom: 8px;
       flex-grow: 1;
     }
 
     .face-card-cta {
       font-family: var(--f-mono);
-      font-size: 10.5px;
+      font-size: 9.5px;
       font-weight: 600;
       color: var(--gold);
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       transition: gap 0.2s;
     }
 
     .face-card:hover .face-card-cta {
-      gap: 8px;
+      gap: 6px;
     }
 
     .intro-action-bar {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
-      margin-top: 4px;
+      gap: 8px;
+      margin-top: 2px;
     }
 
     .intro-play-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 28px;
+      gap: 8px;
+      padding: 9px 22px;
       border-radius: 999px;
       background: #171510;
       border: 1.5px solid var(--gold);
       color: #fff;
       font-family: var(--f-display);
-      font-size: 15px;
-      letter-spacing: 0.08em;
+      font-size: 13px;
+      letter-spacing: 0.06em;
       cursor: pointer;
       transition: all 0.25s ease;
-      box-shadow: 0 4px 22px rgba(212, 168, 83, 0.22);
+      box-shadow: 0 4px 18px rgba(212, 168, 83, 0.2);
     }
 
     .intro-play-btn:hover {
       background: var(--gold);
       color: #0c0c0e;
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(212, 168, 83, 0.45);
+      box-shadow: 0 6px 24px rgba(212, 168, 83, 0.45);
     }
 
     .intro-feature-pills {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .feature-pill {
       font-family: var(--f-mono);
-      font-size: 10.5px;
+      font-size: 9.5px;
       color: #7a7a85;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       background: #111113;
       border: 1px solid #1f1f23;
