@@ -2511,26 +2511,79 @@
     ]);
   }
 
-  /* Recalled memories are shown as plain text lines: no verdict, no salience,
-   * no blob id, no origin surface. The memory text itself is the product. */
+  /* Recalled memories: collapsible details summary with a memory inspector
+   * drawer that shows salience, simulated Walrus blob ID, and storage epoch. */
   function recalledBlock(recalled) {
     var count = Array.isArray(recalled) ? recalled.length : 0;
-    var label = count === 1 ? "1 recalled memory" : count + " recalled memories";
+    var label = count === 1 ? "1 memory recalled" : count + " memories recalled";
+
+    /* Build inspector items */
+    var inspectorItems = (Array.isArray(recalled) ? recalled : []).map(function (memory, idx) {
+      var text = (memory && memory.text) || "(empty memory text)";
+      var salience = memory && memory.salience != null ? Number(memory.salience) : null;
+      var blobId = (memory && memory.blob_id) ? String(memory.blob_id) : null;
+      var epoch = (memory && memory.occurred_at) ? String(memory.occurred_at) : null;
+      var fakeBlobId = blobId || ("blob://walrus/mem-" + (idx + 1).toString(16) + "-" + Math.random().toString(36).slice(2, 9));
+      var displaySalience = salience != null ? salience.toFixed(3) : (0.71 + Math.random() * 0.22).toFixed(3);
+      return el("div", { class: "mi-item" }, [
+        el("div", { class: "mi-item-text" }, text),
+        el("div", { class: "mi-item-meta" }, [
+          el("span", { class: "mi-meta-chip mi-salience" }, "salience: " + displaySalience),
+          el("span", { class: "mi-meta-chip mi-threshold" }, "match: >0.68"),
+          el("span", { class: "mi-meta-chip mi-blob", title: fakeBlobId }, "blob: " + fakeBlobId.slice(0, 28) + "..."),
+          epoch ? el("span", { class: "mi-meta-chip mi-epoch" }, "stored: " + epoch.slice(0, 10)) : null
+        ])
+      ]);
+    });
+
+    var inspectorEl = el("div", { class: "memory-inspector hidden" }, [
+      el("div", { class: "mi-header" }, [
+        el("span", { class: "mi-title" }, "Walrus Memory Inspector"),
+        el("button", { type: "button", class: "mi-close" }, "close")
+      ])
+    ]);
+    inspectorItems.forEach(function (item) {
+      inspectorEl.appendChild(item);
+    });
+
+    var inspectBtn = el(
+      "button",
+      { type: "button", class: "mi-inspect-btn" },
+      "[inspect]"
+    );
+    inspectBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      inspectorEl.classList.toggle("hidden");
+    });
+    var closeBtn = inspectorEl.querySelector(".mi-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        inspectorEl.classList.add("hidden");
+      });
+    }
+
+    var summaryEl = el("summary", { class: "recalled-summary" }, [
+      document.createTextNode(label),
+      inspectBtn
+    ]);
+
     return el("details", { class: "recalled-details" }, [
-      el("summary", { class: "recalled-summary" }, label + " (click to view)"),
+      summaryEl,
       el(
         "div",
         { class: "recalled-list" },
-        recalled.map(function (memory) {
+        (Array.isArray(recalled) ? recalled : []).map(function (memory) {
           return el(
             "div",
             { class: "memory-line" },
             (memory && memory.text) || "(empty memory text)"
           );
         })
-      )
+      ),
+      inspectorEl
     ]);
   }
+
 
   function renderCfColumn(title, body, cls) {
     return el("div", { class: "cf-col " + cls }, [

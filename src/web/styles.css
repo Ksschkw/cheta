@@ -1709,3 +1709,253 @@ tbody tr {
   100% { transform: scale(1.3); opacity: 1; }
 }
 
+
+/* -------------------------------------------------------- memory inspector */
+
+.recalled-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.25);
+  border-radius: 20px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recalled-badge:hover {
+  background: rgba(212, 168, 83, 0.16);
+  border-color: var(--accent);
+}
+
+.recalled-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.recalled-badge-arrow {
+  color: var(--muted);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+
+.memory-inspector {
+  margin-top: 6px;
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(10, 10, 10, 0.95);
+}
+
+.memory-inspector-inner {
+  padding: 0;
+}
+
+.mi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(212, 168, 83, 0.06);
+}
+
+.mi-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.mi-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+  font-family: var(--mono);
+}
+
+.mi-close:hover {
+  color: var(--text);
+}
+
+.mi-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mi-item:last-child {
+  border-bottom: none;
+}
+
+.mi-item-text {
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.mi-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mi-meta-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--mono);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 200px;
+  text-overflow: ellipsis;
+}
+
+.mi-salience {
+  color: var(--accent);
+  border-color: rgba(212, 168, 83, 0.25);
+}
+
+.mi-blob {
+  max-width: 180px;
+}
+
+/* -------------------------------------------------------- sync banner */
+
+.sync-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 16px;
+  background: rgba(212, 168, 83, 0.04);
+  border-bottom: 1px solid rgba(212, 168, 83, 0.12);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sync-indicator {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(212, 168, 83, 0.7);
+  animation: sync-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.sync-text {
+  flex: 1;
+}
+
+.sync-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sync-dismiss:hover {
+  color: var(--text);
+}
+
+/* -------------------------------------------------------- persona switcher */
+
+.persona-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px 6px 16px;
+  background: rgba(212, 168, 83, 0.06);
+  border-bottom: 1px solid rgba(212, 168, 83, 0.18);
+  font-size: 12px;
+}
+
+.persona-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.persona-btn {
+  padding: 3px 10px;
+  background: rgba(212, 168, 83, 0.1);
+  border: 1px solid rgba(212, 168, 83, 0.3);
+  border-radius: 20px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.persona-btn:hover {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: var(--accent);
+}
+
+.persona-btn.persona-btn-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #07080b;
+  font-weight: 600;
+}
+
+.persona-active {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.persona-reset {
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.persona-reset:hover {
+  border-color: var(--text);
+  color: var(--text);
+}

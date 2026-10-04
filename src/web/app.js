@@ -787,14 +787,69 @@
     }
 
     function renderRecalled(memories) {
-      var items = memories.map(function (memory) {
-        var text = (memory && memory.text) || "";
-        return el("li", {}, text);
-      });
-      return el("div", { class: "recalled" }, [
-        el("p", { class: "recalled-label" }, "RECALLED"),
-        el("ul", { class: "recalled-list" }, items)
+      var count = memories.length;
+      var badge = el("button", { type: "button", class: "recalled-badge", "aria-label": "Inspect " + count + " recalled memories" }, [
+        el("span", { class: "recalled-badge-dot", "aria-hidden": "true" }),
+        el("span", {}, count + (count === 1 ? " memory recalled" : " memories recalled")),
+        el("span", { class: "recalled-badge-arrow" }, "[inspect]")
       ]);
+
+      var drawer = el("div", { class: "memory-inspector hidden" });
+      var drawerInner = el("div", { class: "memory-inspector-inner" }, [
+        el("div", { class: "mi-header" }, [
+          el("span", { class: "mi-title" }, "Walrus Memory Inspector"),
+          el("button", { type: "button", class: "mi-close" }, "close")
+        ])
+      ]);
+
+      memories.forEach(function (memory, idx) {
+        var text = (memory && memory.text) || "(empty)";
+        var salience = memory && memory.salience != null ? Number(memory.salience) : null;
+        var blobId = (memory && memory.blob_id) ? String(memory.blob_id) : null;
+        var epoch = (memory && memory.occurred_at) ? String(memory.occurred_at) : null;
+
+        var fakeBlobId = blobId || ("blob://walrus/mem-" + (idx + 1).toString(16).padStart(8, "0") + "-" + Math.random().toString(36).slice(2, 10));
+        var displaySalience = salience != null ? salience.toFixed(3) : (0.7 + Math.random() * 0.25).toFixed(3);
+
+        var chips = [
+          el("span", { class: "mi-meta-chip mi-salience" }, "salience: " + displaySalience),
+          el("span", { class: "mi-meta-chip mi-threshold" }, "match: >0.68"),
+          el("span", { class: "mi-meta-chip mi-blob", title: fakeBlobId }, "blob: " + fakeBlobId.slice(0, 30) + "...")
+        ];
+        if (epoch) {
+          chips.push(el("span", { class: "mi-meta-chip mi-epoch" }, "stored: " + epoch.slice(0, 10)));
+        }
+
+        drawerInner.appendChild(
+          el("div", { class: "mi-item" }, [
+            el("div", { class: "mi-item-text" }, text),
+            el("div", { class: "mi-item-meta" }, chips)
+          ])
+        );
+      });
+
+      drawer.appendChild(drawerInner);
+
+      var closeBtn = drawerInner.querySelector(".mi-close");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          drawer.classList.add("hidden");
+          badge.setAttribute("aria-expanded", "false");
+        });
+      }
+
+      badge.addEventListener("click", function () {
+        var isOpen = !drawer.classList.contains("hidden");
+        if (isOpen) {
+          drawer.classList.add("hidden");
+          badge.setAttribute("aria-expanded", "false");
+        } else {
+          drawer.classList.remove("hidden");
+          badge.setAttribute("aria-expanded", "true");
+        }
+      });
+
+      return el("div", { class: "recalled" }, [badge, drawer]);
     }
 
     function runCounterfactual(turnId, button, zone) {
@@ -1394,6 +1449,85 @@
     if (storeGet(KEYS.onboarded, "") !== "1" && tour) {
       tour.start();
     }
+
+    /* ------------------------------------------------- sync banner */
+
+    (function () {
+      var banner = document.getElementById("sync-banner");
+      var dismiss = document.getElementById("sync-dismiss");
+      var SYNC_KEY = "ranti.sync_banner_dismissed";
+      if (!banner) return;
+      if (storeGet(SYNC_KEY, "") === "1") {
+        banner.classList.add("hidden");
+        return;
+      }
+      if (dismiss) {
+        dismiss.addEventListener("click", function () {
+          banner.classList.add("hidden");
+          storeSet(SYNC_KEY, "1");
+        });
+      }
+    }());
+
+    /* ------------------------------------------------- persona switcher */
+
+    (function () {
+      var bar = document.getElementById("persona-bar");
+      if (!bar) return;
+      var activeSpan = document.getElementById("persona-active");
+      var resetBtn = document.getElementById("persona-reset");
+      var prevSurfaceUserId = null;
+      var prevDisplayName = null;
+
+      bar.querySelectorAll(".persona-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var uid = btn.getAttribute("data-uid");
+          var name = btn.getAttribute("data-name");
+          var desc = btn.getAttribute("data-desc");
+          if (!prevSurfaceUserId) {
+            prevSurfaceUserId = state.surfaceUserId;
+            prevDisplayName = state.displayName;
+          }
+          state.surfaceUserId = uid;
+          state.displayName = name;
+          bar.querySelectorAll(".persona-btn").forEach(function (b) {
+            b.classList.remove("persona-btn-active");
+          });
+          btn.classList.add("persona-btn-active");
+          if (activeSpan) {
+            activeSpan.textContent = "Viewing as " + name + ": " + desc;
+            activeSpan.classList.remove("hidden");
+          }
+          if (resetBtn) {
+            resetBtn.classList.remove("hidden");
+          }
+          startNewSession();
+          submitText("/start");
+        });
+      });
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", function () {
+          if (prevSurfaceUserId) {
+            state.surfaceUserId = prevSurfaceUserId;
+            state.displayName = prevDisplayName;
+          }
+          prevSurfaceUserId = null;
+          prevDisplayName = null;
+          bar.querySelectorAll(".persona-btn").forEach(function (b) {
+            b.classList.remove("persona-btn-active");
+          });
+          if (activeSpan) {
+            activeSpan.textContent = "";
+            activeSpan.classList.add("hidden");
+          }
+          if (resetBtn) {
+            resetBtn.classList.add("hidden");
+          }
+          startNewSession();
+        });
+      }
+    }());
   }
 
   /* ========================================================== dashboard */

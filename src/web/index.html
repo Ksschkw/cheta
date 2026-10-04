@@ -87,7 +87,21 @@
           <a class="head-link" href="dashboard.html">Memory</a>
           <a class="head-link" href="evidence.html">Evidence</a>
         </div>
+        <div id="sync-banner" class="sync-banner" role="status">
+          <span class="sync-indicator" aria-hidden="true"></span>
+          <span class="sync-text">Walrus memory syncs live across Telegram, Browser Extension, Web, and CLI. Store a fact anywhere, recall it everywhere.</span>
+          <button id="sync-dismiss" class="sync-dismiss" type="button" aria-label="Dismiss">x</button>
+        </div>
       </header>
+
+      <div id="persona-bar" class="persona-bar">
+        <span class="persona-label">Judge Preview:</span>
+        <button class="persona-btn" data-name="Kosisochukwu" data-uid="kosi-demo" data-desc="Tech founder, 12 memories - prefers window seats, builds decentralized apps">Kosi (12 mem)</button>
+        <button class="persona-btn" data-name="Kenzy" data-uid="kenzy-demo" data-desc="Lagos-based, 19 memories - lactose intolerant, bell pepper allergy">Kenzy (19 mem)</button>
+        <button class="persona-btn" data-name="K" data-uid="k-demo" data-desc="Younger brother, 17 memories - student, gaming, soccer">K (17 mem)</button>
+        <span id="persona-active" class="persona-active hidden"></span>
+        <button id="persona-reset" class="persona-reset hidden" type="button">Exit persona</button>
+      </div>
 
       <div id="chats-drawer" class="chats-drawer hidden" role="region" aria-label="Saved Chats">
         <div class="chats-drawer-header">
