@@ -513,7 +513,10 @@ async def test_no_surface_tells_a_person_with_notes_that_they_are_new() -> None:
         "telegram", "555", "Ada", "Tell me about the weather in Oslo"
     )
     assert result is not None
-    assert result.first_turn is True
+    # The one newness predicate says established: stored notes exist even though
+    # the local turns table is empty.
+    assert result.first_turn is False
+    assert result.onboarding_note is None
     rendered = service._render_reply(result)
     assert "Tell me a few things about yourself" not in rendered
 

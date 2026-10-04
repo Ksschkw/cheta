@@ -70,6 +70,35 @@ def _get_float(env: Mapping[str, str], key: str, default: float) -> float:
         return default
 
 
+def _get_int(env: Mapping[str, str], key: str, default: int) -> int:
+    raw = (env.get(key) or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _parse_key_list(raw: str) -> tuple[str, ...]:
+    """Parse a comma-separated key list: trim, drop empties, de-duplicate.
+
+    ``GROQ_API_KEYS`` is hand-edited, so whitespace around a key is normal and an
+    empty entry from a trailing comma is not a key. Order is preserved because
+    the first key is the preferred one, and a repeated key is dropped so the
+    rotation does not waste an attempt on it.
+    """
+    seen: set[str] = set()
+    keys: list[str] = []
+    for part in raw.split(","):
+        key = part.strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        keys.append(key)
+    return tuple(keys)
+
+
 @dataclass(frozen=True)
 class LlmProviderConfig:
     """One OpenAI-compatible provider in the failover chain."""
@@ -79,11 +108,22 @@ class LlmProviderConfig:
     api_key: str
     model: str
     timeout_seconds: float = 30.0
+    # Extra keys for providers that rate limit per key. When this is non-empty
+    # it wins over ``api_key``: the provider rotates through the list on a 429
+    # instead of giving up on the provider after one key.
+    api_keys: tuple[str, ...] = ()
+
+    @property
+    def keys(self) -> tuple[str, ...]:
+        """The ordered keys to try. Falls back to the single-key form."""
+        if self.api_keys:
+            return self.api_keys
+        return (self.api_key,) if self.api_key else ()
 
     @property
     def configured(self) -> bool:
         # A local Ollama runs without an API key; hosted providers do not.
-        return bool(self.base_url and self.model and (self.api_key or self.name == "ollama"))
+        return bool(self.base_url and self.model and (self.keys or self.name == "ollama"))
 
 
 @dataclass(frozen=True)
@@ -123,8 +163,21 @@ class Settings:
     resume_after_hours: float = 6.0
 
     memwal_timeout_seconds: float = 90.0
+    # A settle poll is a GET against the relayer, which allows 60 weighted
+    # requests per minute. Polling every 1.5s for the whole boundary budget
+    # burned that budget on one turn, so the interval is longer and the total
+    # budget shorter: a wait makes a handful of status calls, not dozens.
+    memwal_poll_interval_ms: int = 5000
+    memwal_settle_timeout_seconds: float = 30.0
     llm_timeout_seconds: float = 30.0
     telegram_timeout_seconds: float = 10.0
+    # A webhook is acknowledged at once and the turn runs in the background.
+    # This caps how many of those background turns may run at the same time, so
+    # a burst of messages cannot exhaust the process.
+    telegram_max_concurrency: int = 4
+    # How long a seen update id is kept for re-delivery detection. Telegram
+    # retries for far less than a day, and older rows are pruned on each claim.
+    telegram_update_retention_seconds: float = 86400.0
 
     # How long a pairing code stays valid. Ten minutes is long enough to walk to
     # another device and short enough that a leaked code is soon worthless.
@@ -188,12 +241,21 @@ class Settings:
         # of falling through to the deterministic offline model.
         ollama_enabled = _get(source, "OLLAMA_ENABLED", "0").lower() in ("1", "true", "yes", "on")
 
+        # GROQ_API_KEYS is the multi-key form and wins over the single
+        # GROQ_API_KEY when both are present. With neither, the Groq provider is
+        # simply not configured, which is the existing behaviour.
+        groq_key = _get(source, "GROQ_API_KEY")
+        groq_keys = _parse_key_list(_get(source, "GROQ_API_KEYS"))
+        if not groq_keys and groq_key:
+            groq_keys = (groq_key,)
+
         candidates: list[LlmProviderConfig] = [
             LlmProviderConfig(
                 name="groq",
                 base_url=_get(source, "GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
-                api_key=_get(source, "GROQ_API_KEY"),
+                api_key=groq_key,
                 model=_get(source, "GROQ_MODEL", "qwen/qwen3.8-27b"),
+                api_keys=groq_keys,
             ),
             LlmProviderConfig(
                 name="gemini",
@@ -229,6 +291,14 @@ class Settings:
             telegram_webhook_secret=_get(source, "TELEGRAM_WEBHOOK_SECRET"),
             public_base_url=_get(source, "PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
             memwal_timeout_seconds=_get_float(source, "MEMWAL_TIMEOUT_SECONDS", 90.0),
+            memwal_poll_interval_ms=_get_int(source, "MEMWAL_POLL_INTERVAL_MS", 5000),
+            memwal_settle_timeout_seconds=_get_float(
+                source, "MEMWAL_SETTLE_TIMEOUT_SECONDS", 30.0
+            ),
+            telegram_max_concurrency=_get_int(source, "TELEGRAM_MAX_CONCURRENCY", 4),
+            telegram_update_retention_seconds=_get_float(
+                source, "TELEGRAM_UPDATE_RETENTION_SECONDS", 86400.0
+            ),
             pairing_code_ttl_seconds=_get_float(
                 source, "RANTI_PAIRING_CODE_TTL_SECONDS", 600.0
             ),

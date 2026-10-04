@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from core.tools.tool_registry import ToolRegistry
-from services.conversation_service import ONBOARDING_TEXT
+from services.conversation_service import ONBOARDING_TEXT, onboarding_text
 from tests.services.test_agent_loop import (
     ScriptedLlm,
     SpyTool,
@@ -90,3 +90,72 @@ def test_a_degraded_memory_read_must_not_be_reported_as_no_memory() -> None:
     assert "Do not say that you have no memory" in system
     # It must not fall into the "nothing stored" branch when the read failed.
     assert "nothing stored about this person yet" not in system
+
+
+# ---------------------------------------------------- one newness predicate
+
+
+def _seed_notes(service, user, count: int) -> None:
+    namespace = service._settings.memory_namespace(user.memory_key)
+    for index in range(count):
+        service._memories.create(
+            user_id=user.id,
+            blob_id=f"blob-{index}",
+            namespace=namespace,
+            text=f"Preference number {index}",
+            importance=0.5,
+            origin_surface="telegram",
+            occurred_at="2026-01-01T00:00:00+00:00",
+        )
+
+
+async def test_a_person_with_stored_memories_but_no_turns_is_not_new() -> None:
+    """The exact shape a redeploy leaves: notes in Walrus, empty turns table."""
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, registry_with("calculate"))
+    user = service._users.get_or_create("telegram", "42", "Ada")
+    _seed_notes(service, user, 20)
+    assert service._turns.count_for_user(user.id) == 0
+
+    result = await service.handle_turn("telegram", "42", "Ada", "hello")
+
+    assert result.first_turn is False
+    assert result.onboarding_note is None
+    assert ONBOARDING_TEXT not in result.reply
+    assert "You are new here" not in result.reply
+
+
+async def test_a_person_with_nothing_anywhere_is_new_and_gets_onboarding() -> None:
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, registry_with("calculate"))
+    user = service._users.get_or_create("web", "nobody", "Ada")
+
+    assert service.is_new_person(user) is True
+    result = await service.handle_turn("web", "nobody", "Ada", "hello")
+
+    assert result.first_turn is True
+    assert result.onboarding_note is not None
+    assert "You are new here" in result.reply
+
+
+async def test_a_person_with_a_shared_handle_and_an_empty_database_is_not_new() -> None:
+    """A shared handle is history even when nothing local exists yet."""
+    llm = ScriptedLlm()
+    _, service = build_harness(llm, registry_with("calculate"))
+    user = service._users.get_or_create("telegram", "42", "Ada")
+    service._users.set_memory_handle(user.id, "shared-space")
+    assert service._turns.count_for_user(user.id) == 0
+    assert service._scope_count(user.id, None) == 0
+
+    result = await service.handle_turn("telegram", "42", "Ada", "hello")
+
+    assert result.first_turn is False
+    assert result.onboarding_note is None
+
+
+def test_onboarding_uses_the_one_configured_bot_name() -> None:
+    text = onboarding_text("Aria")
+
+    assert "I am Aria" in text
+    assert "Ranti" not in text
+    assert ONBOARDING_TEXT == onboarding_text("Cheta")

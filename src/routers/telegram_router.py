@@ -1,17 +1,27 @@
-"""Telegram webhook. Parses an Update, calls one use case, always answers 200."""
+"""Telegram webhook. Parses an Update, claims it once, answers 200 at once.
+
+Telegram considers a webhook delivery failed when it is not acknowledged
+quickly, and re-delivers the update. A turn takes tens of seconds, so the work
+is handed to the background runner and the route returns immediately. The update
+id is claimed in the database first, so a re-delivery is recognized even after a
+redeploy and is never processed twice.
+"""
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 
 from core.container import Container, get_container
-from core.errors import RantiError
 from schemas.attachment_schema import AttachmentSchema
+from services.conversation_service import ConversationService
 
 logger = logging.getLogger("ranti.router.telegram")
+
+UpdatePlan = tuple[str, Callable[[], Awaitable[None]], Callable[[], Awaitable[None]]]
 
 # Message keys that carry media this project cannot read. The key is passed
 # through as the media kind so the service can name it in the refusal.
@@ -186,12 +196,93 @@ def _extract_callback(
     )
 
 
+def _failure_notice(
+    service: ConversationService, chat_id: str
+) -> Callable[[], Awaitable[None]]:
+    """An honest notice for a background turn that could not be served."""
+
+    async def notify() -> None:
+        await service.notify_unavailable(chat_id)
+
+    return notify
+
+
+def _plan(payload: dict[str, Any], service: ConversationService) -> UpdatePlan | None:
+    """Describe the work one update needs, or None when it carries nothing.
+
+    Parsing stays in the router; the returned closures call exactly one use case
+    each, so the background runner owns execution but not transport knowledge.
+    """
+    callback = _extract_callback(payload)
+    if callback is not None:
+        chat_id, display_name, callback_id, callback_data = callback
+
+        async def run_callback() -> None:
+            await service.handle_callback_query(
+                "telegram", chat_id, display_name, chat_id, callback_id, callback_data
+            )
+
+        return chat_id, run_callback, _failure_notice(service, chat_id)
+
+    document = _extract_document(payload)
+    if document is not None:
+        chat_id, display_name, attachment = document
+
+        async def run_document() -> None:
+            await service.handle_surface_attachment(
+                "telegram", chat_id, display_name, chat_id, attachment
+            )
+
+        return chat_id, run_document, _failure_notice(service, chat_id)
+
+    voice = _extract_voice(payload)
+    if voice is not None:
+        chat_id, display_name, attachment = voice
+
+        async def run_voice() -> None:
+            await service.handle_surface_voice(
+                "telegram", chat_id, display_name, chat_id, attachment
+            )
+
+        return chat_id, run_voice, _failure_notice(service, chat_id)
+
+    media = _extract_media(payload)
+    if media is not None:
+        chat_id, display_name, attachment = media
+
+        async def run_media() -> None:
+            await service.handle_surface_attachment(
+                "telegram", chat_id, display_name, chat_id, attachment
+            )
+
+        return chat_id, run_media, _failure_notice(service, chat_id)
+
+    parsed = _extract_text(payload)
+    if parsed is None:
+        return None
+    chat_id, display_name, text, _ = parsed
+
+    async def run_text() -> None:
+        await service.handle_surface_turn(
+            surface="telegram",
+            surface_user_id=chat_id,
+            display_name=display_name,
+            text=text,
+            recipient_id=chat_id,
+        )
+
+    return chat_id, run_text, _failure_notice(service, chat_id)
+
+
 def build_router() -> APIRouter:
     router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
     @router.post("/telegram/{secret}")
     async def telegram(
-        secret: str, request: Request, container: Container = Depends(get_container)
+        secret: str,
+        request: Request,
+        background: BackgroundTasks,
+        container: Container = Depends(get_container),
     ) -> dict[str, object]:
         expected = container.settings.telegram_webhook_secret
         if expected and secret != expected:
@@ -200,95 +291,25 @@ def build_router() -> APIRouter:
         payload = await request.json()
         if not isinstance(payload, dict):
             return {"ok": True, "handled": False}
+
+        update_id = payload.get("update_id")
+        if update_id is not None and not container.telegram_runner.claim(
+            str(update_id)
+        ):
+            # Telegram re-delivered an update that was already accepted. Another
+            # 200 stops the retries; the turn is not run a second time.
+            logger.info("telegram update duplicate update_id=%s", update_id)
+            return {"ok": True, "handled": True, "duplicate": True}
+
         service = container.conversation_service
+        plan = _plan(payload, service)
+        if plan is None:
+            return {"ok": True, "handled": False}
 
-        try:
-            callback = _extract_callback(payload)
-            if callback is not None:
-                chat_id, display_name, callback_id, callback_data = callback
-                # A tap is an interaction, not a turn: this path stores no text.
-                await service.handle_callback_query(
-                    "telegram", chat_id, display_name, chat_id, callback_id, callback_data
-                )
-                return {"ok": True, "handled": True, "callback": True}
-
-            document = _extract_document(payload)
-            if document is not None:
-                chat_id, display_name, attachment = document
-                result = await service.handle_surface_attachment(
-                    "telegram", chat_id, display_name, chat_id, attachment
-                )
-                return {
-                    "ok": True,
-                    "handled": True,
-                    "attachment": True,
-                    "turn_id": result.turn_id if result is not None else None,
-                    "refused": result is None,
-                }
-
-            voice = _extract_voice(payload)
-            if voice is not None:
-                chat_id, display_name, attachment = voice
-                result = await service.handle_surface_voice(
-                    "telegram", chat_id, display_name, chat_id, attachment
-                )
-                return {
-                    "ok": True,
-                    "handled": True,
-                    "voice": True,
-                    "turn_id": result.turn_id if result is not None else None,
-                }
-
-            media = _extract_media(payload)
-            if media is not None:
-                chat_id, display_name, attachment = media
-                await service.handle_surface_attachment(
-                    "telegram", chat_id, display_name, chat_id, attachment
-                )
-                return {"ok": True, "handled": True, "attachment": True, "refused": True}
-
-            parsed = _extract_text(payload)
-            if parsed is None:
-                return {"ok": True, "handled": False}
-
-            chat_id, display_name, text, _ = parsed
-            result = await service.handle_surface_turn(
-                surface="telegram",
-                surface_user_id=chat_id,
-                display_name=display_name,
-                text=text,
-                recipient_id=chat_id,
-            )
-            if result is None:
-                return {"ok": True, "handled": True, "command": True}
-        except RantiError as error:
-            # Error mapping is the one branch a router is allowed to own.
-            logger.warning("telegram update failed code=%s", error.code)
-            recipient = _reply_target(payload)
-            if recipient is not None:
-                await service.notify_unavailable(recipient)
-            return {"ok": True, "handled": True, "degraded": True, "reason": error.code}
-
-        return {
-            "ok": True,
-            "handled": True,
-            "turn_id": result.turn_id,
-            "recalled": len(result.recalled),
-        }
+        key, work, on_failure = plan
+        # The turn runs after the response is sent. The route never awaits it,
+        # so Telegram sees its 200 long before a slow model or memory call ends.
+        background.add_task(container.telegram_runner.run, key, work, on_failure)
+        return {"ok": True, "handled": True, "accepted": True}
 
     return router
-
-
-def _reply_target(payload: dict[str, Any]) -> str | None:
-    """Best-effort recipient for a failure notice, without raising."""
-    for extractor in (
-        _extract_text,
-        _extract_document,
-        _extract_voice,
-        _extract_media,
-        _extract_callback,
-    ):
-        parsed = extractor(payload)
-        if parsed is not None:
-            return str(parsed[0])
-    return None

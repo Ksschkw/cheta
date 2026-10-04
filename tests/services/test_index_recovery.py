@@ -34,6 +34,15 @@ class IndexFailingGateway:
             raise DependencyUnavailableError("walrus-memory", "index namespace unavailable")
         return await self._inner.remember(text, namespace, idempotency_key=idempotency_key)
 
+    async def remember_accepted(
+        self, text: str, namespace: str, idempotency_key: str | None = None
+    ):
+        if namespace.endswith(".idx"):
+            raise DependencyUnavailableError("walrus-memory", "index namespace unavailable")
+        return await self._inner.remember_accepted(
+            text, namespace, idempotency_key=idempotency_key
+        )
+
     def __getattr__(self, name: str):
         return getattr(self._inner, name)
 
@@ -263,3 +272,31 @@ async def test_repair_runs_for_records_restored_by_index_recovery() -> None:
     }
     assert state["blob-name"] == "superseded"
     assert state["blob-detail"] == "active"
+
+
+async def test_a_recovered_snapshot_counts_as_history_before_the_newness_check() -> None:
+    """A wiped index and empty turns table is still an established person.
+
+    This only holds if recovery runs BEFORE the newness predicate: the snapshot
+    is the only remaining evidence, and the local database knows nothing.
+    """
+    harness = Harness([{"text": "Ada is allergic to peanuts", "importance": 1.0}])
+    result = await harness.say("I am allergic to peanuts")
+    await harness.service.await_pending_writes()
+    user_id = result.user_id
+    assert harness.turns.count_for_user(user_id) == 1
+
+    # Simulate a redeploy: the snapshot stays on the relayer, while turns, the
+    # local memory index and the in-process recovered set are all gone.
+    harness.database.execute("DELETE FROM turns")
+    harness.wipe_index(user_id)
+    harness.service._recovered_users.clear()
+    assert harness.turns.count_for_user(user_id) == 0
+    assert harness.memories.count_for_user(user_id, None) == 0
+
+    again = await harness.say("hello again")
+
+    # Recovery rebuilt the index from the snapshot before the predicate ran.
+    assert harness.memories.count_for_user(user_id, None) == 1
+    assert again.first_turn is False
+    assert again.onboarding_note is None

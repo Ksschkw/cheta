@@ -12,8 +12,10 @@ from core.attachment_parser import AttachmentParser
 from core.config import Settings
 from core.container import Container, build_memory_gateway
 from core.database import Database
+from core.telegram_dispatch import TelegramUpdateRunner
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.seen_update_crud import SeenUpdateCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from main import create_app
@@ -42,6 +44,9 @@ class FakeLlm:
         # The user content of every reply call, so a test can prove what the
         # model actually saw (for example the text extracted from a PDF).
         self.user_messages: list[str] = []
+        # The system content of every reply call, where the extracted document
+        # text and the surface name are placed.
+        self.system_messages: list[str] = []
 
     async def complete(
         self,
@@ -61,6 +66,7 @@ class FakeLlm:
             text = self.verdict
         else:
             self.reply_calls += 1
+            self.system_messages.append(system)
             if len(messages) > 1:
                 self.user_messages.append(messages[1].content)
             text = "I remember." if "<<<" in system else "I have no memory of you."
@@ -123,13 +129,14 @@ def build_test_container(
     attachment_gateway: object | None = None,
     attachment_parser: object | None = None,
     plan: str = "",
+    database_path: str = ":memory:",
 ) -> tuple[Container, FakeLlm | None, RecordingReplyChannel]:
     settings = Settings(
-        database_path=":memory:",
+        database_path=database_path,
         memwal_namespace_prefix="ranti",
         telegram_webhook_secret=webhook_secret,
     )
-    database = Database(":memory:")
+    database = Database(database_path)
     database.migrate()
 
     users = UserCrud(database)
@@ -169,6 +176,7 @@ def build_test_container(
         user_service=UserService(users=users, settings=settings),
         conversation_service=conversation,
         memory_admin_service=admin,
+        telegram_runner=TelegramUpdateRunner(seen_updates=SeenUpdateCrud(database)),
     )
     return container, llm, channel
 

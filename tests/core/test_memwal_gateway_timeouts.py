@@ -25,19 +25,22 @@ class StoredResult:
 
 
 class RecordingClient:
-    """Captures the poll budget the gateway hands to the SDK."""
+    """Captures the poll budget and interval the gateway hands to the SDK."""
 
     def __init__(self) -> None:
         self.timeouts_ms: list[int] = []
+        self.poll_intervals_ms: list[int] = []
 
     async def remember_and_wait(
         self,
         text: str,
         namespace: str | None = None,
+        poll_interval_ms: int = 1500,
         timeout_ms: int = 60_000,
         idempotency_key: str | None = None,
     ) -> StoredResult:
         self.timeouts_ms.append(timeout_ms)
+        self.poll_intervals_ms.append(poll_interval_ms)
         return StoredResult(blob_id="blob-1", namespace=namespace or "default", owner="owner-1")
 
 
@@ -72,7 +75,11 @@ async def test_the_sdk_poll_budget_expires_before_the_boundary_timeout() -> None
     assert len(client.timeouts_ms) == 1
     poll_budget_ms = client.timeouts_ms[0]
     assert poll_budget_ms < 90_000, "the SDK must time out first to keep its job id"
-    assert poll_budget_ms == 80_000
+    # A shorter budget is deliberate: fewer status calls against a relayer that
+    # allows 60 weighted requests a minute.
+    assert poll_budget_ms == 30_000
+    # And the interval is longer, so those calls are spread out.
+    assert client.poll_intervals_ms[0] >= 5000
 
 
 async def test_a_short_boundary_still_leaves_the_sdk_a_workable_budget() -> None:
@@ -80,7 +87,7 @@ async def test_a_short_boundary_still_leaves_the_sdk_a_workable_budget() -> None
 
     await gateway.remember("Ada lives in Lagos", "ranti.user.test")
 
-    assert client.timeouts_ms[0] == 30_000
+    assert client.timeouts_ms[0] == 25_000
 
 
 async def test_a_timed_out_write_is_never_retried() -> None:

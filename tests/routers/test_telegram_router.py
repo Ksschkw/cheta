@@ -6,20 +6,25 @@ with callback handling, and honest local attachment reading.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
 
 from fastapi.testclient import TestClient
 
 from main import create_app
+from schemas.llm_schema import CompletionSchema
 from tests.routers.test_chat_and_memory_routers import (
     RecordingReplyChannel,
     build_test_container,
 )
 
 
-def update(chat_id: int, text: str, first_name: str = "Ada") -> dict:
+def update(
+    chat_id: int, text: str, first_name: str = "Ada", update_id: int = 1
+) -> dict:
     return {
-        "update_id": 1,
+        "update_id": update_id,
         "message": {
             "message_id": 10,
             "from": {"id": chat_id, "is_bot": False, "first_name": first_name},
@@ -221,9 +226,9 @@ def test_a_failing_turn_apologises_instead_of_silently_dropping_the_message() ->
 
     assert response.status_code == 200
     body = response.json()
-    assert body["ok"] is True
-    assert body["degraded"] is True
-    assert body["reason"] == "dependency_unavailable"
+    assert body == {"ok": True, "handled": True, "accepted": True}
+    # The turn failed in the background, and the person still hears about it,
+    # exactly once.
     assert len(channel.sent) == 1
     _, text = channel.sent[0]
     assert "briefly unavailable" in text
@@ -304,7 +309,7 @@ def test_the_list_callback_answers_and_sends_the_listing_without_the_model() -> 
 
     response = client.post("/webhooks/telegram/s3cret", json=callback_update(555, "mem:list"))
 
-    assert response.json() == {"ok": True, "handled": True, "callback": True}
+    assert response.json() == {"ok": True, "handled": True, "accepted": True}
     assert channel.callback_answers == [("cb-1", None)]
     assert "You are allergic to peanuts" in channel.sent[-1][1]
     assert llm.reply_calls == reply_calls_before
@@ -334,7 +339,7 @@ def test_a_forget_callback_retires_the_first_note() -> None:
 
     response = client.post("/webhooks/telegram/s3cret", json=callback_update(555, "mem:forget:1"))
 
-    assert response.json() == {"ok": True, "handled": True, "callback": True}
+    assert response.json() == {"ok": True, "handled": True, "accepted": True}
     assert channel.callback_answers == [("cb-1", None)]
     assert "will not bring up" in channel.sent[-1][1]
     after = container.conversation_service._memories.get_by_id(before[0].id)
@@ -387,13 +392,15 @@ def test_a_pdf_document_is_downloaded_extracted_and_used_in_the_turn() -> None:
 
     assert response.status_code == 200
     assert response.json()["handled"] is True
-    assert response.json()["attachment"] is True
+    assert response.json()["accepted"] is True
     assert gateway.path_calls == ["file-1"]
     assert gateway.download_calls == ["files/report.pdf"]
     # The model actually saw the extracted text, which is what "used in the
-    # turn" means.
+    # turn" means. It is carried as the document material in the system prompt,
+    # with the caption as the user's question.
     assert llm is not None
-    assert "Ada keeps a spare key under the blue flowerpot." in llm.user_messages[-1]
+    assert "Ada keeps a spare key under the blue flowerpot." in llm.system_messages[-1]
+    assert "notes.pdf" in llm.system_messages[-1]
     assert len(channel.sent) == 1
     # Extracting is not remembering: the raw document text is not a memory.
     user = container.conversation_service._users.get_by_identity("telegram", "555")
@@ -414,10 +421,107 @@ def test_a_document_with_no_caption_is_still_processed() -> None:
         json=document_update(555, "notes.pdf", len(pdf), caption=None),
     )
 
-    assert response.json()["attachment"] is True
+    assert response.json()["accepted"] is True
     assert llm is not None
-    assert "blue cabinet" in llm.user_messages[-1]
+    assert "blue cabinet" in llm.system_messages[-1]
     assert len(channel.sent) == 1
+
+
+DOCUMENT_MARKER = "DOCUMENT ATTACHED"
+EXTRACT_MARKER = "extract durable facts"
+ADJUDICATE_MARKER = "compare one remembered fact"
+DOCUMENT_FENCE = re.compile(r"<<<[0-9a-f]+>>>\n(.*?)\n<<<END", re.DOTALL)
+
+
+class DocumentAwareLlm:
+    """A model that answers from a document only when the prompt says it exists.
+
+    That is the real failure shape: the turn carried a readable document, but
+    nothing in the prompt said so, so the model answered correctly from the
+    material and then denied that any document was attached. With the prompt
+    statement present it answers from the document and never denies it.
+    """
+
+    def __init__(self) -> None:
+        self.system_messages: list[str] = []
+
+    async def complete(self, messages, *, temperature: float = 0.2, max_tokens: int = 800):
+        system = messages[0].content if messages else ""
+        if EXTRACT_MARKER in system:
+            return CompletionSchema(text="[]", provider="fake", model="fake-1")
+        if ADJUDICATE_MARKER in system:
+            return CompletionSchema(text="DIFFERENT", provider="fake", model="fake-1")
+        self.system_messages.append(system)
+        if DOCUMENT_MARKER in system:
+            match = DOCUMENT_FENCE.search(system)
+            body = " ".join(match.group(1).split()) if match else ""
+            return CompletionSchema(
+                text=f"Reading the attached document: {body}",
+                provider="fake",
+                model="fake-1",
+            )
+        return CompletionSchema(
+            text="I don't see any document attached to your message.",
+            provider="fake",
+            model="fake-1",
+        )
+
+    async def complete_with_tools(self, messages, tools, *, temperature: float = 0.2, max_tokens: int = 800):
+        return await self.complete(messages, temperature=temperature, max_tokens=max_tokens)
+
+
+def test_a_document_with_a_caption_produces_exactly_one_reply() -> None:
+    pdf = build_pdf("The quarterly numbers are in this deck.")
+    gateway = FakeAttachmentGateway(pdf)
+    container, _, channel = make_container(
+        facts=[], secret="s3cret", attachment_gateway=gateway
+    )
+    client = TestClient(create_app(container=container))
+
+    response = client.post(
+        "/webhooks/telegram/s3cret",
+        json=document_update(
+            555,
+            "deck.pdf",
+            len(pdf),
+            caption="I have uploaded the ppt, did you parse it?",
+        ),
+    )
+
+    assert response.json()["accepted"] is True
+    # One update, one answer. The caption must not be run again as its own turn.
+    assert len(channel.sent) == 1
+    assert channel.sent[0][0] == "555"
+    assert channel.typing == ["555"]
+
+
+def test_the_document_reply_answers_from_the_document_and_never_denies_it() -> None:
+    pdf = build_pdf("The launch code is stored in the blue cabinet.")
+    gateway = FakeAttachmentGateway(pdf)
+    container, _, channel = make_container(
+        facts=[], secret="s3cret", attachment_gateway=gateway
+    )
+    model = DocumentAwareLlm()
+    container.conversation_service._llm = model
+    client = TestClient(create_app(container=container))
+
+    client.post(
+        "/webhooks/telegram/s3cret",
+        json=document_update(
+            555,
+            "deck.pdf",
+            len(pdf),
+            caption="I have uploaded the ppt, did you parse it?",
+        ),
+    )
+
+    reply = channel.sent[-1][1]
+    assert DOCUMENT_MARKER in model.system_messages[-1]
+    # The answer came from the document...
+    assert "blue cabinet" in reply
+    # ...and never claims the document is missing in the same exchange.
+    assert "no document" not in reply.lower()
+    assert "don't see any document" not in reply.lower()
 
 
 def test_an_unsupported_document_is_refused_specifically() -> None:
@@ -432,7 +536,7 @@ def test_an_unsupported_document_is_refused_specifically() -> None:
         json=document_update(555, "archive.zip", 1024, mime_type="application/zip"),
     )
 
-    assert response.json()["refused"] is True
+    assert response.json()["accepted"] is True
     text = channel.sent[-1][1]
     lowered = text.lower()
     assert "cannot read archive.zip" in lowered
@@ -472,3 +576,162 @@ def test_a_document_over_the_cap_is_refused_before_download() -> None:
     assert "did not download" in channel.sent[-1][1]
     assert gateway.path_calls == []
     assert gateway.download_calls == []
+
+
+# ------------------------------------- acknowledgement, dedup and delivery order
+
+
+def _asgi_scope(path: str, body: bytes) -> dict:
+    return {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.3"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "root_path": "",
+        "headers": [
+            (b"host", b"testserver"),
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode()),
+        ],
+        "client": ("testclient", 50000),
+        "server": ("testserver", 80),
+    }
+
+
+async def _post_update(app, payload: dict, on_response_body=None) -> list[dict]:
+    """Drive the ASGI app directly so the response body can be observed early."""
+    body = json.dumps(payload).encode()
+    scope = _asgi_scope("/webhooks/telegram/s3cret", body)
+    messages: list[dict] = []
+
+    async def receive() -> dict:
+        return {"type": "http.request", "body": body, "more_body": False}
+
+    async def send(message: dict) -> None:
+        messages.append(message)
+        if (
+            on_response_body is not None
+            and message["type"] == "http.response.body"
+            and not message.get("more_body")
+        ):
+            on_response_body()
+
+    await app(scope, receive, send)
+    return messages
+
+
+async def test_the_webhook_route_returns_without_awaiting_the_turn() -> None:
+    """A turn that never finishes must not hold the 200 hostage.
+
+    Telegram retries an unacknowledged update. If the route awaited the turn,
+    the response body would arrive only after the turn ended; this test fails
+    unless the body is already on the wire while the turn is still running.
+    """
+    container, _, _ = make_container(secret="s3cret")
+    app = create_app(container=container)
+    release = asyncio.Event()
+
+    async def never_finishes(*args, **kwargs) -> None:
+        await release.wait()
+
+    container.conversation_service.handle_surface_turn = never_finishes
+
+    body_sent = asyncio.Event()
+    task = asyncio.create_task(
+        _post_update(app, update(555, "hello"), on_response_body=body_sent.set)
+    )
+    await asyncio.wait_for(body_sent.wait(), timeout=1.0)
+    assert not task.done(), "the route was still awaiting the turn after the body"
+
+    release.set()
+    messages = await asyncio.wait_for(task, timeout=1.0)
+    body_message = next(m for m in messages if m["type"] == "http.response.body")
+    assert json.loads(body_message["body"]) == {
+        "ok": True,
+        "handled": True,
+        "accepted": True,
+    }
+
+
+def test_the_same_update_id_delivered_twice_produces_exactly_one_reply() -> None:
+    client, channel = make_client(secret="s3cret")
+    delivered = update(555, "hello")
+
+    first = client.post("/webhooks/telegram/s3cret", json=delivered)
+    second = client.post("/webhooks/telegram/s3cret", json=delivered)
+
+    assert first.json() == {"ok": True, "handled": True, "accepted": True}
+    assert second.json() == {"ok": True, "handled": True, "duplicate": True}
+    assert len(channel.sent) == 1
+
+
+def test_a_redelivered_update_after_a_restart_is_still_seen(tmp_path) -> None:
+    """The seen id must outlive the process, exactly when a redeploy causes it."""
+    database_path = str(tmp_path / "ranti.db")
+    delivered = update(555, "hello")
+
+    first_container, _, first_channel = build_test_container(
+        [], webhook_secret="s3cret", database_path=database_path
+    )
+    with TestClient(create_app(container=first_container)) as first_client:
+        first_client.post("/webhooks/telegram/s3cret", json=delivered)
+    assert len(first_channel.sent) == 1
+
+    second_container, _, second_channel = build_test_container(
+        [], webhook_secret="s3cret", database_path=database_path
+    )
+    with TestClient(create_app(container=second_container)) as second_client:
+        response = second_client.post("/webhooks/telegram/s3cret", json=delivered)
+
+    assert response.json() == {"ok": True, "handled": True, "duplicate": True}
+    assert second_channel.sent == []
+
+
+async def test_two_messages_from_one_person_are_answered_in_order() -> None:
+    container, _, _ = make_container(secret="s3cret")
+    app = create_app(container=container)
+    order: list[str] = []
+    first_started = asyncio.Event()
+
+    async def slow_first(*args, **kwargs) -> None:
+        text = kwargs["text"]
+        if text == "first":
+            first_started.set()
+            await asyncio.sleep(0.05)
+        order.append(text)
+
+    container.conversation_service.handle_surface_turn = slow_first
+
+    first = asyncio.create_task(_post_update(app, update(555, "first", update_id=11)))
+    await asyncio.wait_for(first_started.wait(), timeout=1.0)
+    second = asyncio.create_task(_post_update(app, update(555, "second", update_id=12)))
+    await asyncio.gather(first, second)
+
+    assert order == ["first", "second"]
+
+
+async def test_two_people_are_not_serialised_behind_each_other() -> None:
+    container, _, _ = make_container(secret="s3cret")
+    app = create_app(container=container)
+    started = 0
+    both_started = asyncio.Event()
+
+    async def wait_for_the_other(*args, **kwargs) -> None:
+        nonlocal started
+        started += 1
+        if started == 2:
+            both_started.set()
+        await asyncio.wait_for(both_started.wait(), timeout=1.0)
+
+    container.conversation_service.handle_surface_turn = wait_for_the_other
+
+    first = asyncio.create_task(_post_update(app, update(555, "a", update_id=21)))
+    second = asyncio.create_task(_post_update(app, update(556, "b", update_id=22)))
+    await asyncio.gather(first, second)
+
+    assert started == 2
+

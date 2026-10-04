@@ -23,6 +23,7 @@ from core.gateways.transcription_gateway import TranscriptionGateway
 from core.gateways.web_gateway import WebGateway
 from core.reminder_scheduler import ReminderScheduler
 from core.resilience import Boundary, ResiliencePolicy, StructuredLogMetricSink
+from core.telegram_dispatch import TelegramUpdateRunner
 from core.tools.calculate_tool import build_calculator_tool
 from core.tools.calendar_tools import build_calendar_tools
 from core.tools.capability_tools import build_capability_tools
@@ -36,6 +37,7 @@ from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
 from crud.pairing_crud import PairingCrud
 from crud.reminder_crud import ReminderCrud
+from crud.seen_update_crud import SeenUpdateCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from services.conversation_service import ConversationService
@@ -57,6 +59,9 @@ class Container:
     user_service: UserService
     conversation_service: ConversationService
     memory_admin_service: MemoryAdminService
+    # Accepts each webhook update at most once and runs its turn in the
+    # background, so a slow turn cannot make Telegram re-deliver the update.
+    telegram_runner: TelegramUpdateRunner
     # Added for the agent surface. They carry defaults so an existing test that
     # builds a Container by hand keeps working without naming them.
     tools: ToolRegistry | None = None
@@ -99,7 +104,13 @@ def build_memory_gateway(settings: Settings) -> MemWalGateway:
         client = MemWalMock.create(namespace=settings.memwal_namespace_prefix)
         mode = "mock"
 
-    return MemWalGateway(client=client, boundary=build_memory_boundary(settings), mode=mode)
+    return MemWalGateway(
+        client=client,
+        boundary=build_memory_boundary(settings),
+        mode=mode,
+        poll_interval_ms=settings.memwal_poll_interval_ms,
+        settle_timeout_seconds=settings.memwal_settle_timeout_seconds,
+    )
 
 
 def _boundary_factory(dependency: str, timeout_seconds: float) -> Boundary:
@@ -199,6 +210,7 @@ def build_container(settings: Settings | None = None) -> Container:
     contradictions = ContradictionCrud(database)
     reminders = ReminderCrud(database)
     pairings = PairingCrud(database)
+    seen_updates = SeenUpdateCrud(database)
 
     memory_gateway = build_memory_gateway(resolved)
     llm_gateway = build_llm_gateway(resolved)
@@ -241,6 +253,11 @@ def build_container(settings: Settings | None = None) -> Container:
         reminders=reminders,
         reply_channel=telegram_gateway,
     )
+    telegram_runner = TelegramUpdateRunner(
+        seen_updates=seen_updates,
+        max_concurrency=resolved.telegram_max_concurrency,
+        retention_seconds=resolved.telegram_update_retention_seconds,
+    )
 
     return Container(
         settings=resolved,
@@ -251,6 +268,7 @@ def build_container(settings: Settings | None = None) -> Container:
         user_service=user_service,
         conversation_service=conversation_service,
         memory_admin_service=memory_admin_service,
+        telegram_runner=telegram_runner,
         tools=tools,
         web_gateway=web_gateway,
         transcription_gateway=transcription_gateway,

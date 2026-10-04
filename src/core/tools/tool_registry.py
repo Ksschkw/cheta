@@ -47,6 +47,9 @@ class ToolContext:
     # surface has one. Telegram has a chat id; a web request does not.
     recipient_id: str = ""
     document_text: str | None = None
+    # The name of the document read for this turn, so the system prompt can name
+    # it in plain words instead of the model having to guess or deny it.
+    document_name: str = ""
     # True only when this surface can hand the person a file. A tool whose real
     # output is a document uses this to say what it could or could not deliver
     # instead of pretending, and the service uses it to decide whether to send.

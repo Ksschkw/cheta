@@ -129,6 +129,17 @@ Required environment variables:
   ([src/core/gateways/offline_llm_gateway.py](src/core/gateways/offline_llm_gateway.py)),
   which is loud about being a fallback and is good enough to demonstrate the
   consolidation behaviour but is not a real model.
+- `GROQ_API_KEYS` (optional) - several Groq keys, comma separated with no spaces
+  required, for example `key_one,key_two,key_three`. When set it wins over the
+  single `GROQ_API_KEY`; when it is not set, `GROQ_API_KEY` behaves exactly as
+  before. Each key is trimmed, empty entries and duplicates are dropped, and
+  order is preserved so the first key is preferred. On a `429` the provider tries
+  the next key at once instead of sleeping on the SDK's backoff, rests the
+  rate-limited key until the provider's `Retry-After` (60 seconds when it gives
+  none) and then returns it to rotation. A key that returns `401` or `403` is
+  retired for the process and logged by index and key hash, never by value. The
+  whole rotation shares one provider budget, so a long list of keys cannot each
+  spend the full timeout.
 - `BOT_NAME` (default `Cheta`) - the assistant's own user-facing name. It never
   touches the memory namespaces, which stay on `MEMWAL_NAMESPACE_PREFIX`, so
   renaming cannot orphan a stored memory.

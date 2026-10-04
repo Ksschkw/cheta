@@ -13,9 +13,11 @@ from core.container import (
     build_memory_gateway,
 )
 from core.database import Database
+from core.telegram_dispatch import TelegramUpdateRunner
 from core.tools.tool_registry import ToolContext, ToolRegistry, ToolSpec
 from crud.contradiction_crud import ContradictionCrud
 from crud.memory_crud import MemoryCrud
+from crud.seen_update_crud import SeenUpdateCrud
 from crud.turn_crud import TurnCrud
 from crud.user_crud import UserCrud
 from main import create_app
@@ -205,6 +207,7 @@ def build_harness(
         user_service=UserService(users=users, settings=settings),
         conversation_service=service,
         memory_admin_service=admin,
+        telegram_runner=TelegramUpdateRunner(seen_updates=SeenUpdateCrud(database)),
         tools=tools,
     )
     return container, service
@@ -417,7 +420,7 @@ def test_the_telegram_router_routes_a_voice_note_into_transcription() -> None:
     response = client.post("/webhooks/telegram/voice", json=payload)
 
     assert response.status_code == 200, response.text
-    assert response.json()["voice"] is True
+    assert response.json() == {"ok": True, "handled": True, "accepted": True}
     assert transcription.calls
     assert channel.sent[0] == ("555", "I heard: what is the weather in Lagos")
     assert llm.last_user_text == "what is the weather in Lagos"

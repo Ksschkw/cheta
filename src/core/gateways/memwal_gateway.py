@@ -34,10 +34,22 @@ class MemWalGateway:
     memory. Writes carry a deterministic idempotency key instead.
     """
 
-    def __init__(self, client: Any, boundary: Boundary, mode: str) -> None:
+    def __init__(
+        self,
+        client: Any,
+        boundary: Boundary,
+        mode: str,
+        poll_interval_ms: int = 5000,
+        settle_timeout_seconds: float = 30.0,
+    ) -> None:
         self._client = client
         self._boundary = boundary
         self._mode = mode
+        # The relayer allows 60 weighted requests a minute. A short interval over
+        # a long budget spent that on a single settle, so the next turn was rate
+        # limited before it started. Fewer, further-apart status calls.
+        self._poll_interval_ms = max(1000, poll_interval_ms)
+        self._settle_timeout_seconds = max(5.0, settle_timeout_seconds)
         self._degradation_count = 0
         self._request_count = 0
         self._last_error: str | None = None
@@ -113,9 +125,13 @@ class MemWalGateway:
 
         The SDK must expire before the boundary so that the error surfaced is
         its precise one (job timeout, with the job id) rather than a generic
-        boundary timeout with no handle.
+        boundary timeout with no handle. The budget is also capped by the
+        settle timeout, because a longer wait means more status calls against a
+        relayer that rate limits by the minute.
         """
-        return int(max(30.0, self._boundary.policy.timeout_seconds - 10.0) * 1000)
+        boundary_budget = self._boundary.policy.timeout_seconds - 10.0
+        budget = min(self._settle_timeout_seconds, max(5.0, boundary_budget))
+        return int(budget * 1000)
 
     async def remember(
         self, text: str, namespace: str, idempotency_key: str | None = None
@@ -130,6 +146,7 @@ class MemWalGateway:
             result = await self._client.remember_and_wait(
                 text,
                 namespace,
+                poll_interval_ms=self._poll_interval_ms,
                 timeout_ms=poll_budget_ms,
                 idempotency_key=idempotency_key,
             )
@@ -171,6 +188,7 @@ class MemWalGateway:
         async def operation() -> StoredMemorySchema:
             result = await self._client.wait_for_remember_job(
                 job_id,
+                poll_interval_ms=self._poll_interval_ms,
                 timeout_ms=poll_budget_ms,
             )
             return StoredMemorySchema(

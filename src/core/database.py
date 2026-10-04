@@ -123,6 +123,13 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         invalidated_at TEXT
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS seen_updates (
+        update_id TEXT PRIMARY KEY,
+        surface TEXT NOT NULL,
+        seen_at TEXT NOT NULL
+    )
+    """,
 )
 
 INDEX_STATEMENTS: tuple[str, ...] = (
@@ -132,6 +139,7 @@ INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders (status, due_at)",
     "CREATE INDEX IF NOT EXISTS idx_pairing_codes_hash ON pairing_codes (code_hash)",
     "CREATE INDEX IF NOT EXISTS idx_pairing_codes_user ON pairing_codes (user_id, redeemed_at)",
+    "CREATE INDEX IF NOT EXISTS idx_seen_updates_seen ON seen_updates (seen_at)",
 )
 
 

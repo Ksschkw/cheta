@@ -22,6 +22,41 @@ T = TypeVar("T")
 logger = logging.getLogger("ranti.resilience")
 
 
+def http_status(error: BaseException) -> int | None:
+    """The HTTP status an outbound exception carries, when it has one."""
+    status = getattr(error, "status_code", None)
+    if status is None:
+        status = getattr(error, "status", None)
+    response = getattr(error, "response", None)
+    if status is None and response is not None:
+        status = getattr(response, "status_code", None)
+    return status if isinstance(status, int) else None
+
+
+def rate_limit_retry_after(error: BaseException) -> float | None:
+    """The server's Retry-After when ``error`` is an HTTP 429, otherwise None.
+
+    A rate limit is not a transient blip to retry immediately: the server has
+    already said how long to wait. Retrying inside that window spends the budget
+    that is being limited, so a 429 must be surfaced to the failover or the
+    degraded path at once, carrying the server's own number when it gives one.
+    """
+    if http_status(error) != 429:
+        return None
+    raw = getattr(error, "retry_after", None)
+    if raw is None:
+        raw = getattr(error, "retry_after_seconds", None)
+    if raw is None:
+        response = getattr(error, "response", None)
+        headers = getattr(response, "headers", None) if response is not None else None
+        if headers is not None:
+            raw = headers.get("retry-after")
+    try:
+        return float(str(raw))
+    except (TypeError, ValueError):
+        return None
+
+
 class MetricSink(Protocol):
     def increment(self, name: str, tags: dict[str, str]) -> None: ...
 
@@ -200,6 +235,7 @@ class Boundary:
 
         last_error = "unknown"
         for attempt in range(1, attempts_allowed + 1):
+            rate_limited = False
             try:
                 async with asyncio.timeout(self._policy.timeout_seconds):
                     value = await self._bulkhead.run(operation)
@@ -213,9 +249,20 @@ class Boundary:
             except asyncio.TimeoutError:
                 last_error = f"timeout after {self._policy.timeout_seconds}s"
             except Exception as exc:  # noqa: BLE001 - boundary converts everything
-                last_error = f"{type(exc).__name__}: {exc}"
+                if http_status(exc) == 429:
+                    rate_limited = True
+                    delay = rate_limit_retry_after(exc)
+                    suffix = f" retry_after={delay:g}s" if delay is not None else ""
+                    last_error = f"rate_limited{suffix}: {exc}"
+                else:
+                    last_error = f"{type(exc).__name__}: {exc}"
 
             self._breaker.on_failure()
+            # A 429 is never retried here: the server told us how long to wait,
+            # and waiting would only deepen the limit. The caller decides whether
+            # to fail over or degrade.
+            if rate_limited:
+                break
             if attempt < attempts_allowed:
                 await self._sleep(self._backoff(attempt))
 
