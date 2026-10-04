@@ -821,6 +821,95 @@
       margin-bottom: 4px;
     }
 
+    .tg-voice-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      padding: 4px 7px;
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 8px;
+    }
+
+    .tg-voice-play {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #07080b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .tg-voice-wave {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 18px;
+      flex: 1;
+    }
+
+    .tg-voice-bar {
+      width: 2px;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 1px;
+    }
+
+    .tg-voice-dur {
+      font-size: 10px;
+      font-family: var(--f-mono);
+      color: var(--tg-time);
+    }
+
+    .tg-doc-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      padding: 6px 9px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tg-doc-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(212, 168, 83, 0.15);
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--f-mono);
+    }
+
+    .tg-doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tg-doc-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tg-doc-sub {
+      font-size: 9.5px;
+      color: var(--tg-time);
+    }
+
     .tg-foot {
       background: var(--tg-header);
       border-top: 1px solid var(--tg-border);
@@ -3299,6 +3388,96 @@
       });
     }
 
+    function tgVoiceBubble(duration, transcript, time) {
+      var body = document.getElementById('tg-body');
+      var bub = document.createElement('div');
+      bub.className = 'tg-bubble tg-user';
+
+      var voiceCard = document.createElement('div');
+      voiceCard.className = 'tg-voice-card';
+
+      var playBtn = document.createElement('div');
+      playBtn.className = 'tg-voice-play';
+      playBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+      voiceCard.appendChild(playBtn);
+
+      var wave = document.createElement('div');
+      wave.className = 'tg-voice-wave';
+      var heights = [6, 12, 8, 16, 10, 14, 8, 15, 11, 7, 13, 9, 14, 6];
+      heights.forEach(function(h) {
+        var bar = document.createElement('div');
+        bar.className = 'tg-voice-bar';
+        bar.style.height = h + 'px';
+        wave.appendChild(bar);
+      });
+      voiceCard.appendChild(wave);
+
+      var durEl = document.createElement('div');
+      durEl.className = 'tg-voice-dur';
+      durEl.textContent = duration || '0:04';
+      voiceCard.appendChild(durEl);
+
+      bub.appendChild(voiceCard);
+
+      var textSpan = document.createElement('div');
+      textSpan.style.fontSize = '11px';
+      textSpan.style.opacity = '0.92';
+      textSpan.style.fontStyle = 'italic';
+      textSpan.textContent = '"' + transcript + '"';
+      bub.appendChild(textSpan);
+
+      var timeEl = document.createElement('span');
+      timeEl.className = 'tg-time';
+      timeEl.textContent = time || '12:02';
+      bub.appendChild(timeEl);
+
+      body.appendChild(bub);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function tgDocBubble(fileName, fileSize, promptText, time) {
+      var body = document.getElementById('tg-body');
+      var bub = document.createElement('div');
+      bub.className = 'tg-bubble tg-user';
+
+      var docCard = document.createElement('div');
+      docCard.className = 'tg-doc-card';
+
+      var icon = document.createElement('div');
+      icon.className = 'tg-doc-icon';
+      icon.textContent = 'PDF';
+      docCard.appendChild(icon);
+
+      var info = document.createElement('div');
+      info.className = 'tg-doc-info';
+      var name = document.createElement('div');
+      name.className = 'tg-doc-name';
+      name.textContent = fileName;
+      var sub = document.createElement('div');
+      sub.className = 'tg-doc-sub';
+      sub.textContent = fileSize + ' - In-Process Parser';
+      info.appendChild(name);
+      info.appendChild(sub);
+      docCard.appendChild(info);
+
+      bub.appendChild(docCard);
+
+      if (promptText) {
+        var textSpan = document.createElement('div');
+        textSpan.style.fontSize = '11.5px';
+        textSpan.textContent = promptText;
+        bub.appendChild(textSpan);
+      }
+
+      var timeEl = document.createElement('span');
+      timeEl.className = 'tg-time';
+      timeEl.textContent = time || '12:03';
+      bub.appendChild(timeEl);
+
+      body.appendChild(bub);
+      body.scrollTop = body.scrollHeight;
+    }
+
     function tgTyping(txt) {
       var inp = document.getElementById('tg-input-preview');
       return typeInto(inp, txt, 55).then(function() {
@@ -3315,7 +3494,7 @@
 
       sleep(350).then(function() {
         return narrate('Telegram Face',
-          'Cheta learns through natural conversation. No special "/remember" command needed! It mines durable facts automatically on every turn and consolidates them on Walrus.', 20, 'tg_1');
+          'Cheta learns through natural conversation. It accepts voice notes with automated Whisper transcription, parses attached PDF and Word documents in-process, and mines durable facts automatically into Walrus decentralized memory.', 20, 'tg_1');
       }).then(function() {
         return sleep(500);
       }).then(function() {
@@ -3325,68 +3504,73 @@
       }).then(function() {
         return sleep(600);
       }).then(function() {
-        return tgBubble('bot', 'Hey Kosi! Ready when you are. What\'s on your mind?', '12:01');
+        return tgBubble('bot', 'Hey Kosi! Ready when you are. Send text, voice notes, or documents anytime.', '12:01');
       }).then(function() {
-        return sleep(1000);
+        return sleep(900);
       }).then(function() {
-        // NATURAL CONVERSATION FACT MENTION - NO /remember!
-        return tgTyping('By the way, I switched my main stack from Python to Rust this year, and I work out of Lagos now.');
+        // VOICE NOTE INPUT!
+        tgVoiceBubble('0:04', 'I switched my main stack from Python to Rust, and I work out of Lagos now.', '12:02');
+        return sleep(400);
       }).then(function() {
-        return tgBubble('user', 'By the way, I switched my main stack from Python to Rust this year, and I work out of Lagos now.', '12:02');
+        return tgBubble('bot', 'Transcribed audio via Whisper: "I switched my main stack from Python to Rust, and I work out of Lagos now."\n\nExtracted: Rust stack and Lagos location. Your previous Python preference is now marked superseded on Walrus.', '12:02', 'whisper.transcribe + memory.consolidate');
       }).then(function() {
-        return sleep(600);
+        return sleep(1100);
       }).then(function() {
-        return tgBubble('bot', 'Noted! I extracted and stored your focus on Rust and your location in Lagos. I also checked your existing Walrus memory: your previous Python preference is now marked superseded.', '12:02', 'memory.consolidate');
+        // DOCUMENT ATTACHMENT!
+        tgDocBubble('architecture_spec.pdf', '1.4 MB', 'Can you review this specification for my stack constraints?', '12:03');
+        return sleep(400);
+      }).then(function() {
+        return tgBubble('bot', 'Parsed 6 pages in-process (PDF/Word/Text supported, zero 3rd-party dependencies). Found key constraint: distributed scheduler requiring Walrus persistence. Stored to your index.', '12:03', 'document.parse + memory.remember');
       }).then(function() {
         return sleep(1200);
       }).then(function() {
         return narrate('Telegram Face',
           'Automatic Consolidation: Cheta detects that Rust updates your older Python preference. The old record is superseded on Walrus, preventing memory rot.', 21, 'tg_2');
       }).then(function() {
-        return sleep(1200);
+        return sleep(1100);
       }).then(function() {
         return tgTyping('what do you know about my stack?');
       }).then(function() {
-        return tgBubble('user', 'what do you know about my stack?', '12:03');
+        return tgBubble('user', 'what do you know about my stack?', '12:04');
       }).then(function() {
         return sleep(700);
       }).then(function() {
-        return tgBubble('bot', 'From your Walrus memory space:\n- Primary stack: Rust (active, superseded Python)\n- Location: Lagos\n- Active project: Distributed job scheduler\n- Preferred editor: Neovim', '12:03', 'salience.recall');
+        return tgBubble('bot', 'From your Walrus memory space:\n- Primary stack: Rust (active, superseded Python)\n- Location: Lagos\n- Project constraint: Distributed scheduler with Walrus persistence\n- Preferred editor: Neovim', '12:04', 'salience.recall');
       }).then(function() {
         return sleep(1100);
       }).then(function() {
         return tgTyping('/remind me in 30 mins to review the scheduler PR');
       }).then(function() {
-        return tgBubble('user', '/remind me in 30 mins to review the scheduler PR', '12:04');
+        return tgBubble('user', '/remind me in 30 mins to review the scheduler PR', '12:05');
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', 'Reminder scheduled for 12:34. I will ping you right here on Telegram.', '12:04', 'reminder.set');
+        return tgBubble('bot', 'Reminder scheduled for 12:35. I will ping you right here on Telegram.', '12:05', 'reminder.set');
       }).then(function() {
         return sleep(1000);
       }).then(function() {
         return tgTyping('/pair');
       }).then(function() {
-        return tgBubble('user', '/pair', '12:05');
+        return tgBubble('user', '/pair', '12:06');
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', 'Pairing code: 847 391\n\nEnter "pair 847391" on your CLI or enter 847391 in the browser extension to link all surfaces under this identity. Valid for 10 minutes.', '12:05', 'device.pair');
+        return tgBubble('bot', 'Pairing code: 847 391\n\nEnter "pair 847391" on your CLI or enter 847391 in the browser extension to link all surfaces under this identity. Valid for 10 minutes.', '12:06', 'device.pair');
       }).then(function() {
         return sleep(1100);
       }).then(function() {
         return tgTyping('/memories');
       }).then(function() {
-        return tgBubble('user', '/memories', '12:06');
+        return tgBubble('user', '/memories', '12:07');
       }).then(function() {
         return sleep(500);
       }).then(function() {
-        return tgBubble('bot', '14 active memories stored in Walrus decentralized storage. All encrypted and portable across every device.', '12:06', 'memory.list');
+        return tgBubble('bot', '14 active memories stored in Walrus decentralized storage. All encrypted and portable across every device.', '12:07', 'memory.list');
       }).then(function() {
         return sleep(1400);
       }).then(function() {
         return narrate('Telegram Face',
-          'Notice how natural it is: no manual tagging, automatic superseding, instant reminders, and cross-surface pairing codes.', 21, 'tg_3');
+          'Notice how natural it is: voice notes, document parsing, automatic superseding, instant reminders, and cross-surface pairing codes.', 21, 'tg_3');
       }).then(function() {
         return sleep(4500);
       }).then(function() {
