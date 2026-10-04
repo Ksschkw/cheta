@@ -1,5 +1,7 @@
 # Cheta
 
+Write-up: https://medium.com/@kookafor893/i-gave-my-chatbot-a-memory-that-outlived-its-own-database-449ed737d0ec
+
 Cheta (the Igbo word for "remember") is a memory-first assistant built for the
 Walrus Session 8 hackathon. It keeps one portable memory space per person across
 four surfaces - a Telegram bot, a CLI, a web widget served at `/app`, and a
