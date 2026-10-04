@@ -3649,7 +3649,7 @@
             var parent = n.parentNode;
             if (parent && parent.nodeName !== "MARK" && parent.nodeName !== "SCRIPT" && parent.nodeName !== "STYLE") {
               var mark = document.createElement("mark");
-              mark.style.background = "#35d0ba";
+              mark.style.background = "#d4a853";
               mark.style.color = "#0a0b0e";
               mark.style.padding = "2px 4px";
               mark.style.borderRadius = "3px";

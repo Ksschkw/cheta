@@ -27,8 +27,8 @@ ASSETS = REPO_ROOT / "assets"
 
 BACKGROUND = (10, 10, 10)
 SURFACE = (20, 20, 20)
-ACCENT = (53, 208, 186)
-ACCENT_DIM = (46, 92, 86)
+ACCENT = (212, 168, 83)
+ACCENT_DIM = (130, 102, 50)
 TEXT = (237, 237, 237)
 MUTED = (138, 138, 138)
 
@@ -134,6 +134,13 @@ def main() -> int:
     sys.stdout.reconfigure(line_buffering=True)
     make_icon(ASSETS / "cheta-icon.png")
     make_welcome(ASSETS / "cheta-welcome.png")
+
+    ext_icons = REPO_ROOT / "extension" / "icons"
+    make_icon(ext_icons / "icon128.png", size=128)
+    make_icon(ext_icons / "icon48.png", size=48)
+    make_icon(ext_icons / "icon32.png", size=32)
+    make_icon(ext_icons / "icon16.png", size=16)
+
     print("[OK] assets written. Set the profile picture by hand in @BotFather.")
     return 0
 

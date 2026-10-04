@@ -102,7 +102,7 @@ CLI_RECALL = "What seat do I prefer when I fly?"
 CLI_WARMUP = "hello there"
 
 WALLPAPER = "#0a0a0a"
-ACCENT = "#35d0ba"
+ACCENT = "#d4a853"
 
 
 # ---------------------------------------------------------------------------
@@ -682,7 +682,7 @@ CLI_SCENE_TEMPLATE = r"""<!DOCTYPE html>
       var TYPE_MS = __TYPE_MS__;
       var CW = 2048, CH = 1152;
       var BG = "#0a0a0a", PANEL = "#0e0e0e", LINE = "#262626";
-      var TEXT = "#ededed", SOFT = "#c9c9c9", MUTED = "#8a8a8a", ACCENT = "#35d0ba";
+      var TEXT = "#ededed", SOFT = "#c9c9c9", MUTED = "#8a8a8a", ACCENT = "#d4a853";
       var FONT = '28px "DejaVu Sans Mono", "Liberation Mono", monospace';
       var M = 28, TB = 64, LH = 34, PAD = M + 40;
       var BODY_TOP = M + TB + 28;

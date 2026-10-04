@@ -10,7 +10,7 @@
   --line-strong: #2a3447;
   --text: #f0f2f8;
   --muted: #8b95a8;
-  --accent: #c9a84c;
+  --accent: #d4a853;
   --font-display: 'Fredoka', 'Space Grotesk', system-ui, -apple-system, sans-serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
@@ -174,7 +174,7 @@ code {
 
 .card:hover {
   border-color: var(--accent);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(53, 208, 186, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(212, 168, 83, 0.15);
   background: #111622;
 }
 

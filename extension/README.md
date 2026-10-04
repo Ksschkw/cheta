@@ -303,7 +303,7 @@ Minimal monochrome with a single accent color. The palette is closed:
 
 - Background `#0a0a0a`, surfaces `#141414`, hairline borders `#262626`.
 - Text `#ededed` primary, `#8a8a8a` secondary.
-- One accent, `#35d0ba`, used only for the send button, focus rings, and link
+- One accent, `#d4a853` (warm gold), used only for the send button, focus rings, and link
   hover.
 
 System font stack, tight spacing, no gradients, no glow, no heavy shadows, no

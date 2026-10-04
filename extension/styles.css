@@ -1,6 +1,6 @@
 /* Cheta extension surface: minimal monochrome shell, one accent color.
  * Sized for a 320px side panel first, then allowed to grow.
- * Palette is closed: #0a0a0a, #141414, #262626, #ededed, #8a8a8a, #35d0ba.
+ * Palette is closed: #0a0a0a, #141414, #262626, #ededed, #8a8a8a, #d4a853.
  * The transcript is the dominant area: bars are one line tall, padding is
  * small, and nothing overlays the conversation.
  * ASCII only by policy: no emojis, no smart punctuation. */
@@ -12,7 +12,7 @@
   --line: #262626;
   --text: #ededed;
   --muted: #8a8a8a;
-  --accent: #35d0ba;
+  --accent: #d4a853;
   --radius: 10px;
 }
 
@@ -536,7 +536,7 @@ input[readonly] {
   align-items: center;
   gap: 4px;
   padding: 2px 7px;
-  background: rgba(53, 208, 186, 0.08);
+  background: rgba(212, 168, 83, 0.12);
   border: 1px solid var(--accent);
   color: var(--accent);
   border-radius: 3px;
@@ -1357,8 +1357,8 @@ select.text-input option {
   gap: 6px;
   margin: 6px 2px;
   padding: 6px 12px;
-  background: rgba(53, 208, 186, 0.12);
-  border: 1px solid rgba(53, 208, 186, 0.35);
+  background: rgba(212, 168, 83, 0.12);
+  border: 1px solid rgba(212, 168, 83, 0.35);
   border-radius: 8px;
   color: var(--accent);
   text-decoration: none;
@@ -1372,7 +1372,7 @@ select.text-input option {
 .download-link-chip:hover {
   background: var(--accent);
   color: #07080b;
-  box-shadow: 0 0 10px rgba(53, 208, 186, 0.4);
+  box-shadow: 0 0 10px rgba(212, 168, 83, 0.4);
 }
 
 /* -------------------------------------------------------- chat sessions panel */
@@ -1384,8 +1384,8 @@ select.text-input option {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: rgba(53, 208, 186, 0.2);
-  border: 1px solid rgba(53, 208, 186, 0.5);
+  background: rgba(212, 168, 83, 0.2);
+  border: 1px solid rgba(212, 168, 83, 0.5);
   border-radius: 10px;
   font-size: 10px;
   font-weight: 700;
@@ -1450,15 +1450,15 @@ select.text-input option {
 }
 
 .session-card:hover {
-  background: rgba(53, 208, 186, 0.06);
-  border-color: rgba(53, 208, 186, 0.3);
+  background: rgba(212, 168, 83, 0.06);
+  border-color: rgba(212, 168, 83, 0.3);
   transform: translateY(-1px);
 }
 
 .session-card.active {
-  background: rgba(53, 208, 186, 0.1);
+  background: rgba(212, 168, 83, 0.1);
   border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(53, 208, 186, 0.15);
+  box-shadow: 0 0 12px rgba(212, 168, 83, 0.15);
 }
 
 .session-header-row {

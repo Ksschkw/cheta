@@ -445,7 +445,7 @@ select:focus {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: rgba(53, 208, 186, 0.15);
+  background: rgba(212, 168, 83, 0.15);
   border: 1px solid var(--accent);
   border-radius: 10px;
   font-size: 10px;
@@ -526,7 +526,7 @@ select:focus {
 
 .web-session-card.active {
   border-color: var(--accent);
-  background: rgba(53, 208, 186, 0.05);
+  background: rgba(212, 168, 83, 0.08);
 }
 
 .web-session-info {
@@ -600,7 +600,7 @@ select:focus {
 
 .suggestion:hover,
 .suggestion.is-active {
-  background: rgba(53, 208, 186, 0.08);
+  background: rgba(212, 168, 83, 0.12);
 }
 
 .suggestion-cmd {
@@ -735,7 +735,7 @@ select:focus {
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  background: rgba(53, 208, 186, 0.08);
+  background: rgba(212, 168, 83, 0.12);
   border: 1px solid var(--accent);
   color: var(--accent);
   border-radius: 3px;
