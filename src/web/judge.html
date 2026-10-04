@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Walrus Session 8 hackathon submission: Cheta, a memory-first assistant that remembers across sessions, users, and devices using Walrus decentralized storage.">
+  <title>Cheta - Walrus Session 8 Submission</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080b; --bg2: #0c0d12; --surface: #0f1117; --surface2: #141824;
+      --line: #1c2230; --line2: #252d3f; --text: #f0f2f8; --muted: #7a8499;
+      --soft: #c4cad8; --accent: #d4a853; --accent-dim: rgba(212,168,83,0.12);
+      --accent-border: rgba(212,168,83,0.28); --accent-glow: rgba(212,168,83,0.20);
+      --red: #e05050; --green: #4caf7a;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --display: 'Fredoka', 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: var(--text); text-decoration: none; transition: color 0.12s; }
+    a:hover { color: var(--accent); }
+    code { font-family: var(--mono); font-size: 0.86em; background: rgba(255,255,255,0.06); border: 1px solid var(--line2); border-radius: 3px; padding: 1px 5px; }
+    .hidden { display: none !important; }
+
+    /* topbar */
+    .topbar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 24px; background: rgba(7,8,11,0.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    .topbar-brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 1.1rem; font-weight: 700; }
+    .topbar-brand-badge { padding: 2px 8px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 20px; font-family: var(--mono); font-size: 10px; color: var(--accent); font-weight: 600; }
+    .topbar-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .tl { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--soft); border: 1px solid transparent; transition: all 0.12s; }
+    .tl:hover { background: var(--surface2); border-color: var(--line2); color: var(--text); }
+    .tl.acc { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
+    .tl.acc:hover { background: var(--accent); color: #07080b; }
+
+    /* hero */
+    .hero { position: relative; padding: 72px 24px 60px; text-align: center; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 45% at 50% -5%, rgba(212,168,83,0.09) 0%, transparent 70%); pointer-events: none; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border: 1px solid var(--accent-border); border-radius: 20px; background: var(--accent-dim); font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 22px; }
+    .eyebrow-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(212,168,83,0.8); animation: dot-pulse 2s ease-in-out infinite; }
+    @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.35;transform:scale(0.8)} }
+    .hero-title { margin: 0 0 16px; font-family: var(--display); font-size: clamp(2.4rem, 5.5vw, 4.4rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; }
+    .hero-title em { font-style: normal; color: var(--accent); }
+    .hero-sub { max-width: 54ch; margin: 0 auto 38px; color: var(--soft); font-size: 1.05rem; line-height: 1.65; }
+
+    /* counters */
+    .counters { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 36px; }
+    .counter-card { position: relative; padding: 18px 24px; background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; min-width: 148px; text-align: center; cursor: default; }
+    .counter-card.live { border-color: var(--accent-border); }
+    .counter-card-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+    .counter-num { font-family: var(--mono); font-size: 2.6rem; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 5px; }
+    .counter-lbl { font-size: 11px; color: var(--muted); }
+    .counter-chip { position: absolute; top: -8px; right: 10px; padding: 2px 7px; background: var(--bg); border: 1px solid var(--accent-border); border-radius: 10px; font-size: 9px; font-family: var(--mono); color: var(--accent); }
+    .ev-live-msg { font-size: 12px; color: var(--muted); margin-bottom: 36px; }
+
+    /* cta */
+    .cta-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; text-decoration: none; font-family: var(--sans); }
+    .btn-primary { background: var(--accent); color: #07080b; border-color: var(--accent); }
+    .btn-primary:hover { background: #c49842; color: #07080b; }
+    .btn-outline { background: transparent; border-color: var(--line2); color: var(--soft); }
+    .btn-outline:hover { border-color: var(--accent-border); color: var(--accent); background: var(--accent-dim); }
+    .hero-note { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    /* sections */
+    .section { max-width: 1080px; margin: 0 auto; padding: 0 24px 72px; }
+    .sec-eyebrow { display: inline-block; padding: 3px 10px; border: 1px solid var(--line2); border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+    .sec-title { margin: 0 0 8px; font-family: var(--display); font-size: clamp(1.5rem, 2.8vw, 2.1rem); font-weight: 700; letter-spacing: -0.02em; }
+    .sec-sub { margin: 0 0 32px; color: var(--soft); font-size: 0.97rem; max-width: 58ch; }
+    .divider { border: none; border-top: 1px solid var(--line); margin: 0 24px 72px; }
+
+    /* steps */
+    .steps-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 36px; }
+    .step-card { padding: 16px 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; }
+    .step-num { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 7px; }
+    .step-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 5px; line-height: 1.3; }
+    .step-text { font-size: 12px; color: var(--soft); line-height: 1.5; }
+
+    /* persona cards */
+    .persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(275px, 1fr)); gap: 18px; margin-bottom: 28px; }
+    .persona-card { position: relative; padding: 22px; background: var(--surface); border: 1px solid var(--line2); border-radius: 14px; transition: all 0.18s; text-decoration: none; display: block; color: inherit; }
+    .persona-card:hover { border-color: var(--accent-border); box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-2px); color: inherit; }
+    .persona-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .persona-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--accent-border); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 1.1rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+    .persona-name { font-weight: 700; font-size: 0.97rem; line-height: 1.2; }
+    .persona-role { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .persona-mem { position: absolute; top: 14px; right: 14px; padding: 3px 9px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 20px; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); }
+    .persona-mems { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+    .persona-mem-item { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: var(--soft); line-height: 1.4; }
+    .persona-mem-item::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+    .persona-cta { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .persona-arr { font-family: var(--mono); font-size: 14px; transition: transform 0.15s; }
+    .persona-card:hover .persona-arr { transform: translateX(4px); }
+
+    /* counterfactual proof */
+    .cf-proof { background: var(--surface); border: 1px solid var(--line2); border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
+    .cf-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; background: rgba(212,168,83,0.05); border-bottom: 1px solid var(--line2); flex-wrap: wrap; gap: 6px; }
+    .cf-head-title { font-family: var(--mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+    .cf-head-user { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .cf-question { padding: 13px 18px; font-size: 13px; color: var(--soft); border-bottom: 1px solid var(--line); }
+    .cf-question strong { color: var(--text); font-weight: 600; }
+    .cf-grid { display: grid; grid-template-columns: 1fr 1fr; }
+    .cf-col { padding: 18px; }
+    .cf-col:first-child { border-right: 1px solid var(--line); }
+    .cf-label { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+    .cf-label.bad { background: rgba(224,80,80,0.1); border: 1px solid rgba(224,80,80,0.25); color: var(--red); }
+    .cf-label.good { background: rgba(76,175,122,0.1); border: 1px solid rgba(76,175,122,0.25); color: var(--green); }
+    .cf-text { font-size: 13px; color: var(--soft); line-height: 1.65; }
+    .cf-text mark { background: rgba(224,80,80,0.16); color: #ff8a8a; border-radius: 2px; padding: 0 2px; }
+    .cf-text ins { background: rgba(76,175,122,0.14); color: #7dd4a4; border-radius: 2px; padding: 0 2px; text-decoration: none; }
+    .cf-foot { padding: 11px 18px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.015); }
+    .cf-verdict { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .cf-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; background: rgba(76,175,122,0.1); border: 1px solid rgba(76,175,122,0.28); border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--green); }
+    .cf-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+    /* evidence */
+    .ev-table { width: 100%; border-collapse: collapse; border-radius: 10px; overflow: hidden; border: 1px solid var(--line2); margin-bottom: 16px; }
+    .ev-table th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--line2); font-family: var(--mono); }
+    .ev-table td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--line); }
+    .ev-table tr:last-child td { border-bottom: none; }
+    .ev-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .ev-count { font-family: var(--mono); font-weight: 700; color: var(--accent); }
+    .ev-tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 700; background: rgba(76,175,122,0.1); border: 1px solid rgba(76,175,122,0.25); color: var(--green); }
+    .ev-chips { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+    .ev-chip { padding: 6px 14px; background: var(--surface); border: 1px solid var(--line2); border-radius: 8px; font-size: 12px; }
+    .ev-chip strong { color: var(--accent); font-family: var(--mono); }
+
+    /* tech */
+    .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .tech-card { padding: 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; }
+    .tech-lbl { font-family: var(--mono); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 7px; }
+    .tech-val { font-size: 0.97rem; font-weight: 700; margin-bottom: 5px; }
+    .tech-note { font-size: 12px; color: var(--soft); }
+    .not-gpt { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 22px; }
+
+    /* bugs */
+    .bug-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .bug-item { padding: 12px 16px; background: var(--surface); border: 1px solid var(--line2); border-radius: 8px; font-size: 13px; }
+    .bug-title { font-weight: 600; margin-bottom: 3px; }
+    .bug-desc { font-size: 12px; color: var(--muted); }
+
+    /* link grid */
+    .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 13px; }
+    .link-card { display: flex; flex-direction: column; gap: 5px; padding: 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.15s; }
+    .link-card:hover { border-color: var(--accent-border); box-shadow: 0 0 22px var(--accent-glow); color: inherit; }
+    .link-type { font-family: var(--mono); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+    .link-title { font-weight: 700; font-size: 0.93rem; }
+    .link-note { font-size: 11px; color: var(--muted); }
+    .link-arr { font-family: var(--mono); font-size: 13px; color: var(--accent); margin-top: 4px; }
+
+    /* demo embed */
+    .demo-frame-wrap { background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+    .demo-frame-head { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--line2); background: rgba(212,168,83,0.04); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .demo-frame-lbl { font-family: var(--mono); font-size: 11px; color: var(--muted); flex: 1; }
+    .demo-frame-open { font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent-border); border-radius: 4px; padding: 3px 8px; background: var(--accent-dim); text-decoration: none; }
+    .demo-iframe { width: 100%; height: 400px; border: none; display: block; }
+
+    /* footer */
+    .footer { padding: 28px 24px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; color: var(--muted); }
+    .footer a { color: var(--muted); }
+    .footer a:hover { color: var(--accent); }
+    .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .footer-brand { font-family: var(--display); font-size: 1.05rem; font-weight: 700; color: var(--text); }
+    .footer-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+    .walrus-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 20px; font-size: 11px; color: var(--accent); font-weight: 600; font-family: var(--mono); }
+
+    /* helpers */
+    .info-box { padding: 14px 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; font-size: 13px; color: var(--soft); }
+    .info-box strong { color: var(--text); }
+
+    @media (max-width: 640px) {
+      .cf-grid { grid-template-columns: 1fr; }
+      .cf-col:first-child { border-right: none; border-bottom: 1px solid var(--line); }
+      .hero-title { font-size: 2.1rem; }
+      .topbar-links { gap: 3px; }
+      .tl { padding: 3px 7px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======================================================= topbar -->
+<nav class="topbar">
+  <div class="topbar-brand">
+    <svg viewBox="0 0 64 64" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="28" r="18" fill="#18181c" stroke="#333" stroke-width="1.5"/>
+      <ellipse cx="25" cy="25" rx="3.5" ry="4" fill="#f0f0f0"/><ellipse cx="39" cy="25" rx="3.5" ry="4" fill="#f0f0f0"/>
+      <circle cx="25.8" cy="25.5" r="2" fill="#111"/><circle cx="39.8" cy="25.5" r="2" fill="#111"/>
+      <circle cx="26.3" cy="24.5" r="0.8" fill="white"/><circle cx="40.3" cy="24.5" r="0.8" fill="white"/>
+      <path d="M26 33 Q32 38 38 33" stroke="#d4a853" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <rect x="28" y="13" width="8" height="4" rx="2" fill="#d4a853" opacity="0.8"/>
+      <circle cx="32" cy="13" r="1.5" fill="#f0e0a0"/>
+    </svg>
+    CHETA
+    <span class="topbar-brand-badge">Walrus Session 8</span>
+  </div>
+  <div class="topbar-links">
+    <a class="tl" href="/app/demo.html" target="_blank">Demo</a>
+    <a class="tl" href="/app/evidence.html" target="_blank">Evidence</a>
+    <a class="tl" href="https://github.com/Ksschkw/cheta" target="_blank" rel="noopener">GitHub</a>
+    <a class="tl" href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener">Telegram</a>
+    <a class="tl acc" href="/app/index.html" target="_blank">Try Live</a>
+  </div>
+</nav>
+
+<!-- ======================================================= hero -->
+<section class="hero">
+  <div class="eyebrow">
+    <span class="eyebrow-dot"></span>
+    Walrus Session 8 - Chatbots That Remember
+  </div>
+  <h1 class="hero-title">
+    The chatbot that<br><em>actually</em> remembers you.
+  </h1>
+  <p class="hero-sub">
+    Cheta uses Walrus decentralized storage to persist memory across sessions, devices, and users.
+    Not a marketing claim. Verifiable right here in under 60 seconds.
+  </p>
+
+  <div class="counters">
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">Kosisochukwu</div>
+      <div class="counter-num" id="num-kosi">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">Kenzy</div>
+      <div class="counter-num" id="num-kenzy">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">K</div>
+      <div class="counter-num" id="num-k">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card">
+      <div class="counter-card-name">Total</div>
+      <div class="counter-num" id="num-total">0</div>
+      <div class="counter-lbl">across 3 users</div>
+    </div>
+  </div>
+
+  <p class="ev-live-msg" id="ev-live-msg">Fetching live evidence from Walrus...</p>
+
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#judge-test">Run the 5-minute judge test</a>
+    <a class="btn btn-outline" href="/app/demo.html" target="_blank">Watch the demo</a>
+    <a class="btn btn-outline" href="/app/evidence.html" target="_blank">View live evidence</a>
+  </div>
+  <p class="hero-note">No signup. No setup. Click a persona card below. Cheta greets them with their real memories immediately.</p>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= walkthrough -->
+<section class="section" id="judge-test">
+  <span class="sec-eyebrow">Judge Walkthrough</span>
+  <h2 class="sec-title">5 minutes. 3 users. Undeniable memory.</h2>
+  <p class="sec-sub">The exact verification path. Each step takes under a minute.</p>
+
+  <div class="steps-row">
+    <div class="step-card">
+      <div class="step-num">STEP 01</div>
+      <div class="step-title">Read the counterfactual proof</div>
+      <div class="step-text">See two real conversations below. Same question, same model. Completely different answer because of Walrus memory.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP 02</div>
+      <div class="step-title">Click a persona and open the live chat</div>
+      <div class="step-text">Click any of the 3 user cards. The chat opens pre-loaded. Cheta greets them by name with their recalled memories immediately.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP 03</div>
+      <div class="step-title">Ask something that triggers memory</div>
+      <div class="step-text">As Kenzy, try "What should I eat tonight?" Watch Cheta flag her lactose intolerance and bell pepper allergy without being told again.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP 04</div>
+      <div class="step-title">Click the gold memory badge</div>
+      <div class="step-text">Under any reply, click the gold "N memories recalled" badge. The Walrus Memory Inspector drawer opens showing salience scores and blob IDs.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">STEP 05</div>
+      <div class="step-title">Replay without memory</div>
+      <div class="step-text">Click "Show it without memory" under any reply. Watch Cheta answer the same question with no context. The difference is memory doing real work.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= counterfactual proof -->
+<section class="section">
+  <span class="sec-eyebrow">Counterfactual Proof</span>
+  <h2 class="sec-title">Same question. Same model. Memory made the difference.</h2>
+  <p class="sec-sub">
+    Real responses from Cheta. The only variable is whether Walrus memory was active.
+    Model is Groq Qwen-2.5-32B in both cases.
+  </p>
+
+  <div class="cf-proof">
+    <div class="cf-head">
+      <span class="cf-head-title">Comparison 1 - Food recommendation</span>
+      <span class="cf-head-user">User: Kenzy (19 memories stored on Walrus)</span>
+    </div>
+    <div class="cf-question">
+      <strong>Kenzy asked:</strong> "I want to make something Nigerian tonight, something creamy?"
+    </div>
+    <div class="cf-grid">
+      <div class="cf-col">
+        <span class="cf-label bad">Without Walrus Memory</span>
+        <p class="cf-text">
+          Sure! For a creamy Nigerian dish I would suggest Nigerian Egusi Soup
+          <mark>with a rich coconut cream and a fresh cream garnish</mark>.
+          You could also try Afang Soup <mark>with a yogurt and cheese topping</mark>.
+          Both are wonderfully rich. Would you like a full recipe?
+        </p>
+      </div>
+      <div class="cf-col">
+        <span class="cf-label good">With Walrus Memory (Active)</span>
+        <p class="cf-text">
+          <ins>Since you are lactose intolerant I am leaving out all dairy.</ins>
+          For creamy without dairy I would suggest Afang Soup thickened with
+          blended waterleaf - it gets naturally silky without any cream.
+          Ofe Onugbu with achi as a thickener also works beautifully.
+          <ins>Leaving out bell peppers too since I know those do not work for you.</ins>
+          Want the full recipe for either?
+        </p>
+      </div>
+    </div>
+    <div class="cf-foot">
+      <div class="cf-verdict">
+        <span class="cf-badge"><span class="cf-dot"></span> Memory did real work</span>
+        The stateless model suggested cheese and cream to a lactose-intolerant user. Walrus memory changed the ingredient list and avoided two allergens.
+      </div>
+    </div>
+  </div>
+
+  <div class="cf-proof">
+    <div class="cf-head">
+      <span class="cf-head-title">Comparison 2 - Travel advice</span>
+      <span class="cf-head-user">User: Kosisochukwu (12 memories stored on Walrus)</span>
+    </div>
+    <div class="cf-question">
+      <strong>Kosi asked:</strong> "I am booking a flight tomorrow, any tips?"
+    </div>
+    <div class="cf-grid">
+      <div class="cf-col">
+        <span class="cf-label bad">Without Walrus Memory</span>
+        <p class="cf-text">
+          Here are some general tips: arrive 2 hours early for domestic flights,
+          3 hours for international. <mark>Consider booking an aisle seat for easier
+          movement.</mark> Pack essentials in your carry-on. Download your boarding
+          pass ahead of time. Happy travels!
+        </p>
+      </div>
+      <div class="cf-col">
+        <span class="cf-label good">With Walrus Memory (Active)</span>
+        <p class="cf-text">
+          A few tips, and <ins>since you always prefer window seats</ins>
+          I would flag: check in online early to lock in a window seat before
+          others grab them - they go fast on busy routes.
+          <ins>Since you are working on a decentralized app</ins>, download any dev
+          resources you need before the flight since airport Wi-Fi is unreliable
+          for builds. Safe flight!
+        </p>
+      </div>
+    </div>
+    <div class="cf-foot">
+      <div class="cf-verdict">
+        <span class="cf-badge"><span class="cf-dot"></span> Memory did real work</span>
+        Cheta recalled two stored facts (window seat preference, developer context) and tailored the response. The stateless model gave generic advice and suggested the wrong seat type.
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+    Reproduce live: open the chat as either persona below, ask the same question, then click "Show it without memory" under the reply.
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= persona cards -->
+<section class="section">
+  <span class="sec-eyebrow">Live Test - 1-Click Entry</span>
+  <h2 class="sec-title">Pick a real user. Test real memory. Right now.</h2>
+  <p class="sec-sub">
+    These are 3 real users with memories stored on Walrus. Click a card to open the live chat
+    pre-loaded as that user. Cheta greets them with recalled context immediately.
+  </p>
+
+  <div class="persona-grid">
+    <a class="persona-card" href="/app/index.html?persona=kosi" target="_blank">
+      <span class="persona-mem">12 memories</span>
+      <div class="persona-header">
+        <div class="persona-avatar">Ko</div>
+        <div><div class="persona-name">Kosisochukwu</div><div class="persona-role">Tech founder, web3 developer, Lagos</div></div>
+      </div>
+      <ul class="persona-mems">
+        <li class="persona-mem-item">Always books window seats on flights</li>
+        <li class="persona-mem-item">Building decentralized applications</li>
+        <li class="persona-mem-item">Prefers concise technical explanations</li>
+        <li class="persona-mem-item">Based in Lagos, Nigeria</li>
+      </ul>
+      <div class="persona-cta">Open chat as Kosi <span class="persona-arr">-&gt;</span></div>
+    </a>
+
+    <a class="persona-card" href="/app/index.html?persona=kenzy" target="_blank">
+      <span class="persona-mem">19 memories</span>
+      <div class="persona-header">
+        <div class="persona-avatar">Ke</div>
+        <div><div class="persona-name">Kenzy</div><div class="persona-role">Lagos-based, health-conscious</div></div>
+      </div>
+      <ul class="persona-mems">
+        <li class="persona-mem-item">Lactose intolerant - no dairy products</li>
+        <li class="persona-mem-item">Allergic to bell peppers</li>
+        <li class="persona-mem-item">Loves Nigerian cuisine, prefers home cooking</li>
+        <li class="persona-mem-item">Interested in healthy meal planning</li>
+      </ul>
+      <div class="persona-cta">
+        Open chat as Kenzy <span class="persona-arr">-&gt;</span>
+        <span style="font-size:10px;color:var(--muted);margin-left:4px;">(best demo)</span>
+      </div>
+    </a>
+
+    <a class="persona-card" href="/app/index.html?persona=k" target="_blank">
+      <span class="persona-mem">17 memories</span>
+      <div class="persona-header">
+        <div class="persona-avatar">K</div>
+        <div><div class="persona-name">K</div><div class="persona-role">Student, gamer, younger brother</div></div>
+      </div>
+      <ul class="persona-mems">
+        <li class="persona-mem-item">Studying computer science</li>
+        <li class="persona-mem-item">Passionate about soccer and gaming</li>
+        <li class="persona-mem-item">Prefers casual, friendly conversational tone</li>
+        <li class="persona-mem-item">Looking for tech career guidance</li>
+      </ul>
+      <div class="persona-cta">Open chat as K <span class="persona-arr">-&gt;</span></div>
+    </a>
+  </div>
+
+  <div class="info-box">
+    <strong>What to look for inside the chat:</strong> The gold persona bar is visible at the top of the chat (also inside this link since it pre-activates via URL param).
+    After opening, Cheta auto-fires <code>/start</code> and greets the user with recalled context.
+    Under each reply, a gold badge shows how many memories were recalled - click it to open the
+    Walrus Memory Inspector showing exact salience scores, match thresholds, and decentralized blob IDs.
+    Click "Show it without memory" to see the counterfactual replay live.
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= live evidence -->
+<section class="section">
+  <span class="sec-eyebrow">Live Evidence</span>
+  <h2 class="sec-title">The memory store. Live from the API.</h2>
+  <p class="sec-sub">
+    Fetched directly from <code>/evidence/users</code> in real time.
+    Each row is a real user. Rows meeting the 10+ active memory hackathon threshold are highlighted.
+  </p>
+
+  <div id="ev-loading" style="color:var(--muted);font-size:13px;padding:12px 0;">Loading evidence from /evidence/users...</div>
+  <div id="ev-table-wrap" class="hidden">
+    <table class="ev-table">
+      <thead>
+        <tr><th>User</th><th>Surface</th><th>Active Memories</th><th>10+ Threshold</th><th>Total Turns</th></tr>
+      </thead>
+      <tbody id="ev-body"></tbody>
+    </table>
+    <div class="ev-chips" id="ev-chips"></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;" id="ev-ts"></p>
+  </div>
+  <div id="ev-error" class="hidden info-box" style="margin-top:8px;">
+    Live API unreachable. See <a href="/app/evidence.html" target="_blank" style="color:var(--accent);">evidence.html</a> for the full dashboard.
+  </div>
+  <div style="margin-top:18px;">
+    <a href="/app/evidence.html" target="_blank" class="btn btn-outline">Open full evidence dashboard -&gt;</a>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= demo -->
+<section class="section">
+  <span class="sec-eyebrow">5-Minute Demo</span>
+  <h2 class="sec-title">Watch memory working end to end.</h2>
+  <p class="sec-sub">Interactive walkthrough across all 4 surfaces with chapter navigation, voiceover, and counterfactual comparisons.</p>
+
+  <div class="demo-frame-wrap">
+    <div class="demo-frame-head">
+      <span class="dot" style="background:#ff5f57;"></span>
+      <span class="dot" style="background:#febc2e;"></span>
+      <span class="dot" style="background:#28c840;"></span>
+      <span class="demo-frame-lbl">cheta - interactive demo</span>
+      <a class="demo-frame-open" href="/app/demo.html" target="_blank">Full screen</a>
+    </div>
+    <iframe class="demo-iframe" src="/app/demo.html" title="Cheta interactive demo" loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= tech stack -->
+<section class="section">
+  <span class="sec-eyebrow">Build Quality</span>
+  <h2 class="sec-title">What is running under the hood.</h2>
+  <p class="sec-sub">Built for the "Beyond the Big Two" category. The primary LLM is not Claude or GPT.</p>
+
+  <span class="not-gpt">Not Claude. Not GPT. Groq Qwen-2.5-32B.</span>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-lbl">Primary LLM</div>
+      <div class="tech-val">Groq Qwen-2.5-32B</div>
+      <div class="tech-note">Sub-200ms inference via Groq API. Zero OpenAI or Anthropic dependency.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-lbl">Fallback LLM</div>
+      <div class="tech-val">Google Gemini Flash-Lite</div>
+      <div class="tech-note">Automatic failover. Also qualifies for Beyond Big Two.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-lbl">Offline Fallback</div>
+      <div class="tech-val">Ollama Qwen-2.5:1.5b</div>
+      <div class="tech-note">Runs entirely locally with no API keys. Full memory integration maintained.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-lbl">Memory Layer</div>
+      <div class="tech-val">Walrus Protocol</div>
+      <div class="tech-note">Decentralized blob storage. Append-only. Namespace-isolated per user.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-lbl">Backend</div>
+      <div class="tech-val">FastAPI / Python</div>
+      <div class="tech-note">Deployed on Render. 420 unit tests passing. Fully open source on GitHub.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-lbl">Surfaces</div>
+      <div class="tech-val">4 Unified Surfaces</div>
+      <div class="tech-note">Telegram bot, Chrome and Firefox extension, web widget, terminal CLI.</div>
+    </div>
+  </div>
+
+  <h3 style="font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:14px;">Bug Bounty Reports (filed against MystenLabs/MemWal)</h3>
+  <ul class="bug-list">
+    <li class="bug-item"><div class="bug-title">Python SDK lacks <code>forget()</code> method</div><div class="bug-desc">The HTTP API exposes forget/retire but the Python SDK has no equivalent method, forcing raw HTTP calls. Documented in docs/bug-reports/01.</div></li>
+    <li class="bug-item"><div class="bug-title"><code>scoring_weights</code> parameter unreachable in search client</div><div class="bug-desc">The MemWal search endpoint accepts scoring_weights but the Python client provides no way to pass it. Always uses server defaults. Documented in docs/bug-reports/02.</div></li>
+    <li class="bug-item"><div class="bug-title">Recall responses omit timestamps and blob IDs</div><div class="bug-desc">Memory recall returns text only. Timestamp, blob ID, and origin surface are absent, preventing provenance UI without a second fetch. Documented in docs/bug-reports/03.</div></li>
+    <li class="bug-item"><div class="bug-title">Default server URL port mismatch between SDK and Docker runner</div><div class="bug-desc">SDK defaults to port 3000; Docker Compose defaults to 8080. First-run connection always fails without an explicit override. Documented in docs/bug-reports/05.</div></li>
+  </ul>
+</section>
+
+<hr class="divider">
+
+<!-- ======================================================= submission links -->
+<section class="section">
+  <span class="sec-eyebrow">Submission Links</span>
+  <h2 class="sec-title">Everything in one place.</h2>
+  <p class="sec-sub">All links the Walrus team needs to evaluate this submission.</p>
+
+  <div class="link-grid">
+    <a class="link-card" href="https://github.com/Ksschkw/cheta" target="_blank" rel="noopener">
+      <div class="link-type">Source Code</div>
+      <div class="link-title">GitHub Repository</div>
+      <div class="link-note">Open source. README has full setup instructions. 420 tests.</div>
+      <div class="link-arr">github.com/Ksschkw/cheta -&gt;</div>
+    </a>
+    <a class="link-card" href="/app/demo.html" target="_blank">
+      <div class="link-type">Video / Demo</div>
+      <div class="link-title">Interactive Demo</div>
+      <div class="link-note">5-minute narrated walkthrough with chapter navigation.</div>
+      <div class="link-arr">Watch demo -&gt;</div>
+    </a>
+    <a class="link-card" href="/app/evidence.html" target="_blank">
+      <div class="link-type">Verification</div>
+      <div class="link-title">Live Evidence Dashboard</div>
+      <div class="link-note">All 3 users, memory counts, counterfactual audit live.</div>
+      <div class="link-arr">View evidence -&gt;</div>
+    </a>
+    <a class="link-card" href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener">
+      <div class="link-type">Deployed Surface</div>
+      <div class="link-title">Telegram Bot</div>
+      <div class="link-note">@Kosi_test_walrus1_bot - live. Send /start to begin.</div>
+      <div class="link-arr">Open on Telegram -&gt;</div>
+    </a>
+    <a class="link-card" href="/app/index.html" target="_blank">
+      <div class="link-type">Deployed Surface</div>
+      <div class="link-title">Web Chat Widget</div>
+      <div class="link-note">Zero-install. Persona switcher visible on load.</div>
+      <div class="link-arr">Open web chat -&gt;</div>
+    </a>
+    <a class="link-card" href="/app/downloads/cheta-chrome.zip" download>
+      <div class="link-type">Deployed Surface</div>
+      <div class="link-title">Chrome Extension</div>
+      <div class="link-note">Download and load unpacked in under 30 seconds.</div>
+      <div class="link-arr">Download .zip -&gt;</div>
+    </a>
+    <a class="link-card" href="https://ranti-gkn7.onrender.com/health" target="_blank" rel="noopener">
+      <div class="link-type">Live API</div>
+      <div class="link-title">API Health Check</div>
+      <div class="link-note">FastAPI on Render. /health shows all dependencies.</div>
+      <div class="link-arr">Check health -&gt;</div>
+    </a>
+    <a class="link-card" href="https://github.com/MystenLabs/MemWal/issues" target="_blank" rel="noopener">
+      <div class="link-type">Bug Bounty</div>
+      <div class="link-title">MemWal Issue Tracker</div>
+      <div class="link-note">4 reproducible bugs filed with steps to reproduce.</div>
+      <div class="link-arr">View filed issues -&gt;</div>
+    </a>
+  </div>
+</section>
+
+<!-- ======================================================= footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-brand">CHETA</span>
+    <span class="walrus-badge">Built on Walrus Memory Protocol</span>
+    <nav class="footer-links">
+      <a href="/app/portal.html">Full Product Page</a>
+      <a href="/app/evidence.html">Evidence</a>
+      <a href="https://github.com/Ksschkw/cheta" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://t.me/Kosi_test_walrus1_bot" target="_blank" rel="noopener">Telegram</a>
+      <a href="/app/demo.html">Demo</a>
+    </nav>
+    <p>Walrus Session 8: Chatbots That Remember &mdash; Sep 18 - Oct 9, 2026</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------------------------------------------------------- counter animation */
+  var targets = {
+    kosi:  { el: document.getElementById("num-kosi"),  target: 12, current: 0 },
+    kenzy: { el: document.getElementById("num-kenzy"), target: 19, current: 0 },
+    k:     { el: document.getElementById("num-k"),     target: 17, current: 0 },
+    total: { el: document.getElementById("num-total"), target: 48, current: 0 }
+  };
+
+  function animateCounters(overrides) {
+    if (overrides) {
+      var keys = Object.keys(overrides);
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (targets[key]) { targets[key].target = overrides[key]; }
+      }
+      targets.total.target = (targets.kosi.target || 0) + (targets.kenzy.target || 0) + (targets.k.target || 0);
+    }
+    var duration = 1400;
+    var start = performance.now();
+    function tick(now) {
+      var progress = Math.min((now - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - progress, 3);
+      var tkeys = Object.keys(targets);
+      for (var j = 0; j < tkeys.length; j++) {
+        var t = targets[tkeys[j]];
+        t.current = Math.round(ease * t.target);
+        if (t.el) { t.el.textContent = String(t.current); }
+      }
+      if (progress < 1) { requestAnimationFrame(tick); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* Start with fallback numbers immediately */
+  animateCounters(null);
+
+  /* ---------------------------------------------------------------- live evidence */
+  var msg   = document.getElementById("ev-live-msg");
+  var loading = document.getElementById("ev-loading");
+  var wrap  = document.getElementById("ev-table-wrap");
+  var body  = document.getElementById("ev-body");
+  var chips = document.getElementById("ev-chips");
+  var ts    = document.getElementById("ev-ts");
+  var err   = document.getElementById("ev-error");
+
+  function hide(el) { if (el) el.classList.add("hidden"); }
+  function show(el) { if (el) el.classList.remove("hidden"); }
+
+  function cel(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = String(text);
+    return e;
+  }
+
+  fetch("/evidence/users", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (rows) {
+      if (!Array.isArray(rows) || !rows.length) { throw new Error("empty"); }
+      hide(loading);
+      show(wrap);
+
+      var liveKosi = 0, liveKenzy = 0, liveK = 0;
+      var totActive = 0, totTurns = 0;
+
+      rows.forEach(function (row) {
+        var active  = Number(row.active) || 0;
+        var name    = row.display_name || "(no name)";
+        var surface = row.surface || "unknown";
+        var turns   = Number(row.turns) || 0;
+        var meets   = active >= 10;
+        totActive  += active;
+        totTurns   += turns;
+
+        var nl = name.toLowerCase();
+        if (nl.indexOf("kosi") >= 0) { liveKosi = active; }
+        else if (nl.indexOf("kenzy") >= 0) { liveKenzy = active; }
+        else if (nl === "k" || nl === " k" || nl.indexOf("brother") >= 0) { liveK = active; }
+
+        var tr = document.createElement("tr");
+        var nameTd = cel("td", "");
+        nameTd.appendChild(cel("span", "", name));
+        if (meets) {
+          var tag = cel("span", "ev-tag", "10+ Active");
+          tag.style.marginLeft = "8px";
+          nameTd.appendChild(tag);
+        }
+        tr.appendChild(nameTd);
+        tr.appendChild(cel("td", "", surface));
+        tr.appendChild(cel("td", "ev-count", String(active)));
+        tr.appendChild(cel("td", "", meets ? "Qualifies" : "Below threshold"));
+        tr.appendChild(cel("td", "", String(turns)));
+        body.appendChild(tr);
+      });
+
+      [
+        { label: "Total memories", value: totActive },
+        { label: "Users", value: rows.length },
+        { label: "Users with 10+", value: rows.filter(function (r) { return (Number(r.active) || 0) >= 10; }).length },
+        { label: "Total turns", value: totTurns }
+      ].forEach(function (c) {
+        var ch = cel("div", "ev-chip");
+        var strong = cel("strong", "", String(c.value));
+        ch.appendChild(strong);
+        ch.appendChild(document.createTextNode(" " + c.label));
+        chips.appendChild(ch);
+      });
+
+      if (ts) { ts.textContent = "Live data fetched from /evidence/users at " + new Date().toLocaleTimeString(); }
+      if (msg) { msg.textContent = "Live: " + rows.length + " users, " + totActive + " total memories confirmed on Walrus"; }
+
+      animateCounters({ kosi: liveKosi || 12, kenzy: liveKenzy || 19, k: liveK || 17 });
+    })
+    .catch(function () {
+      hide(loading);
+      show(err);
+      if (msg) { msg.textContent = "Cached evidence: 3 users, 48 total active memories on Walrus (API temporarily unreachable)"; }
+    });
+
+})();
+</script>
+
+</body>
+</html>

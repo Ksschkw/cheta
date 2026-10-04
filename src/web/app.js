@@ -1469,6 +1469,36 @@
       }
     }());
 
+    /* ------------------------------------------------- URL ?persona= param (judge.html entry)
+     * When judge.html persona cards link to /app/index.html?persona=kosi|kenzy|k,
+     * this handler reads the param and auto-activates the correct persona so the
+     * chat opens pre-loaded with that user's identity and fires /start immediately. */
+
+    (function () {
+      var search = window.location.search;
+      if (!search) { return; }
+      var match = search.match(/[?&]persona=([^&]+)/i);
+      if (!match) { return; }
+      var slug = match[1].toLowerCase().trim();
+      /* Map slug to persona-btn data-uid values */
+      var slugMap = { kosi: "kosi-demo", kosisochukwu: "kosi-demo", kenzy: "kenzy-demo", k: "k-demo" };
+      var targetUid = slugMap[slug];
+      if (!targetUid) { return; }
+      /* Find the matching button in the persona bar and click it after a short
+       * delay to allow the chat surface to fully initialise first. */
+      setTimeout(function () {
+        var bar = document.getElementById("persona-bar");
+        if (!bar) { return; }
+        var btns = bar.querySelectorAll(".persona-btn");
+        for (var i = 0; i < btns.length; i++) {
+          if (btns[i].getAttribute("data-uid") === targetUid) {
+            btns[i].click();
+            break;
+          }
+        }
+      }, 600);
+    }());
+
     /* ------------------------------------------------- persona switcher */
 
     (function () {

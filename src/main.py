@@ -121,6 +121,12 @@ def create_app(container: Container | None = None, settings: Settings | None = N
             candidate = WEB_ROOT / "extension-help.html"
             return FileResponse(candidate)
 
+        @app.get("/judge", include_in_schema=False)
+        @app.get("/judge.html", include_in_schema=False)
+        async def judge_page() -> FileResponse:
+            candidate = WEB_ROOT / "judge.html"
+            return FileResponse(candidate)
+
     return app
 
 
