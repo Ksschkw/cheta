@@ -124,7 +124,7 @@
       guideLink.href = HELP_URL;
       guideLink.target = "_blank";
       guideLink.rel = "noopener noreferrer";
-      guideLink.textContent = "Step-by-step Guide ↗";
+      guideLink.textContent = "Step-by-step Guide \u2197";
       host.appendChild(guideLink);
     }
 
@@ -146,7 +146,7 @@
       mHelp.href = HELP_URL;
       mHelp.target = "_blank";
       mHelp.rel = "noopener noreferrer";
-      mHelp.textContent = "Guide ↗";
+      mHelp.textContent = "Guide \u2197";
       modalHost.appendChild(mHelp);
     }
 
