@@ -61,6 +61,25 @@ class SlowSettleGateway:
         return getattr(self._inner, name)
 
 
+class IndexReadFailingGateway:
+    """Fails reads of the companion index namespace, passes the rest through.
+
+    A relayer outage means a snapshot cannot be ruled out, which is not the same
+    as there being no snapshot.
+    """
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+
+    async def recall(self, query: str, namespace: str, limit: int = 40):
+        if namespace.endswith(".idx"):
+            raise DependencyUnavailableError("walrus-memory", "index namespace unavailable")
+        return await self._inner.recall(query, namespace, limit=limit)
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
+
+
 class Harness:
     def __init__(
         self,
@@ -300,3 +319,13 @@ async def test_a_recovered_snapshot_counts_as_history_before_the_newness_check()
     assert harness.memories.count_for_user(user_id, None) == 1
     assert again.first_turn is False
     assert again.onboarding_note is None
+
+
+async def test_an_unreadable_index_is_not_evidence_that_a_person_is_new() -> None:
+    """A relayer outage cannot rule out a snapshot, so the person is not new."""
+    harness = Harness([], gateway_factory=IndexReadFailingGateway)
+
+    result = await harness.say("hello")
+
+    assert result.first_turn is False
+    assert result.onboarding_note is None

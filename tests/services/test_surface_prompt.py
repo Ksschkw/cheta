@@ -63,3 +63,11 @@ def test_no_self_introduction_surfaces_a_former_name() -> None:
     onboarding = service._onboarding_text()
     assert "Ranti" not in onboarding
     assert service._settings.bot_name in onboarding
+
+    tutorial = service.command_reply("/tutorial", "web", "u1", "Ada")
+    assert "Ranti" not in tutorial
+    assert service._settings.bot_name in tutorial
+
+    help_text = service.command_reply("/help", "web", "u1", "Ada")
+    assert "Ranti" not in help_text
+    assert service._settings.bot_name in help_text

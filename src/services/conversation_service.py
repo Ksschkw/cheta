@@ -1880,9 +1880,10 @@ class ConversationService:
         return lines
 
     def _tutorial_reply(self) -> str:
+        name = self._settings.bot_name
         return (
-            "CHETA MASTER TUTORIAL: THE 4 SURFACES & 5 SUPERPOWERS\n\n"
-            "Cheta is an autonomous memory-first AI agent powered by Walrus decentralized storage. "
+            f"{name.upper()} MASTER TUTORIAL: THE 4 SURFACES & 5 SUPERPOWERS\n\n"
+            f"{name} is an autonomous memory-first AI agent powered by Walrus decentralized storage. "
             "Your memory travels with you across Browser, Telegram, Terminal, and Web.\n\n"
             "THE 4 SURFACES:\n"
             "1. BROWSER EXTENSION: In-page WebMCP automation, live reasoning pills, tab reading, and 1-click downloads.\n"
@@ -1891,7 +1892,7 @@ class ConversationService:
             "4. WEB PORTAL / WIDGET: Full dashboard and responsive web assistant at /app/.\n\n"
             "THE 5 CORE SUPERPOWERS:\n"
             "1. DECENTRALIZED WALRUS MEMORY:\n"
-            "   Just talk naturally! Cheta extracts durable facts (preferences, projects, plans) "
+            f"   Just talk naturally! {name} extracts durable facts (preferences, projects, plans) "
             "and stores them in encrypted Walrus blobs. Commands:\n"
             "   - /memories : view all remembered facts\n"
             "   - /forget <number> : retire a memory note\n"
@@ -2750,19 +2751,24 @@ class ConversationService:
 
         A person is new only when nothing about them exists anywhere: no local
         turns, no stored memory records (including records just recovered from a
-        snapshot), and no shared memory handle. Any one of those means they are
-        established, so a wiped local database can never turn an existing person
-        into a first contact.
+        snapshot), no shared memory handle, and no index snapshot that recovery
+        could not rule out. Any one of those means they are established, so a
+        wiped local database can never turn an existing person into a first
+        contact.
 
         This must be evaluated AFTER ``recover_index_if_empty``. A redeploy wipes
         the local index while the snapshots stay on the relayer; recovery writes
-        those records locally, and only then does this predicate see them.
+        those records locally, and only then does this predicate see them. When
+        recovery could not read the relayer at all, the snapshot cannot be ruled
+        out, so the person is treated as established rather than new.
         """
         if self._turns.count_for_user(user.id) > 0:
             return False
         if self._scope_count(user.id, None) > 0:
             return False
         if user.memory_handle:
+            return False
+        if user.id in self._recovery_uncertain:
             return False
         return True
 
@@ -2789,6 +2795,9 @@ class ConversationService:
         try:
             outcome = await self._memory.recall(INDEX_QUERY, namespace, limit=50)
         except DependencyUnavailableError as error:
+            # The snapshot cannot be ruled out, so this person is never treated
+            # as new on the strength of a failed read.
+            self._recovery_uncertain.add(user.id)
             logger.warning(
                 "index recovery could not reach the memory relayer; keeping the "
                 "local index as it is",
@@ -2800,6 +2809,7 @@ class ConversationService:
             )
             return 0
         if outcome.degraded:
+            self._recovery_uncertain.add(user.id)
             logger.warning(
                 "index recovery skipped because the memory relayer is degraded",
                 extra={
@@ -2812,6 +2822,7 @@ class ConversationService:
         # Only a successful read marks the user recovered, so a transient outage
         # is retried on a later request instead of being forgotten for the life
         # of the process.
+        self._recovery_uncertain.discard(user.id)
         self._recovered_users.add(user.id)
         by_blob: dict[str, object] = {}
         for hit in outcome.memories:

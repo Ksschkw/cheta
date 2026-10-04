@@ -11,8 +11,9 @@ up under real conversation.
 The persona was renamed to Cheta without moving any memory. The Python package,
 the repository and the environment variables keep the original `ranti` name on
 purpose: `MEMWAL_NAMESPACE_PREFIX=ranti` and every memory namespace are
-unchanged, so the rename orphaned nothing. A person who still addresses the bot
-as Ranti is answered naturally.
+unchanged, so the rename orphaned nothing. Self-introductions use the one name
+configured in `BOT_NAME`; a retired name is never surfaced, even when an old
+stored record still contains it, because stored blobs are never rewritten.
 
 The problem it solves is memory rot. Walrus Memory is permanent, encrypted and
 portable, but it is append-only, and the Python SDK's high-level recall is plain
@@ -142,7 +143,9 @@ Required environment variables:
   spend the full timeout.
 - `BOT_NAME` (default `Cheta`) - the assistant's own user-facing name. It never
   touches the memory namespaces, which stay on `MEMWAL_NAMESPACE_PREFIX`, so
-  renaming cannot orphan a stored memory.
+  renaming cannot orphan a stored memory. Every self-introduction, including the
+  first-turn onboarding, renders this one name, so a retired name cannot leak
+  back into a greeting.
 - `RANTI_MEMORY_RECEIPTS` (default `0`) - internal plumbing such as
   `1 accepted, persisting` appended to a reply. Off by default so it never
   reaches a real conversation; turn it on only to show the memory engine at work
@@ -153,6 +156,15 @@ Required environment variables:
   from stored records, is appended to the model's own reply, and is suppressed
   entirely when Walrus Memory is degraded. Below the threshold, a fast
   back-and-forth is treated as one conversation and is not re-greeted.
+
+Newness is decided by one predicate, `is_new_person`, and every first-contact
+decision goes through it. A person is new only when no local turn, no stored
+memory record (live or recovered from an index snapshot), no unreachable
+snapshot and no shared handle exist. It is evaluated after index recovery, so a
+redeploy that wipes the local SQLite file never turns an established person into
+a first contact and never replays the onboarding block. When the relayer cannot
+be read, the absence of a snapshot cannot be assumed, so the person is treated
+as established rather than new.
 
 Run the API:
 
@@ -244,6 +256,10 @@ identity is the Telegram chat id. The bot also has:
   any plain text or source file. Legacy `.doc`, `.ppt` and `.xls` are refused by
   name with the format to save as, and images, video, audio and archives are
   refused. Voice notes are transcribed instead when a transcription key is set.
+  A document with a caption is one turn: the caption is the question and the
+  document is the material. The system prompt states that the document was read,
+  names it, and forbids claiming it is absent, so the model cannot answer from a
+  document and deny it in the same reply.
 
 These Telegram paths are described from the source in this checkout; they were
 not exercised end to end as part of the web-widget verification. See
