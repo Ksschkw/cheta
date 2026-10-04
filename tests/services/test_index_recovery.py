@@ -80,6 +80,26 @@ class IndexReadFailingGateway:
         return getattr(self._inner, name)
 
 
+class CountingIndexGateway:
+    """Counts accepted writes to the companion index namespace, passes the rest."""
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+        self.index_writes = 0
+
+    async def remember_accepted(
+        self, text: str, namespace: str, idempotency_key: str | None = None
+    ):
+        if namespace.endswith(".idx"):
+            self.index_writes += 1
+        return await self._inner.remember_accepted(
+            text, namespace, idempotency_key=idempotency_key
+        )
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
+
+
 class Harness:
     def __init__(
         self,
@@ -329,3 +349,87 @@ async def test_an_unreadable_index_is_not_evidence_that_a_person_is_new() -> Non
 
     assert result.first_turn is False
     assert result.onboarding_note is None
+
+
+DUPLICATE_FACT = "The user is interested in purchasing a MacBook."
+
+
+def seed_duplicate_pair(harness: Harness) -> str:
+    """Two identical active records, so a listing has one repair to perform."""
+    user = harness.users.get_or_create("telegram", "42", "Ada")
+    namespace = harness.settings.memory_namespace(user.memory_key)
+    for blob_id, occurred_at in (
+        ("blob-dup-old", "2026-01-01T00:00:00+00:00"),
+        ("blob-dup-new", "2026-01-02T00:00:00+00:00"),
+    ):
+        harness.memories.create(
+            user_id=user.id,
+            blob_id=blob_id,
+            namespace=namespace,
+            text=DUPLICATE_FACT,
+            importance=0.7,
+            origin_surface="telegram",
+            occurred_at=occurred_at,
+        )
+    return user.id
+
+
+async def test_a_listing_that_retires_a_record_writes_a_snapshot_to_the_store() -> None:
+    harness = Harness([], gateway_factory=CountingIndexGateway)
+    user_id = seed_duplicate_pair(harness)
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+    assert "duplicate retired" in listing
+    await harness.service.await_pending_writes()
+
+    assert harness.gateway.index_writes == 1
+    outcome = await harness.gateway.recall(
+        INDEX_QUERY, harness.index_namespace(user_id), limit=5
+    )
+    assert outcome.memories, "the repair snapshot never reached the index namespace"
+    _, records = decode_snapshot(outcome.memories[0].text)
+    assert sorted(record.status for record in records) == ["active", "superseded"]
+
+
+async def test_a_listing_with_no_repairs_writes_no_snapshot() -> None:
+    harness = Harness([], gateway_factory=CountingIndexGateway)
+    user = harness.users.get_or_create("telegram", "42", "Ada")
+    harness.memories.create(
+        user_id=user.id,
+        blob_id="blob-single",
+        namespace=harness.settings.memory_namespace(user.memory_key),
+        text="The user prefers jollof rice.",
+        importance=0.7,
+        origin_surface="telegram",
+        occurred_at="2026-01-01T00:00:00+00:00",
+    )
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+    assert "cleaned up" not in listing
+    await harness.service.await_pending_writes()
+
+    assert harness.gateway.index_writes == 0
+
+
+async def test_a_failed_repair_snapshot_does_not_break_the_listing() -> None:
+    harness = Harness([], gateway_factory=IndexFailingGateway)
+    seed_duplicate_pair(harness)
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "duplicate retired" in listing
+    assert "MacBook" in listing
+    # The failed background write is contained; it never escapes the listing.
+    await harness.service.await_pending_writes()
+
+
+async def test_the_repair_still_applies_when_the_snapshot_write_is_unavailable() -> None:
+    harness = Harness([], gateway_factory=IndexFailingGateway)
+    user_id = seed_duplicate_pair(harness)
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+    await harness.service.await_pending_writes()
+
+    assert "duplicate retired" in listing
+    records = harness.memories.list_for_user(user_id, None, 100)
+    assert sorted(record.status for record in records) == ["active", "superseded"]

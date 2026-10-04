@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from functools import lru_cache
 
 # A fact about the assistant or the product is not a fact about the person, even
 # when the sentence starts with "The user". Both the extraction rule and the
@@ -31,6 +32,19 @@ _ASSISTANT_SUBJECT = re.compile(
     r"|\bassistant's\b"
     r"|\b(?:assistant|chatbot)\s+(?:is|was|has|can|should|must|will|would|identifies)\b",
     re.IGNORECASE,
+)
+
+# The assistant role words that make a sentence about the product. Kept to the
+# unambiguous nouns from the subject pattern above: "model" and "agent" are also
+# ordinary things a person can be.
+_ASSISTANT_ROLES = r"(?:assistant|bot|chatbot)"
+# A role word followed by one of these starts a job title ("assistant
+# professor"), which is about a person, not the product.
+_ROLE_TITLES = (
+    r"(?:professor|manager|director|coach|editor|secretary|teacher|principal|"
+    r"dean|attorney|referee|curator|superintendent|coordinator|administrator|"
+    r"researcher|engineer|scientist|developer|consultant|specialist|"
+    r"librarian|nurse|therapist|instructor|lecturer|pastor|priest)"
 )
 
 _CONVERSATION_SUBJECT = re.compile(
@@ -140,9 +154,53 @@ def _subject_pattern(display_names: Sequence[str]) -> str:
     return "(?:" + "|".join(alternatives) + ")"
 
 
-def is_assistant_fact(text: str) -> bool:
-    """True when the sentence is about the assistant rather than the person."""
-    return _ASSISTANT_SUBJECT.search(text) is not None
+@lru_cache(maxsize=32)
+def _retired_names_pattern(retired_names: tuple[str, ...]) -> re.Pattern[str] | None:
+    """A regex matching a retired assistant name used AS the assistant.
+
+    The name is accepted as an assistant subject only when the sentence also
+    says it is one: "NAME is [a] ... assistant|bot|chatbot", "the assistant is
+    called NAME", or "the assistant named NAME". A record that merely mentions
+    the name, or that gives the namesake person some other predicate, does not
+    match. Returns None when no name is configured, which disables the filter.
+    """
+    names = [
+        re.escape(" ".join(str(name).split()))
+        for name in retired_names
+        if str(name).strip()
+    ]
+    if not names:
+        return None
+    alternation = "(?:" + "|".join(sorted(set(names), key=len, reverse=True)) + ")"
+    role = _ASSISTANT_ROLES + r"(?!\s+" + _ROLE_TITLES + r"\b)"
+    pattern = (
+        r"\b" + alternation + r"\b\s+(?:is|was)\s+"
+        r"(?:(?:a|an|the|your|my|our)\s+)?(?:[\w-]+'s\s+)?"
+        r"(?:(?:memory-first|memory|helpful|personal|virtual|intelligent|smart|"
+        r"autonomous|ai)\s+){0,2}"
+        + role
+        + r"\b"
+        + r"|\b" + _ASSISTANT_ROLES + r"s?\s+(?:is|was|are|were)\s+"
+        r"(?:(?:called|named)\s+)?" + alternation + r"\b"
+        + r"|\b" + _ASSISTANT_ROLES + r"\s+(?:named|called)\s+" + alternation + r"\b"
+    )
+    return re.compile(pattern, re.IGNORECASE)
+
+
+def is_assistant_fact(text: str, retired_names: Sequence[str] = ()) -> bool:
+    """True when the sentence is about the assistant rather than the person.
+
+    ``retired_names`` are assistant names from an earlier rename. A name alone
+    does not make a sentence about the assistant, because a person can share the
+    name, so the name only counts when the sentence ties it to the assistant
+    role: "Ranti is a memory-first assistant", "the assistant is called Ranti",
+    or "the assistant named Ranti". A legitimate fact about a namesake person is
+    left alone.
+    """
+    if _ASSISTANT_SUBJECT.search(text) is not None:
+        return True
+    pattern = _retired_names_pattern(tuple(retired_names))
+    return pattern is not None and pattern.search(text) is not None
 
 
 def is_conversation_fact(text: str) -> bool:
@@ -150,9 +208,9 @@ def is_conversation_fact(text: str) -> bool:
     return _CONVERSATION_SUBJECT.search(text) is not None
 
 
-def is_person_fact(text: str) -> bool:
+def is_person_fact(text: str, retired_names: Sequence[str] = ()) -> bool:
     """True when the sentence can honestly be listed as a fact about the person."""
-    return not is_assistant_fact(text) and not is_conversation_fact(text)
+    return not is_assistant_fact(text, retired_names) and not is_conversation_fact(text)
 
 
 def _deconjugate(verb: str) -> str:
@@ -204,18 +262,26 @@ def to_second_person(text: str, display_names: Sequence[str] = ()) -> str:
     return text
 
 
-def person_facing(text: str, display_names: Sequence[str] = ()) -> str | None:
+def person_facing(
+    text: str,
+    display_names: Sequence[str] = (),
+    retired_names: Sequence[str] = (),
+) -> str | None:
     """The text to show the person, or None when it is not about them."""
-    if not is_person_fact(text):
+    if not is_person_fact(text, retired_names):
         return None
     return to_second_person(text, display_names)
 
 
-def record_facing(record, display_names: Sequence[str] = ()) -> str:
+def record_facing(
+    record,
+    display_names: Sequence[str] = (),
+    retired_names: Sequence[str] = (),
+) -> str:
     """The single rendering every surface uses to turn a record into display text.
 
     A record that is not about the person is still returned verbatim rather than
     raising, so a caller that has already filtered can never crash; a caller that
     has not is responsible for filtering it out first.
     """
-    return person_facing(record.text, display_names) or record.text
+    return person_facing(record.text, display_names, retired_names) or record.text

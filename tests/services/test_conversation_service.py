@@ -180,6 +180,7 @@ class Harness:
         client_wrapper=None,
         resume_after_hours: float = 6.0,
         reply_channel=None,
+        retired_names: Sequence[str] = (),
     ):
         self.database = Database(":memory:")
         self.database.migrate()
@@ -187,6 +188,7 @@ class Harness:
             database_path=":memory:",
             memwal_namespace_prefix="ranti",
             resume_after_hours=resume_after_hours,
+            retired_assistant_names=tuple(retired_names),
         )
         self.users = UserCrud(self.database)
         self.memories = MemoryCrud(self.database)

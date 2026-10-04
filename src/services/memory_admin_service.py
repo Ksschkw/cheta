@@ -59,7 +59,7 @@ class MemoryAdminService:
     def _view(self, memory, display_names: tuple[str, ...]) -> MemoryViewSchema:
         return MemoryViewSchema(
             blob_id=memory.blob_id,
-            text=record_facing(memory, display_names),
+            text=record_facing(memory, display_names, self._retired_names()),
             status=memory.status,
             importance=memory.importance,
             origin_surface=memory.origin_surface,
@@ -70,6 +70,10 @@ class MemoryAdminService:
     def _names_for(self, user) -> tuple[str, ...]:
         """The name forms every surface uses to resolve a record's subject."""
         return subject_names(user.display_name)
+
+    def _retired_names(self) -> tuple[str, ...]:
+        """The assistant names retired by an earlier rename, from settings."""
+        return self._settings.retired_assistant_names
 
     def _scope_user_ids(self, user_id: str) -> list[str]:
         """Every local identity whose rows belong to this person's memory space.
@@ -110,7 +114,7 @@ class MemoryAdminService:
         return [
             self._view(record, display_names)
             for record in records
-            if is_person_fact(record.text)
+            if is_person_fact(record.text, self._retired_names())
         ]
 
     def repair_memories(self, user_id: str) -> list[RepairAction]:
@@ -124,7 +128,7 @@ class MemoryAdminService:
         if user is None:
             raise NotFoundError(f"user {user_id} does not exist")
         records = self._scope_records(user_id, None, 1000)
-        actions = plan_repairs(records, self._names_for(user))
+        actions = plan_repairs(records, self._names_for(user), self._retired_names())
         for action in actions:
             if action.kind == KIND_DUPLICATE:
                 self._memories.mark_status(
@@ -159,7 +163,7 @@ class MemoryAdminService:
             "id": record.id,
             "blob_id": record.blob_id,
             "status": STATUS_SUPERSEDED,
-            "text": record_facing(record, self._names_for(user)),
+            "text": record_facing(record, self._names_for(user), self._retired_names()),
         }
 
     async def correct_memory(
@@ -179,7 +183,7 @@ class MemoryAdminService:
         corrected = " ".join(text.split())
         if not corrected:
             raise ValidationError("a correction must not be blank")
-        if not is_person_fact(corrected):
+        if not is_person_fact(corrected, self._retired_names()):
             raise ValidationError("a correction must be a fact about the person")
 
         namespace = self._settings.memory_namespace(user.memory_key)
@@ -321,8 +325,16 @@ class MemoryAdminService:
                     "id": contradiction.id,
                     "reason": contradiction.reason,
                     "created_at": contradiction.created_at,
-                    "left": record_facing(left, display_names) if left else contradiction.left_blob_id,
-                    "right": record_facing(right, display_names) if right else contradiction.right_blob_id,
+                    "left": (
+                        record_facing(left, display_names, self._retired_names())
+                        if left
+                        else contradiction.left_blob_id
+                    ),
+                    "right": (
+                        record_facing(right, display_names, self._retired_names())
+                        if right
+                        else contradiction.right_blob_id
+                    ),
                 }
             )
         return views

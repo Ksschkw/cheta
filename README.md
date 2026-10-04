@@ -146,6 +146,16 @@ Required environment variables:
   renaming cannot orphan a stored memory. Every self-introduction, including the
   first-turn onboarding, renders this one name, so a retired name cannot leak
   back into a greeting.
+- `RANTI_RETIRED_NAMES` (default empty) - assistant names retired by an earlier
+  rename, comma separated. Stored blobs are append-only and never rewritten, so
+  an old record about the assistant can still name one of them. Any record that
+  is about the assistant under one of these names is treated as not a fact about
+  the person: it is filtered from the listing, the greeting, the prompt and the
+  repair pass, exactly like a record whose subject is "the assistant". A record
+  is only matched when it ties the name to the assistant role ("Ranti is a
+  memory-first assistant", "the assistant is called Ranti"), so a legitimate
+  fact about a namesake person is left alone. Every entry is trimmed, empty
+  entries and repeats are dropped, and an empty value disables the filter.
 - `RANTI_MEMORY_RECEIPTS` (default `0`) - internal plumbing such as
   `1 accepted, persisting` appended to a reply. Off by default so it never
   reaches a real conversation; turn it on only to show the memory engine at work

@@ -457,7 +457,7 @@ class ConversationService:
         candidates = [
             RankedMemory(
                 blob_id=record.blob_id,
-                text=record_facing(record, display_names),
+                text=record_facing(record, display_names, self._retired_names()),
                 distance=0.0,
                 importance=record.importance,
                 age_days=self._age_days(record.occurred_at),
@@ -497,11 +497,12 @@ class ConversationService:
         """
         if not pairs:
             return None
-        described = "; ".join(
-            f'"{self._one_line(person_facing(left, display_names) or left)}" and '
-            f'"{self._one_line(person_facing(right, display_names) or right)}"'
-            for left, right in pairs
-        )
+
+        def shown(statement: str) -> str:
+            rendered = person_facing(statement, display_names, self._retired_names())
+            return self._one_line(rendered or statement)
+
+        described = "; ".join(f'"{shown(left)}" and "{shown(right)}"' for left, right in pairs)
         if len(pairs) == 1:
             return (
                 f"I have two notes about you that conflict: {described}. "
@@ -531,7 +532,7 @@ class ConversationService:
         known = {
             memory.blob_id: memory
             for memory in self._scope_records(user_id, None, 500)
-            if is_person_fact(memory.text)
+            if is_person_fact(memory.text, self._retired_names())
         }
 
         candidates: list[RankedMemory] = []
@@ -541,12 +542,12 @@ class ConversationService:
                 # Written by another surface, or recovered before the index was
                 # rebuilt. Treat it as live rather than dropping the memory, but
                 # still refuse a fact that is not about the person.
-                if not is_person_fact(hit.text):
+                if not is_person_fact(hit.text, self._retired_names()):
                     continue
                 candidates.append(
                     RankedMemory(
                         blob_id=hit.blob_id,
-                        text=record_facing(hit, display_names),
+                        text=record_facing(hit, display_names, self._retired_names()),
                         distance=hit.distance,
                         importance=0.5,
                         age_days=0.0,
@@ -556,7 +557,7 @@ class ConversationService:
             candidates.append(
                 RankedMemory(
                     blob_id=record.blob_id,
-                    text=record_facing(record, display_names),
+                    text=record_facing(record, display_names, self._retired_names()),
                     distance=hit.distance,
                     importance=record.importance,
                     age_days=self._age_days(record.occurred_at),
@@ -1796,7 +1797,7 @@ class ConversationService:
                     f"Welcome back. I remember {len(remembered)} things about you, "
                     "including: "
                     + "; ".join(
-                        record_facing(record, greeting_names).rstrip(".")
+                        record_facing(record, greeting_names, self._retired_names()).rstrip(".")
                         for record in remembered[:3]
                     )
                     + "."
@@ -1854,7 +1855,8 @@ class ConversationService:
         shown = records[: self.LISTING_LIMIT]
         for index, record in enumerate(shown, start=1):
             marker = "" if record.status == STATUS_ACTIVE else f" [{record.status}]"
-            lines.append(f"{index}. {record_facing(record, display_names)}{marker}")
+            rendered = record_facing(record, display_names, self._retired_names())
+            lines.append(f"{index}. {rendered}{marker}")
         if len(records) > self.LISTING_LIMIT:
             lines.append(
                 f"...and {len(records) - self.LISTING_LIMIT} more. The export button "
@@ -2030,7 +2032,7 @@ class ConversationService:
             return f"There is no note {index}. Send /memories to see what I have."
 
         self._memories.mark_status(target.id, STATUS_SUPERSEDED, "user-retracted")
-        rendered = record_facing(target, display_names)
+        rendered = record_facing(target, display_names, self._retired_names())
         return (
             f"Done. I will not bring up \"{rendered}\" again. It stays on Walrus "
             "until its storage expires, because Walrus Memory cannot erase a blob."
@@ -2061,7 +2063,7 @@ class ConversationService:
             return f"There is no note {index}. Send /memories to see what I have."
         target = records[index - 1]
         corrected = " ".join(parts[1].split())
-        if not is_person_fact(corrected):
+        if not is_person_fact(corrected, self._retired_names()):
             return (
                 "That correction is about the assistant or the conversation, not about "
                 "you, so I did not store it. Rewrite it as a fact about yourself."
@@ -2101,8 +2103,9 @@ class ConversationService:
             self._settle_write(user.id, memory.id, accepted.job_id, "updates", best, corrected)
         )
         self._track_task(settle)
+        rendered = record_facing(target, subject_names(user.display_name), self._retired_names())
         return (
-            f"Done. \"{record_facing(target, subject_names(user.display_name))}\" is "
+            f"Done. \"{rendered}\" is "
             f"retired and I will use \"{corrected}\" from now on. The corrected note "
             "is being written to Walrus Memory now."
         )
@@ -2123,7 +2126,9 @@ class ConversationService:
         the one the listing and /forget both index into.
         """
         return [
-            record for record in self._sorted_memories(user_id) if is_person_fact(record.text)
+            record
+            for record in self._sorted_memories(user_id)
+            if is_person_fact(record.text, self._retired_names())
         ]
 
     def _display_names_for(self, user_id: str) -> tuple[str, ...]:
@@ -2201,7 +2206,7 @@ class ConversationService:
         redundant local record. This runs when a listing runs, so existing bad
         data is cleaned rather than only preventing new bad data.
         """
-        actions = plan_repairs(records, display_names)
+        actions = plan_repairs(records, display_names, self._retired_names())
         for action in actions:
             if action.kind == KIND_DUPLICATE:
                 self._memories.mark_status(
@@ -2228,10 +2233,56 @@ class ConversationService:
     def _listing_records(
         self, user_id: str, display_names: tuple[str, ...] = ()
     ) -> tuple[list, list[RepairAction]]:
-        """The person records plus whatever the listing just collapsed."""
+        """The person records plus whatever the listing just collapsed.
+
+        A listing that actually retired a record schedules a snapshot, because
+        the retirement lives only in the local index until a turn writes one and
+        a redeploy wipes the local index. A listing with no repairs writes
+        nothing, because listings are frequent.
+        """
         records = self._scope_records(user_id, None, 1000)
         repairs = self._repair_active_memories(records, display_names)
+        if repairs:
+            self._schedule_repair_snapshot(user_id)
         return self._person_records(user_id), repairs
+
+    def _retired_names(self) -> tuple[str, ...]:
+        """The assistant names retired by an earlier rename, from settings."""
+        return self._settings.retired_assistant_names
+
+    def _schedule_repair_snapshot(self, user_id: str) -> None:
+        """Make a repair durable on Walrus without blocking the listing.
+
+        Retiring a record only changes the local SQLite index, which a redeploy
+        wipes, so without this the retired status reaches Walrus only if a later
+        conversational turn happens to write a snapshot. The write is submitted
+        and not polled, exactly like a turn's accepted write, and its failure is
+        contained in the background task: the person still sees their list. The
+        snapshot writer reads the local index directly, so it cannot trigger
+        another listing or repair.
+        """
+        try:
+            task = asyncio.create_task(self._settle_repair_snapshot(user_id))
+        except RuntimeError:
+            # No running loop, for example a direct synchronous read. The local
+            # repair still stands and the next listing converges on a snapshot.
+            logger.info(
+                "memory repair applied without a running loop; snapshot deferred",
+                extra={"event": "memory_repair_snapshot_deferred", "user_id": user_id},
+            )
+            return
+        self._track_task(task)
+
+    async def _settle_repair_snapshot(self, user_id: str) -> None:
+        """Write one repair snapshot; a background failure never escapes."""
+        try:
+            await self._write_index_snapshot(user_id)
+        except Exception:  # noqa: BLE001 - a background task must never crash the loop
+            logger.warning(
+                "index snapshot after a memory repair failed; the listing is unaffected",
+                extra={"event": "memory_repair_snapshot_failed", "user_id": user_id},
+                exc_info=True,
+            )
 
     def _greeting_records(self, user_id: str, display_names: tuple[str, ...]) -> list:
         """The ordered, current facts a greeting may quote.
@@ -2252,21 +2303,23 @@ class ConversationService:
 
         return sorted(active, key=priority)
 
-    @staticmethod
     def _repair_report_lines(
-        actions: list[RepairAction], display_names: tuple[str, ...] = ()
+        self,
+        actions: list[RepairAction],
+        display_names: tuple[str, ...] = (),
     ) -> list[str]:
         """Name exactly what the listing collapsed, in the second person."""
         if not actions:
             return []
         lines = ["", f"I also cleaned up {len(actions)} problem record(s):"]
+        retired_names = self._retired_names()
         for action in actions:
-            retired = person_facing(action.retired_text, display_names) or action.retired_text
-            kept = (
-                person_facing(action.kept_text, display_names) or action.kept_text
-                if action.kept_text
-                else None
-            )
+            rendered = person_facing(action.retired_text, display_names, retired_names)
+            retired = rendered or action.retired_text
+            kept = None
+            if action.kept_text:
+                rendered_kept = person_facing(action.kept_text, display_names, retired_names)
+                kept = rendered_kept or action.kept_text
             if action.kind == KIND_DUPLICATE:
                 lines.append(f"- duplicate retired: \"{retired}\" (kept \"{kept}\")")
             elif action.kind == KIND_CONTRADICTION:
@@ -2284,7 +2337,7 @@ class ConversationService:
         """The numbered keyboard, built from the same list the tap resolves in."""
         rows: list[list[dict[str, str]]] = []
         for index, record in enumerate(records[:FORGET_MENU_LIMIT], start=1):
-            label = " ".join(record_facing(record, display_names).split())
+            label = " ".join(record_facing(record, display_names, self._retired_names()).split())
             if len(label) > 60:
                 label = label[:59] + "."
             rows.append(
@@ -2373,7 +2426,7 @@ class ConversationService:
             index = start + offset + 1
             marker = "" if record.status == STATUS_ACTIVE else f" [{record.status}]"
             lines.append(
-                f"{index}. {record_facing(record, display_names)}{marker}"
+                f"{index}. {record_facing(record, display_names, self._retired_names())}{marker}"
             )
         lines.extend(self._repair_report_lines(repairs, display_names))
         lines.extend(
@@ -2397,7 +2450,7 @@ class ConversationService:
             return (
                 "That note is no longer there. Send /memories to see what I have."
             )
-        rendered = record_facing(target, display_names)
+        rendered = record_facing(target, display_names, self._retired_names())
         return (
             f'To correct note {position} ("{rendered}"), send:\n'
             f"/correct {position} <the right version>\n"
@@ -3054,7 +3107,7 @@ class ConversationService:
             fact_text = str(fact["text"])
             importance = float(fact["importance"])  # type: ignore[arg-type]
 
-            if not is_person_fact(fact_text):
+            if not is_person_fact(fact_text, self._retired_names()):
                 stored.append(
                     ExtractedFactView(
                         text=fact_text,
@@ -3084,7 +3137,7 @@ class ConversationService:
             known = {
                 memory.blob_id: memory
                 for memory in self._scope_records(user_id, None, 500)
-                if is_person_fact(memory.text)
+                if is_person_fact(memory.text, self._retired_names())
             }
             neighbours = [
                 RankedMemory(

@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from core.config import Settings, _parse_dotenv, load_environment
+from models.entities.memory_phrasing_model import is_person_fact
 
 
 def write_env(tmp_path: Path, text: str) -> Path:
@@ -110,3 +111,20 @@ def test_the_resume_gap_defaults_to_six_hours_and_is_configurable() -> None:
     assert Settings.from_env({"RANTI_RESUME_AFTER_HOURS": "0.5"}).resume_after_hours == 0.5
     # A malformed value must not crash startup; it falls back to the default.
     assert Settings.from_env({"RANTI_RESUME_AFTER_HOURS": "soon"}).resume_after_hours == 6.0
+
+
+def test_retired_assistant_names_are_trimmed_deduplicated_and_empty_disables() -> None:
+    settings = Settings.from_env({"RANTI_RETIRED_NAMES": " Ranti , Cheta,Ranti,, "})
+
+    assert settings.retired_assistant_names == ("Ranti", "Cheta")
+
+    disabled = Settings.from_env({})
+    assert disabled.retired_assistant_names == ()
+    # An empty list is what disables the filter: the name no longer implies the
+    # assistant, so the record stays a fact about the person.
+    assert (
+        is_person_fact(
+            "Ranti is a memory-first assistant.", disabled.retired_assistant_names
+        )
+        is True
+    )

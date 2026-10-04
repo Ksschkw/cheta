@@ -81,12 +81,12 @@ def _get_int(env: Mapping[str, str], key: str, default: int) -> int:
 
 
 def _parse_key_list(raw: str) -> tuple[str, ...]:
-    """Parse a comma-separated key list: trim, drop empties, de-duplicate.
+    """Parse a comma-separated list: trim, drop empties, de-duplicate.
 
-    ``GROQ_API_KEYS`` is hand-edited, so whitespace around a key is normal and an
-    empty entry from a trailing comma is not a key. Order is preserved because
-    the first key is the preferred one, and a repeated key is dropped so the
-    rotation does not waste an attempt on it.
+    Used for ``GROQ_API_KEYS`` and for the retired assistant names. Both values
+    are hand-edited, so whitespace around an entry is normal and an empty entry
+    from a trailing comma is not an entry. Order is preserved because the first
+    key is the preferred one, and a repeated entry is dropped.
     """
     seen: set[str] = set()
     keys: list[str] = []
@@ -155,6 +155,13 @@ class Settings:
     # Internal plumbing like "1 accepted, persisting" must stay out of the chat
     # unless someone explicitly wants it for a demo.
     memory_receipts: bool = False
+
+    # Assistant names retired by an earlier rename. A stored record about the
+    # assistant under one of these names is not a fact about the person, so it
+    # is filtered from the listing, the greeting and the prompt even though the
+    # append-only blob is never rewritten. Empty (the default) disables the
+    # filter. Comma separated; every entry is trimmed and repeats are dropped.
+    retired_assistant_names: tuple[str, ...] = field(default_factory=tuple)
 
     # A returning session is one whose most recent stored turn is older than
     # this. Below it, a rapid back-and-forth is one conversation and must not be
@@ -311,6 +318,9 @@ class Settings:
             ),
             memory_receipts=_get(source, "RANTI_MEMORY_RECEIPTS", "0").lower()
             in ("1", "true", "yes", "on"),
+            retired_assistant_names=_parse_key_list(
+                _get(source, "RANTI_RETIRED_NAMES")
+            ),
             resume_after_hours=_get_float(source, "RANTI_RESUME_AFTER_HOURS", 6.0),
             transcription_api_key=_get(source, "TRANSCRIPTION_API_KEY")
             or _get(source, "GROQ_API_KEY"),

@@ -56,7 +56,11 @@ def _keeper_key(record) -> tuple[float, int, str]:
     )
 
 
-def plan_repairs(records: Sequence, display_names: Sequence[str] = ()) -> list[RepairAction]:
+def plan_repairs(
+    records: Sequence,
+    display_names: Sequence[str] = (),
+    retired_names: Sequence[str] = (),
+) -> list[RepairAction]:
     """Return the retirements that collapse obvious bad state.
 
     Exact duplicates keep one record and retire the rest. A contradiction
@@ -68,6 +72,10 @@ def plan_repairs(records: Sequence, display_names: Sequence[str] = ()) -> list[R
     stored fact. Comparing the subject-resolved form means a record written with
     the person's name and one written with "The user" are still recognised as
     the same claim.
+
+    ``retired_names`` are assistant names from an earlier rename, so a record
+    about the assistant under one of those names is retired like any other
+    assistant fact.
     """
     active = [record for record in records if record.status == STATUS_ACTIVE]
     active.sort(key=_order_key)
@@ -76,7 +84,7 @@ def plan_repairs(records: Sequence, display_names: Sequence[str] = ()) -> list[R
     remaining = []
 
     for record in active:
-        if not is_person_fact(record.text):
+        if not is_person_fact(record.text, retired_names):
             actions.append(
                 RepairAction(
                     kind=KIND_NOT_ABOUT_PERSON,

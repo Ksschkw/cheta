@@ -159,6 +159,36 @@ async def test_the_listing_renders_stored_facts_in_the_second_person() -> None:
     assert "The user is" not in listing
 
 
+RETIRED_ASSISTANT_FACT = "Ranti is a memory-first assistant that keeps facts for you."
+NAMESAKE_FACT = "Ranti is the user's sister and lives in Lagos."
+
+
+async def test_a_record_about_the_assistant_under_a_retired_name_is_not_shown() -> None:
+    """A legacy blob can still name a former assistant name; it is not a person fact."""
+    harness = Harness([], retired_names=("Ranti",))
+    user_id = seed(harness, RETIRED_ASSISTANT_FACT, "blob-retired", "2026-01-01T00:00:00+00:00")
+    seed(harness, MACBOOK, "blob-keep", "2026-01-02T00:00:00+00:00")
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "memory-first assistant" not in listing
+    assert "You are interested in purchasing a MacBook." in listing
+    # The repair retires it locally, the same as a generic assistant subject.
+    assert statuses(harness, user_id)[RETIRED_ASSISTANT_FACT] == "superseded"
+
+
+async def test_a_namesake_person_fact_is_still_shown_with_the_filter_enabled() -> None:
+    """Sharing a first name with a retired assistant name is not enough to hide it."""
+    harness = Harness([], retired_names=("Ranti",))
+    user_id = seed(harness, NAMESAKE_FACT, "blob-sister", "2026-01-01T00:00:00+00:00")
+
+    listing = harness.service.command_reply("/memories", "telegram", "42", "Ada")
+
+    assert "sister" in listing
+    assert "cleaned up" not in listing
+    assert statuses(harness, user_id)[NAMESAKE_FACT] == "active"
+
+
 async def test_the_resume_line_names_memories_in_the_second_person() -> None:
     harness = Harness([])
     await harness.say_settled("hello")
