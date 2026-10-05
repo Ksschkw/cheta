@@ -1,90 +1,80 @@
 # How I gave my chatbot a memory that outlived its own database
 
 Most chatbots forget you when the conversation ends. A support bot asks for your
-order number for the third time. That repetition is what I wanted to solve, so I
-built an assistant whose memory survives not just the conversation but the server
-it runs on.
+order number for the third time. You explain your setup again to a tool that had
+it last week. I built an assistant called Cheta to fix that, and then kept going,
+because remembering turned out to be the easier half.
 
-## What I built
+## What it does
 
-Cheta is a personal assistant you can talk to from Telegram, a web page, a command
-line client, or a browser extension. It is for anyone tired of explaining
-themselves twice. Its purpose is narrow: hold onto the durable facts a person
-tells it, and bring them back when they matter.
+Cheta is an assistant you can talk to from Telegram, a web page, a command line
+client, or a browser extension. All four share one memory space per person.
 
-## How the memory works
+It answers with tools, not only with text. I gave it a web search, a page
+crawler, a URL reader, Wikipedia, live weather, an exact calculator, reminders
+that fire later, and a calendar file generator. It reads documents: PDF, Word,
+PowerPoint including the speaker notes, Excel, and any plain text or source file,
+detected by content rather than by file extension. It transcribes voice notes and
+shows me what it heard before it answers. The browser extension can read the page
+I am looking at and act on it, and if that site publishes public MCP tools, which
+is a standard for exposing functions to an assistant, it can call those too.
 
-Walrus Memory is a storage service that keeps data as blobs on the Walrus network,
-which is a decentralised store rather than a database tied to one server. Your
-application talks to it through a relayer, an HTTP service that accepts writes and
-answers recalls.
+## What memory means here
 
-Four things happen on every message.
+Walrus Memory is a storage service that keeps data as blobs on the Walrus
+network. An application reaches it through a relayer, which is an HTTP service
+that accepts writes and answers recalls.
 
-Cheta reads the message and asks the relayer to recall anything related to it.
-The relayer does a semantic search, so it finds notes by meaning rather than by
-keyword. Whatever comes back is inserted into the prompt as context before the
-model sees the message. That is the whole trick at the point of use: recalled
-facts become part of the question.
-
-Then the model's reply is shown, and the turn is passed to an extractor. The
-extractor pulls out facts worth keeping, things like a preference, a constraint,
-or a fact about someone's work. Each one is written to the relayer under a
-namespace derived from the person, so one person's memory never mixes with
-another's.
-
-The last step is where the project stopped being a demo for me. Before writing a
-new fact, Cheta checks it against what it already knows. A restatement is dropped.
-A changed preference retires the older note rather than sitting beside it. Two
-facts that conflict are stored and flagged, so the assistant says so out loud
-instead of holding both and contradicting itself later.
+On every message Cheta asks the relayer to recall anything related. That search
+is semantic, so it finds notes by meaning rather than by keyword. The results go
+into the prompt before the model sees my message. After the reply, an extraction
+pass decides what is worth keeping, and before writing anything it checks the new
+fact against what it already has. A restatement is dropped. A changed preference
+retires the older note instead of sitting beside it. Two facts that conflict are
+flagged, so it can tell me rather than contradict itself a week later.
 
 ## The before and after
 
 Without memory the assistant answers every message in isolation. Ask it for a
-restaurant recommendation and it suggests anything, including a dish full of an
-ingredient you told it last week you cannot eat.
+restaurant and it suggests anything, including a dish full of an ingredient you
+told it you cannot eat.
 
-With memory the same question produces a different answer, and I wanted to prove
-that rather than assert it. Cheta stores each turn, so it can re-run the same turn
-with memory switched off and put the two answers side by side. The model, the
-question and the moment are identical. The only difference is whether the recalled
-facts were in the prompt. On one of my own turns the reply with memory named a
-stored seat preference; without memory it said it had no such information on file.
-That comparison is the most useful thing I built, because it turns "does memory do
-real work" into something you can look at.
+I did not want to assert that memory helped. I wanted to show it, so Cheta stores
+each turn and can re-run the same turn with memory switched off. Same model, same
+question, same minute. On one of my own turns the answer with memory named a
+stored seat preference, and the answer without it said it had no such information
+on file. Putting those two side by side is the most useful thing I built.
 
 ## What broke
 
-The failures are worth more to you than the successes.
+The failures taught me more than the features did.
 
-My first version kept the local index in a SQLite file on the server. Every
-redeploy wiped it, so the assistant told a person with twenty stored facts that
-it had nothing about them. The facts were safe the whole time. The index was a
-cache, and I had forgotten that. It now rebuilds from a snapshot stored in Walrus
-itself, so a fresh server recovers what it lost.
+My first version kept its index in a SQLite file on the server. Every redeploy
+erased it, so the assistant told a person with twenty stored facts that it had
+nothing about them. The facts were safe the whole time, on Walrus, because the
+local index was only a cache and I had forgotten that. It now rebuilds from a
+snapshot held in Walrus itself.
 
 Consolidation barely worked at first. An exact duplicate could be stored twice,
-because my comparison ran on the raw text and two notes phrased differently
-("The user is a student" and a version using a person's name) never matched. Both
-stayed active. Comparing a normalised form fixed it.
+because my comparison ran on raw text and two notes phrased differently never
+matched. Comparing a normalised form fixed it.
 
 The worst was latency. Turns took up to forty seconds, and the cause was not the
-model. The provider was rate limiting, and the client library's automatic retry
+model. The provider was rate limiting and the client library's automatic retry
 was sleeping for up to fifty seconds before trying again, against a timeout of
-thirty. Every retry was wasted work. Bounding the retry and rotating across
-several provider keys brought it down.
+thirty. Every retry was wasted work. Disabling that retry and rotating across
+several API keys brought it down.
 
-## Evidence and code
+## Evidence
 
-Three people used it, with nineteen, seventeen and twenty stored memories each,
-which the repository's evidence page reads live from the deployment.
+Three people used it, holding nineteen, seventeen and twenty stored memories.
 
 The code is at https://github.com/Ksschkw/cheta, with setup instructions in the
-README. It runs without any paid service: memory on Walrus, an open-weight model
-for replies, and an offline model so you can clone it and watch the memory
+README. It runs without any paid service, using an open-weight model through
+Groq, with a deterministic offline model so you can clone it and watch the memory
 behaviour before configuring anything.
 
 If you are adding memory to your own bot, the lesson I would pass on is this.
-Storing facts is the easy part. Deciding which ones to keep, and proving the
-difference they make, is the part that changes how the thing feels to use.
+Storing facts is the easy part. Deciding which ones to keep, acting on them, and
+proving the difference they make is the part that changes how the thing feels to
+use.
