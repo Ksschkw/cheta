@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="Walrus Session 8 hackathon submission: Cheta, a memory-first assistant that remembers across sessions, users, and devices using Walrus decentralized storage.">
+  <meta name="description" content="Walrus Session 8 hackathon submission: Cheta, a working assistant with 13 registered tools, voice, four surfaces and MCP, plus one memory space on Walrus decentralized storage.">
   <title>Cheta - Walrus Session 8 Submission</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,14 +39,14 @@
     .tl.acc:hover { background: var(--accent); color: #07080b; }
 
     /* hero */
-    .hero { position: relative; padding: 72px 24px 60px; text-align: center; overflow: hidden; }
+    .hero { position: relative; padding: 34px 24px 18px; text-align: center; overflow: hidden; }
     .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 45% at 50% -5%, rgba(212,168,83,0.09) 0%, transparent 70%); pointer-events: none; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border: 1px solid var(--accent-border); border-radius: 20px; background: var(--accent-dim); font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 22px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px; border: 1px solid var(--accent-border); border-radius: 20px; background: var(--accent-dim); font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
     .eyebrow-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(212,168,83,0.8); animation: dot-pulse 2s ease-in-out infinite; }
     @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.35;transform:scale(0.8)} }
-    .hero-title { margin: 0 0 16px; font-family: var(--display); font-size: clamp(2.4rem, 5.5vw, 4.4rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; }
+    .hero-title { margin: 0 0 12px; font-family: var(--display); font-size: clamp(2rem, 3.4vw, 2.7rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; }
     .hero-title em { font-style: normal; color: var(--accent); }
-    .hero-sub { max-width: 54ch; margin: 0 auto 38px; color: var(--soft); font-size: 1.05rem; line-height: 1.65; }
+    .hero-sub { max-width: 72ch; margin: 0 auto 20px; color: var(--soft); font-size: 1rem; line-height: 1.55; }
 
     /* counters */
     .counters { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 36px; }
@@ -174,12 +174,42 @@
     .info-box { padding: 14px 18px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; font-size: 13px; color: var(--soft); }
     .info-box strong { color: var(--text); }
 
+    /* capabilities */
+    .cap-sec .sec-title { margin-bottom: 6px; }
+    .cap-sec .sec-sub { margin-bottom: 12px; }
+    .cap-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 7px; }
+    .cap-card { padding: 12px 14px 11px; background: var(--surface); border: 1px solid var(--line2); border-radius: 12px; }
+    .cap-card.acc { border-color: var(--accent-border); }
+    .cap-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--line); }
+    .cap-title { font-weight: 700; font-size: 0.82rem; letter-spacing: -0.01em; }
+    .cap-count { font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+    .cap-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .cap-item { font-size: 11.5px; line-height: 1.38; color: var(--soft); }
+    .cap-item strong { color: var(--text); font-weight: 600; }
+    .cap-item code { color: var(--text); background: rgba(255,255,255,0.05); border: 1px solid var(--line2); border-radius: 3px; padding: 0 4px; margin-right: 4px; font-size: 0.92em; }
+
+    /* surfaces and limits */
+    .surfaces-band { padding: 12px 16px; background: var(--surface); border: 1px solid var(--accent-border); border-left: 3px solid var(--accent); border-radius: 10px; margin-bottom: 12px; }
+    .surfaces-band-head { font-family: var(--display); font-weight: 700; font-size: 1rem; margin-bottom: 5px; }
+    .surfaces-band-text { margin: 0 0 5px; font-size: 12.5px; color: var(--soft); line-height: 1.45; }
+    .surfaces-band-text:last-child { margin-bottom: 0; }
+    .limits-box { display: flex; align-items: baseline; gap: 12px; padding: 11px 16px; background: var(--surface); border: 1px solid var(--line2); border-radius: 10px; }
+    .limits-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
+    .limits-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 3px 18px; font-size: 11.5px; color: var(--soft); }
+    .limits-list li::before { content: '- '; color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .cap-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     @media (max-width: 640px) {
       .cf-grid { grid-template-columns: 1fr; }
       .cf-col:first-child { border-right: none; border-bottom: 1px solid var(--line); }
       .hero-title { font-size: 2.1rem; }
       .topbar-links { gap: 3px; }
       .tl { padding: 3px 7px; font-size: 11px; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .limits-box { flex-direction: column; gap: 6px; }
     }
   </style>
 </head>
@@ -216,47 +246,90 @@
     Walrus Session 8 - Chatbots That Remember
   </div>
   <h1 class="hero-title">
-    The chatbot that<br><em>actually</em> remembers you.
+    The assistant that <em>acts</em>.<br>And remembers.
   </h1>
   <p class="hero-sub">
-    Cheta uses Walrus decentralized storage to persist memory across sessions, devices, and users.
-    Not a marketing claim. Verifiable right here in under 60 seconds.
+    13 registered tools, voice notes, four connected surfaces and MCP, on one Walrus memory space
+    that follows you across all of them. Memory is the entry ticket; acting is the difference.
   </p>
 
-  <div class="counters">
-    <div class="counter-card live">
-      <span class="counter-chip">LIVE</span>
-      <div class="counter-card-name">Kosisochukwu</div>
-      <div class="counter-num" id="num-kosi">0</div>
-      <div class="counter-lbl">active memories</div>
-    </div>
-    <div class="counter-card live">
-      <span class="counter-chip">LIVE</span>
-      <div class="counter-card-name">Kenzy</div>
-      <div class="counter-num" id="num-kenzy">0</div>
-      <div class="counter-lbl">active memories</div>
-    </div>
-    <div class="counter-card live">
-      <span class="counter-chip">LIVE</span>
-      <div class="counter-card-name">K</div>
-      <div class="counter-num" id="num-k">0</div>
-      <div class="counter-lbl">active memories</div>
-    </div>
-    <div class="counter-card">
-      <div class="counter-card-name">Total</div>
-      <div class="counter-num" id="num-total">0</div>
-      <div class="counter-lbl">across 3 users</div>
-    </div>
-  </div>
-
-  <p class="ev-live-msg" id="ev-live-msg">Fetching live evidence from Walrus...</p>
-
   <div class="cta-row">
-    <a class="btn btn-primary" href="#judge-test">Run the 5-minute judge test</a>
+    <a class="btn btn-primary" href="#capabilities">See what it can do</a>
+    <a class="btn btn-outline" href="#judge-test">Run the 5-minute judge test</a>
     <a class="btn btn-outline" href="/app/demo.html" target="_blank">Watch the demo</a>
-    <a class="btn btn-outline" href="/app/evidence.html" target="_blank">View live evidence</a>
   </div>
-  <p class="hero-note">No signup. No setup. Click a persona card below. Cheta greets them with their real memories immediately.</p>
+  <p class="hero-note">No signup, no setup. Every tool below is registered in the running agent, not on a roadmap.</p>
+</section>
+
+<hr class="divider" style="margin: 0 24px 26px;">
+
+<!-- ======================================================= capabilities -->
+<section class="section cap-sec" id="capabilities">
+  <span class="sec-eyebrow">What it can do</span>
+  <h2 class="sec-title">It does not just answer. It acts.</h2>
+  <p class="sec-sub">13 registered tools in four groups, plus voice transcription and document reading.</p>
+
+  <div class="cap-grid">
+    <div class="cap-card">
+      <div class="cap-head"><span class="cap-title">Look things up</span><span class="cap-count">5 tools</span></div>
+      <ul class="cap-list">
+        <li class="cap-item"><code>web_search</code> finds pages and snippets on the public web.</li>
+        <li class="cap-item"><code>crawl</code> reads a site and follows its own links.</li>
+        <li class="cap-item"><code>fetch_url</code> reads one page you point it at.</li>
+        <li class="cap-item"><code>wikipedia</code> returns an encyclopedia article summary.</li>
+        <li class="cap-item"><code>weather</code> gives current conditions and a 3-day forecast.</li>
+      </ul>
+    </div>
+    <div class="cap-card">
+      <div class="cap-head"><span class="cap-title">Do things</span><span class="cap-count">4 tools</span></div>
+      <ul class="cap-list">
+        <li class="cap-item"><code>reminder_set</code> schedules a reminder and sends it on time.</li>
+        <li class="cap-item"><code>reminder_list</code> lists the reminders still pending.</li>
+        <li class="cap-item"><code>calendar_event</code> builds a .ics calendar file for you to open.</li>
+        <li class="cap-item"><code>calculate</code> does exact arithmetic instead of guessing.</li>
+      </ul>
+    </div>
+    <div class="cap-card">
+      <div class="cap-head"><span class="cap-title">Read things</span><span class="cap-count">1 tool</span></div>
+      <ul class="cap-list">
+        <li class="cap-item"><code>document_question</code> answers a question from a file you send.</li>
+        <li class="cap-item"><strong>Files:</strong> PDF, DOCX, PPTX with slides and speaker notes, XLSX, XML, JSON, YAML, HTML, CSV, and plain text or source files - detected by content, not only by extension.</li>
+        <li class="cap-item"><strong>Voice:</strong> voice notes and audio files are transcribed, and the transcript is shown back before the answer.</li>
+        <li class="cap-item"><strong>Refused by name:</strong> the old binary .doc, .ppt and .xls, with the format to save as, because there is no converter.</li>
+      </ul>
+    </div>
+    <div class="cap-card acc">
+      <div class="cap-head"><span class="cap-title">Remember</span><span class="cap-count">3 tools</span></div>
+      <ul class="cap-list">
+        <li class="cap-item"><code>memory_recall</code> searches the notes stored about you.</li>
+        <li class="cap-item"><code>memory_remember</code> keeps a durable fact you want stored.</li>
+        <li class="cap-item"><code>memory_forget</code> retires a note so it stops surfacing.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="surfaces-band">
+    <div class="surfaces-band-head">Four surfaces. One memory space.</div>
+    <p class="surfaces-band-text">
+      Telegram, the web widget, the command line and the browser extension run the same assistant.
+      Run <code>/pair</code> on a client you already use to get a short code, then <code>/pair CODE</code> on a
+      new client to join the same memory space - and the client you started on is told when a new one links.
+    </p>
+    <p class="surfaces-band-text">
+      The browser extension reads the page you are currently on, offers summarise and save-facts actions,
+      and can call public MCP tools exposed by that page's own origin, with credentials omitted and redirects refused.
+    </p>
+  </div>
+
+  <div class="limits-box">
+    <span class="limits-title">Honest limits</span>
+    <ul class="limits-list">
+      <li>No logging into your accounts</li>
+      <li>No reading private pages you are not viewing</li>
+      <li>No images or video beyond voice transcription</li>
+      <li>The extension is in no browser store and must be loaded unpacked</li>
+    </ul>
+  </div>
 </section>
 
 <hr class="divider">
@@ -300,11 +373,12 @@
 
 <!-- ======================================================= counterfactual proof -->
 <section class="section">
-  <span class="sec-eyebrow">Counterfactual Proof</span>
+  <span class="sec-eyebrow">Evidence - The Memory Layer Does Real Work</span>
   <h2 class="sec-title">Same question. Same model. Memory made the difference.</h2>
   <p class="sec-sub">
-    Real responses from Cheta. The only variable is whether Walrus memory was active.
-    Model is Groq Qwen-2.5-32B in both cases.
+    The capability section above is what the assistant does on its own. This is the evidence that the
+    memory half is not decoration: real responses from Cheta, where the only variable is whether Walrus
+    memory was active. Model is Groq Qwen-2.5-32B in both cases.
   </p>
 
   <div class="cf-proof">
@@ -465,9 +539,37 @@
   <span class="sec-eyebrow">Live Evidence</span>
   <h2 class="sec-title">The memory store. Live from the API.</h2>
   <p class="sec-sub">
-    Fetched directly from <code>/evidence/users</code> in real time.
-    Each row is a real user. Rows meeting the 10+ active memory hackathon threshold are highlighted.
+    Memory is the required integration, so here it is measured. Counters and table are fetched directly
+    from <code>/evidence/users</code> in real time. Rows meeting the 10+ active memory hackathon threshold are highlighted.
   </p>
+
+  <div class="counters">
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">Kosisochukwu</div>
+      <div class="counter-num" id="num-kosi">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">Kenzy</div>
+      <div class="counter-num" id="num-kenzy">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card live">
+      <span class="counter-chip">LIVE</span>
+      <div class="counter-card-name">K</div>
+      <div class="counter-num" id="num-k">0</div>
+      <div class="counter-lbl">active memories</div>
+    </div>
+    <div class="counter-card">
+      <div class="counter-card-name">Total</div>
+      <div class="counter-num" id="num-total">0</div>
+      <div class="counter-lbl">across 3 users</div>
+    </div>
+  </div>
+
+  <p class="ev-live-msg" id="ev-live-msg">Fetching live evidence from Walrus...</p>
 
   <div id="ev-loading" style="color:var(--muted);font-size:13px;padding:12px 0;">Loading evidence from /evidence/users...</div>
   <div id="ev-table-wrap" class="hidden">
