@@ -1621,16 +1621,57 @@ tbody tr {
 
 @media (max-width: 640px) {
   .chat-app {
-    padding: 0 16px;
+    padding: 0 12px;
   }
 
   .chat-head {
-    padding: 14px 0 12px 0;
+    padding: 10px 0 8px 0;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .head-actions {
+    gap: 8px 12px;
+    flex-wrap: wrap;
+  }
+
+  .head-link,
+  .head-btn,
+  .help-toggle,
+  .settings-toggle {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .persona-bar {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+
+  .persona-btn {
+    padding: 3px 8px;
+    font-size: 10.5px;
+  }
+
+  .sync-banner {
+    padding: 6px 10px;
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  .composer-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .composer-left {
+    flex-wrap: wrap;
+    gap: 6px 10px;
   }
 
   .transcript {
-    padding: 20px 0;
-    gap: 20px;
+    padding: 16px 0;
+    gap: 16px;
   }
 
   .turn.user .bubble,
@@ -1650,11 +1691,11 @@ tbody tr {
   }
 
   .wrap {
-    padding: 28px 18px 48px 18px;
+    padding: 24px 14px 40px 14px;
   }
 
   .panel {
-    padding: 18px;
+    padding: 14px;
   }
 }
 

@@ -202,7 +202,10 @@
       .cap-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
+    #ev-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
     @media (max-width: 640px) {
+      .topbar { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
       .cf-grid { grid-template-columns: 1fr; }
       .cf-col:first-child { border-right: none; border-bottom: 1px solid var(--line); }
       .hero-title { font-size: 2.1rem; }
@@ -210,6 +213,7 @@
       .tl { padding: 3px 7px; font-size: 11px; }
       .cap-grid { grid-template-columns: 1fr; }
       .limits-box { flex-direction: column; gap: 6px; }
+      .persona-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
