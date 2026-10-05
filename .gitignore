@@ -22,3 +22,6 @@ docs/submission.md
 
 # Generated extension builds: reproduce with scripts/build_extension.py
 extension-dist/
+
+# Verification scratch from extension UI checks
+extension/.verify/
