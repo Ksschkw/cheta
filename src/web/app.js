@@ -611,6 +611,7 @@
     }
 
     var state = {
+      surface: SURFACE,
       surfaceUserId: getSurfaceUserId(),
       userId: storeGet(KEYS.userId, ""),
       displayName: storeGet(KEYS.displayName, ""),
@@ -1003,6 +1004,65 @@
       });
     }
 
+    /* ------------------------------------------------- voice input */
+
+    (function () {
+      var voiceBtn = $("voice-btn");
+      var voiceLabel = $("voice-label");
+      if (!voiceBtn) return;
+      var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        voiceBtn.title = "Voice notes available via Telegram bot @Kosi_test_walrus1_bot";
+        return;
+      }
+      var recognition = new SpeechRec();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      var recognizing = false;
+
+      voiceBtn.addEventListener("click", function () {
+        if (recognizing) {
+          recognition.stop();
+          return;
+        }
+        try {
+          recognition.start();
+        } catch (e) {
+          /* already started */
+        }
+      });
+
+      recognition.onstart = function () {
+        recognizing = true;
+        voiceBtn.classList.add("voice-recording");
+        if (voiceLabel) voiceLabel.textContent = "Listening...";
+      };
+
+      recognition.onresult = function (event) {
+        var transcriptText = "";
+        for (var i = event.resultIndex; i < event.results.length; ++i) {
+          transcriptText += event.results[i][0].transcript;
+        }
+        if (input && transcriptText) {
+          input.value = transcriptText;
+          autoGrow();
+        }
+      };
+
+      recognition.onerror = function () {
+        recognizing = false;
+        voiceBtn.classList.remove("voice-recording");
+        if (voiceLabel) voiceLabel.textContent = "Voice";
+      };
+
+      recognition.onend = function () {
+        recognizing = false;
+        voiceBtn.classList.remove("voice-recording");
+        if (voiceLabel) voiceLabel.textContent = "Voice";
+      };
+    }());
+
     if (toolsToggle && toolsDrawer) {
       toolsToggle.addEventListener("click", function () {
         toolsDrawer.classList.toggle("hidden");
@@ -1071,7 +1131,7 @@
       setBusy(true);
 
       var payload = {
-        surface: SURFACE,
+        surface: state.surface || SURFACE,
         surface_user_id: state.surfaceUserId,
         display_name: name,
         text: value,
@@ -1480,8 +1540,13 @@
       var match = search.match(/[?&]persona=([^&]+)/i);
       if (!match) { return; }
       var slug = match[1].toLowerCase().trim();
-      /* Map slug to persona-btn data-uid values */
-      var slugMap = { kosi: "kosi-demo", kosisochukwu: "kosi-demo", kenzy: "kenzy-demo", k: "k-demo" };
+      /* Map slug to persona-btn data-uid values (real Walrus IDs) */
+      var slugMap = {
+        kosi: "5527434923",
+        kosisochukwu: "5527434923",
+        kenzy: "6190892934",
+        k: "6959647089"
+      };
       var targetUid = slugMap[slug];
       if (!targetUid) { return; }
       /* Find the matching button in the persona bar and click it after a short
@@ -1508,18 +1573,22 @@
       var resetBtn = document.getElementById("persona-reset");
       var prevSurfaceUserId = null;
       var prevDisplayName = null;
+      var prevSurface = null;
 
       bar.querySelectorAll(".persona-btn").forEach(function (btn) {
         btn.addEventListener("click", function () {
           var uid = btn.getAttribute("data-uid");
           var name = btn.getAttribute("data-name");
           var desc = btn.getAttribute("data-desc");
+          var surface = btn.getAttribute("data-surface") || "telegram";
           if (!prevSurfaceUserId) {
             prevSurfaceUserId = state.surfaceUserId;
             prevDisplayName = state.displayName;
+            prevSurface = state.surface || SURFACE;
           }
           state.surfaceUserId = uid;
           state.displayName = name;
+          state.surface = surface;
           bar.querySelectorAll(".persona-btn").forEach(function (b) {
             b.classList.remove("persona-btn-active");
           });
@@ -1541,9 +1610,11 @@
           if (prevSurfaceUserId) {
             state.surfaceUserId = prevSurfaceUserId;
             state.displayName = prevDisplayName;
+            state.surface = prevSurface || SURFACE;
           }
           prevSurfaceUserId = null;
           prevDisplayName = null;
+          prevSurface = null;
           bar.querySelectorAll(".persona-btn").forEach(function (b) {
             b.classList.remove("persona-btn-active");
           });

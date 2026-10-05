@@ -1959,3 +1959,18 @@ tbody tr {
   border-color: var(--text);
   color: var(--text);
 }
+
+/* -------------------------------------------------------- voice input */
+
+.voice-recording {
+  background: rgba(212, 168, 83, 0.25) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  animation: voice-pulse 1.5s infinite;
+}
+
+@keyframes voice-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(212, 168, 83, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(212, 168, 83, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 168, 83, 0); }
+}
