@@ -1109,6 +1109,21 @@
       if (fileInput) fileInput.value = "";
 
       var trimmed = value.trim();
+      if (trimmed.toLowerCase() === "/judge") {
+        var bar = document.getElementById("persona-bar");
+        if (bar) {
+          bar.classList.toggle("hidden");
+          if (!bar.classList.contains("hidden")) {
+            storeSet("ranti.judge_mode", "1");
+          } else {
+            storeSet("ranti.judge_mode", "");
+          }
+        }
+        input.value = "";
+        input.style.height = "";
+        appendAssistant("Judge preview bar toggled. Click any persona button above to preview memories for that identity, or click 'Exit persona' to dismiss.");
+        return;
+      }
       if (trimmed.toLowerCase().startsWith("/name ")) {
         var customName = trimmed.slice(6).trim();
         if (customName) {
@@ -1529,14 +1544,26 @@
       }
     }());
 
-    /* ------------------------------------------------- URL ?persona= param (judge.html entry)
-     * When judge.html persona cards link to /app/index.html?persona=kosi|kenzy|k,
-     * this handler reads the param and auto-activates the correct persona so the
-     * chat opens pre-loaded with that user's identity and fires /start immediately. */
+    /* ------------------------------------------------- URL ?persona= / ?judge= param (judge.html entry)
+     * When judge.html persona cards link to /app/index.html?persona=kosi|kenzy|k or ?judge=1,
+     * this handler reveals the persona-bar and auto-activates the persona if specified.
+     * Regular visitors without these parameters never see the Judge Preview bar. */
 
     (function () {
-      var search = window.location.search;
-      if (!search) { return; }
+      var bar = document.getElementById("persona-bar");
+      if (!bar) { return; }
+      var search = window.location.search || "";
+      var isJudgeParam = /[?&](persona|judge)=/i.test(search);
+      var isJudgeReferrer = !!(document.referrer && document.referrer.indexOf("judge") !== -1);
+      var isJudgeStored = storeGet("ranti.judge_mode", "") === "1";
+
+      if (isJudgeParam || isJudgeReferrer || isJudgeStored) {
+        bar.classList.remove("hidden");
+        storeSet("ranti.judge_mode", "1");
+      } else {
+        bar.classList.add("hidden");
+      }
+
       var match = search.match(/[?&]persona=([^&]+)/i);
       if (!match) { return; }
       var slug = match[1].toLowerCase().trim();
@@ -1552,8 +1579,6 @@
       /* Find the matching button in the persona bar and click it after a short
        * delay to allow the chat surface to fully initialise first. */
       setTimeout(function () {
-        var bar = document.getElementById("persona-bar");
-        if (!bar) { return; }
         var btns = bar.querySelectorAll(".persona-btn");
         for (var i = 0; i < btns.length; i++) {
           if (btns[i].getAttribute("data-uid") === targetUid) {
@@ -1615,6 +1640,7 @@
           prevSurfaceUserId = null;
           prevDisplayName = null;
           prevSurface = null;
+          storeSet("ranti.judge_mode", "");
           bar.querySelectorAll(".persona-btn").forEach(function (b) {
             b.classList.remove("persona-btn-active");
           });
@@ -1625,6 +1651,7 @@
           if (resetBtn) {
             resetBtn.classList.add("hidden");
           }
+          bar.classList.add("hidden");
           startNewSession();
         });
       }

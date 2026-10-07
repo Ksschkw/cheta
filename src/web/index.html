@@ -11,7 +11,7 @@
   <body class="chat-body">
     <div id="chat-app" class="chat-app">
       <header class="chat-head">
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="brand-wrap">
           <svg viewBox="0 0 64 64" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="32" cy="28" r="18" fill="#18181c" stroke="#333" stroke-width="1.5"/>
             <ellipse cx="25" cy="25" rx="3.5" ry="4" fill="#f0f0f0"/>
@@ -83,18 +83,19 @@
           </details>
           <button id="btn-web-new-chat" class="head-btn" type="button">New</button>
           <button id="btn-web-chats" class="head-btn" type="button">Chats <span id="web-chats-badge" class="badge-count hidden">0</span></button>
-          <button id="tools-toggle-btn" class="head-btn" type="button">Tools (13)</button>
+          <button id="tools-toggle-btn" class="head-btn head-btn-pill" type="button">Tools (13)</button>
           <a class="head-link" href="dashboard.html">Memory</a>
           <a class="head-link" href="evidence.html">Evidence</a>
         </div>
-        <div id="sync-banner" class="sync-banner" role="status">
-          <span class="sync-indicator" aria-hidden="true"></span>
-          <span class="sync-text">Walrus memory syncs live across Telegram, Browser Extension, Web, and CLI. Store a fact anywhere, recall it everywhere.</span>
-          <button id="sync-dismiss" class="sync-dismiss" type="button" aria-label="Dismiss">x</button>
-        </div>
       </header>
 
-      <div id="persona-bar" class="persona-bar">
+      <div id="sync-banner" class="sync-banner" role="status">
+        <span class="sync-indicator" aria-hidden="true"></span>
+        <span class="sync-text">Walrus memory syncs live across Telegram, Browser Extension, Web, and CLI. Store a fact anywhere, recall it everywhere.</span>
+        <button id="sync-dismiss" class="sync-dismiss" type="button" aria-label="Dismiss">x</button>
+      </div>
+
+      <div id="persona-bar" class="persona-bar hidden" role="region" aria-label="Judge persona preview">
         <span class="persona-label">Judge Preview:</span>
         <button class="persona-btn" data-name="Kosisochukwu" data-uid="5527434923" data-surface="telegram" data-desc="Founder, 16 memories on Walrus - tech preferences, hackathons, Nigerian developer">Kosi (16 mem)</button>
         <button class="persona-btn" data-name="Kenzy" data-uid="6190892934" data-surface="telegram" data-desc="17 memories on Walrus - personal preferences, food, lifestyle">Kenzy (17 mem)</button>
